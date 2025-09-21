@@ -67,13 +67,6 @@ export default function AuthPage() {
           {/* Left Column - Auth Forms */}
           <div className="col-lg-6 d-flex align-items-center">
             <div className="w-100">
-              <div className="text-center mb-4">
-                <h1 className="text-primary fw-bold mb-2">
-                  <i className="bi bi-chat-square-text-fill me-2"></i>
-                  Consulta Ciudadana Honduras
-                </h1>
-                <p className="text-muted">Acceso para administradores del sistema</p>
-              </div>
 
               <Card className="mx-auto" style={{ maxWidth: "400px" }}>
                 <CardHeader>
