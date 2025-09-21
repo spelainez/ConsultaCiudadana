@@ -273,13 +273,6 @@ export function Dashboard() {
               >
                 <MessageSquare className="w-4 h-4 me-2" />Consultas
               </button>
-              <button 
-                className={`nav-link ${activeView === 'reports' ? 'active' : ''}`} 
-                onClick={() => setActiveView('reports')}
-                data-testid="nav-reports"
-              >
-                <Download className="w-4 h-4 me-2" />Reportes
-              </button>
               {user?.role === "super_admin" && (
                 <button 
                   className={`nav-link ${activeView === 'users' ? 'active' : ''}`} 
