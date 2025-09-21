@@ -1138,33 +1138,6 @@ export function Dashboard() {
               </div>
             </div>
 
-            {/* Estadísticas del Usuario */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-3 bg-white border rounded-lg">
-                <div className="text-2xl font-bold" style={{ color: '#1bd1e8' }}>
-                  {consultationsData?.total || 0}
-                </div>
-                <div className="text-sm text-gray-600">Consultas Gestionadas</div>
-              </div>
-              <div className="text-center p-3 bg-white border rounded-lg">
-                <div className="text-2xl font-bold text-green-600">
-                  {consultationsData?.total ? Math.round((consultationsData.total * 0.85)) : 0}
-                </div>
-                <div className="text-sm text-gray-600">Consultas Activas</div>
-              </div>
-              <div className="text-center p-3 bg-white border rounded-lg">
-                <div className="text-2xl font-bold text-orange-600">
-                  {user?.createdAt ? Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0}
-                </div>
-                <div className="text-sm text-gray-600">Días en Sistema</div>
-              </div>
-              <div className="text-center p-3 bg-white border rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">
-                  {user?.role === 'super_admin' ? '100%' : user?.role === 'admin' ? '85%' : '60%'}
-                </div>
-                <div className="text-sm text-gray-600">Nivel de Acceso</div>
-              </div>
-            </div>
 
             {/* Seguridad */}
             <div className="space-y-3">
