@@ -641,7 +641,8 @@ export function ConsultationForm() {
                 {/* SECCIÓN 4: CONSULTA POPULAR */}
                 <Card className="form-section-card">
                   <CardHeader className="form-section-header">
-                    <h3 className="form-section-title">4. Su Consulta Popular</h3>
+                    <h3 className="form-section-title">Comparte tu idea</h3>
+                    <p className="form-section-description">Queremos escuchar tu voz para mejorar Honduras</p>
                   </CardHeader>
                   <CardContent>
                     <div className="mb-4">
