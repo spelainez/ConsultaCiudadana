@@ -499,19 +499,19 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#f5f7fa' }}>
-      {/* Navbar Superior */}
+      {/* Navbar Superior - Responsive */}
       <div 
         className="shadow-sm sticky top-0 border-0 z-10" 
         style={{ backgroundColor: '#1bd1e8' }}
       >
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center py-3">
+        <div className="container mx-auto px-2 sm:px-4">
+          <div className="flex justify-between items-center py-2 sm:py-3">
             <div className="flex items-center">
-              <Settings className="w-6 h-6 text-white mr-3" />
-              <h4 className="mb-0 font-bold text-white text-lg">Panel Principal</h4>
+              <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-white mr-2 sm:mr-3" />
+              <h4 className="mb-0 font-bold text-white text-sm sm:text-lg">Panel Principal</h4>
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 sm:gap-3">
               <Button 
                 variant="outline" 
                 className="border-white text-white hover:bg-white hover:text-slate-800 bg-transparent" 
@@ -519,12 +519,13 @@ export function Dashboard() {
                 onClick={handleRefresh}
                 data-testid="button-refresh"
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline ml-1">Actualizar</span>
               </Button>
 
               {/* User Menu */}
               <div className="flex items-center text-white">
-                <span className="font-medium mr-1">{user?.username}</span>
+                <span className="font-medium mr-1 text-sm sm:text-base hidden sm:inline">{user?.username}</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button 
@@ -533,7 +534,8 @@ export function Dashboard() {
                       className="text-white hover:bg-white hover:bg-opacity-20 p-1"
                       data-testid="button-user-menu"
                     >
-                      <ChevronDown className="w-4 h-4" />
+                      <User className="w-4 h-4 sm:hidden" />
+                      <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
