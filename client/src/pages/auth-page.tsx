@@ -131,7 +131,6 @@ export default function AuthPage() {
               <div className="mb-4">
                 <i className="bi bi-graph-up display-1"></i>
               </div>
-              <h2 className="fw-bold mb-4">Panel Administrativo</h2>
               <p className="lead mb-4">
                 Gestiona las consultas ciudadanas, analiza tendencias y toma decisiones informadas
                 para el desarrollo de Honduras.
