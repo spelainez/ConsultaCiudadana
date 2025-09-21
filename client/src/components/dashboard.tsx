@@ -569,38 +569,38 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-4">
-        <div className="grid grid-cols-1 gap-4">
+      {/* Main Content - Responsive */}
+      <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-4">
+        <div className="grid grid-cols-1 gap-2 sm:gap-4">
           <div className="w-full">
-
 
             {/* Data Table */}
             <Card className="border-0 shadow-sm rounded-lg">
-              <CardHeader style={{ backgroundColor: '#fff' }} className="border-0 rounded-t-lg">
-                <div className="flex items-center justify-between mb-4">
+              <CardHeader style={{ backgroundColor: '#fff' }} className="border-0 rounded-t-lg px-3 sm:px-6 py-3 sm:py-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 sm:mb-4 gap-2 sm:gap-0">
                   <div>
-                    <CardTitle className="mb-0 flex items-center">
-                      <BarChart3 className="w-5 h-5 mr-2" style={{ color: '#1bd1e8' }} />
+                    <CardTitle className="mb-0 flex items-center text-lg sm:text-xl">
+                      <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" style={{ color: '#1bd1e8' }} />
                       Consultas Ciudadanas
                     </CardTitle>
                   </div>
                 </div>
                 
-                {/* Action Buttons */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
+                {/* Action Buttons - Responsive */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button 
                           variant="outline"
                           size="sm" 
                           data-testid="button-export-table"
-                          className="border text-gray-600 hover:bg-gray-50"
+                          className="border text-gray-600 hover:bg-gray-50 flex-1 sm:flex-none"
                         >
-                          <Download className="w-4 h-4 mr-1" />
-                          Exportar
-                          <ChevronDown className="w-4 h-4 ml-1" />
+                          <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                          <span className="hidden sm:inline">Exportar</span>
+                          <span className="sm:hidden">Exp.</span>
+                          <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
@@ -626,23 +626,23 @@ export function Dashboard() {
                     </DropdownMenu>
                   </div>
                   
-                  <div>
+                  <div className="w-full sm:w-auto">
                     <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
                       <CollapsibleTrigger asChild>
                         <Button 
                           variant="outline" 
                           size="sm" 
                           data-testid="button-toggleFilters"
-                          className="border-2"
+                          className="border-2 w-full sm:w-auto"
                           style={{ borderColor: '#1bd1e8', color: '#1bd1e8' }}
                         >
-                          <Filter className="w-4 h-4 mr-1" />
+                          <Filter className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                           Filtros
-                          <ChevronDown className="w-4 h-4 ml-1" />
+                          <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
                         </Button>
                       </CollapsibleTrigger>
                       <CollapsibleContent className="mt-3">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
                           <div>
                             <Label className="text-sm font-medium">Fecha Desde</Label>
                             <Input
@@ -733,23 +733,27 @@ export function Dashboard() {
                             </Select>
                           </div>
                         </div>
-                        <div className="flex gap-2 mt-3">
+                        <div className="flex flex-col sm:flex-row gap-2 mt-3">
                           <Button 
                             size="sm" 
                             onClick={handleFilterApply}
                             data-testid="button-applyFilters"
                             style={{ backgroundColor: '#1bd1e8', borderColor: '#1bd1e8' }}
+                            className="w-full sm:w-auto"
                           >
-                            <Filter className="w-4 h-4 mr-1" />
-                            Aplicar Filtros
+                            <Filter className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                            <span className="hidden sm:inline">Aplicar Filtros</span>
+                            <span className="sm:hidden">Aplicar</span>
                           </Button>
                           <Button 
                             variant="outline" 
                             size="sm" 
                             onClick={handleFilterClear}
                             data-testid="button-clearFilters"
+                            className="w-full sm:w-auto"
                           >
-                            Limpiar
+                            <span className="hidden sm:inline">Limpiar</span>
+                            <span className="sm:hidden">Limpiar</span>
                           </Button>
                         </div>
                       </CollapsibleContent>
@@ -924,63 +928,67 @@ export function Dashboard() {
                   </Table>
                 </div>
 
-                {/* Mobile Cards */}
-                <div className="lg:hidden p-3">
+                {/* Mobile Cards - Responsive */}
+                <div className="lg:hidden p-2 sm:p-3">
                   {sortedConsultations.length > 0 ? sortedConsultations.map((consultation: any) => (
-                    <Card key={consultation.id} className="mb-3 border rounded-lg">
-                      <CardContent className="p-3">
-                        <div className="flex justify-between items-start mb-2">
-                          <code className="text-sm">{consultation.id.slice(0, 8)}...</code>
-                          <Badge variant={getStatusBadgeVariant(consultation.status)}>
+                    <Card key={consultation.id} className="mb-2 sm:mb-3 border rounded-lg">
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex flex-col xs:flex-row xs:justify-between xs:items-start mb-2 gap-2 xs:gap-0">
+                          <code className="text-xs sm:text-sm">{consultation.id.slice(0, 8)}...</code>
+                          <Badge variant={getStatusBadgeVariant(consultation.status)} className="self-start xs:self-auto">
                             {consultation.status === 'active' ? 'Activa' : 'Archivada'}
                           </Badge>
                         </div>
-                        <div className="mb-2">
-                          <strong>Fecha:</strong> {formatDate(consultation.createdAt.toString())}
+                        <div className="mb-2 text-sm">
+                          <strong className="text-xs sm:text-sm">Fecha:</strong> 
+                          <span className="text-xs sm:text-sm ml-1">{formatDate(consultation.createdAt.toString())}</span>
                         </div>
-                        <div className="mb-2">
-                          <strong>Tipo:</strong> 
-                          <Badge variant={getPersonTypeBadgeVariant(consultation.personType)} className="ml-2">
+                        <div className="mb-2 text-sm">
+                          <strong className="text-xs sm:text-sm">Tipo:</strong> 
+                          <Badge variant={getPersonTypeBadgeVariant(consultation.personType)} className="ml-2 text-xs">
                             {getPersonTypeLabel(consultation.personType)}
                           </Badge>
                         </div>
-                        <div className="mb-2">
-                          <strong>Datos:</strong> {getPersonalData(consultation)}
+                        <div className="mb-2 text-sm">
+                          <strong className="text-xs sm:text-sm">Datos:</strong> 
+                          <span className="text-xs sm:text-sm ml-1 break-words">{getPersonalData(consultation)}</span>
+                        </div>
+                        <div className="mb-2 text-sm">
+                          <strong className="text-xs sm:text-sm">Ubicación:</strong> 
+                          <span className="text-xs sm:text-sm ml-1 break-words">{getLocationString(consultation)}</span>
                         </div>
                         <div className="mb-2">
-                          <strong>Ubicación:</strong> {getLocationString(consultation)}
-                        </div>
-                        <div className="mb-2">
-                          <strong>Sectores:</strong>
+                          <strong className="text-xs sm:text-sm">Sectores:</strong>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {consultation.selectedSectors.slice(0, 3).map((sector: any, index: number) => (
-                              <Badge key={index} variant="secondary" className="text-xs">
-                                {sector}
+                            {consultation.selectedSectors.slice(0, 2).map((sector: any, index: number) => (
+                              <Badge key={index} variant="secondary" className="text-[10px] sm:text-xs">
+                                {sector.length > 15 ? `${sector.substring(0, 15)}...` : sector}
                               </Badge>
                             ))}
-                            {consultation.selectedSectors.length > 3 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{consultation.selectedSectors.length - 3}
+                            {consultation.selectedSectors.length > 2 && (
+                              <Badge variant="outline" className="text-[10px] sm:text-xs">
+                                +{consultation.selectedSectors.length - 2}
                               </Badge>
                             )}
                           </div>
                         </div>
                         <div className="mb-3">
-                          <strong>Mensaje:</strong>
-                          <p className="mb-0 text-sm mt-1">
-                            {consultation.message.length > 100 
-                              ? `${consultation.message.substring(0, 100)}...` 
+                          <strong className="text-xs sm:text-sm">Mensaje:</strong>
+                          <p className="mb-0 text-xs sm:text-sm mt-1 break-words">
+                            {consultation.message.length > 80 
+                              ? `${consultation.message.substring(0, 80)}...` 
                               : consultation.message}
                           </p>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                           <Button 
                             variant="outline" 
                             size="sm" 
                             onClick={() => handleViewDetail(consultation)}
                             data-testid={`button-view-mobile-${consultation.id}`}
+                            className="text-xs sm:text-sm w-full sm:w-auto"
                           >
-                            <Eye className="w-4 h-4 mr-1" />Ver
+                            <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />Ver
                           </Button>
                           <Button 
                             variant="outline" 
@@ -990,35 +998,49 @@ export function Dashboard() {
                               status: consultation.status === 'active' ? 'archived' : 'active'
                             })}
                             data-testid={`button-edit-mobile-${consultation.id}`}
+                            className="text-xs sm:text-sm w-full sm:w-auto"
                           >
-                            <Edit className="w-4 h-4 mr-1" />
-                            {consultation.status === 'active' ? 'Archivar' : 'Activar'}
+                            <Edit className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                            <span className="hidden xs:inline">{consultation.status === 'active' ? 'Archivar' : 'Activar'}</span>
+                            <span className="xs:hidden">{consultation.status === 'active' ? 'Arch.' : 'Act.'}</span>
                           </Button>
                           <Button 
                             variant="outline" 
                             size="sm" 
                             onClick={() => deleteConsultationMutation.mutate(consultation.id)}
                             data-testid={`button-delete-mobile-${consultation.id}`}
-                            className="text-red-600 hover:bg-red-50 border-red-200"
+                            className="text-red-600 hover:bg-red-50 border-red-200 text-xs sm:text-sm w-full sm:w-auto"
                           >
-                            <Trash2 className="w-4 h-4 mr-1" />
-                            Eliminar
+                            <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                            <span className="hidden xs:inline">Eliminar</span>
+                            <span className="xs:hidden">Elim.</span>
                           </Button>
                         </div>
                       </CardContent>
                     </Card>
                   )) : (
-                    <div className="text-center text-gray-500 py-4">
-                      No hay consultas disponibles
+                    <div className="text-center text-gray-500 py-8">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="mb-2">
+                          <BarChart3 className="w-12 h-12 text-gray-400" />
+                        </div>
+                        <p className="text-base font-medium mb-1">No hay consultas disponibles</p>
+                        <p className="text-sm text-gray-400">Los datos aparecerán aquí cuando estén disponibles</p>
+                      </div>
                     </div>
                   )}
                 </div>
                 
-                {/* Pagination */}
+                {/* Pagination - Responsive */}
                 {consultationsData?.total > 0 && (
-                  <div className="flex justify-between items-center p-3 border-t">
-                    <small className="text-gray-600">
-                      Mostrando {filters.offset + 1}-{Math.min(filters.offset + filters.limit, consultationsData.total)} de {consultationsData.total} registros
+                  <div className="flex flex-col sm:flex-row justify-between items-center p-3 border-t gap-2 sm:gap-0">
+                    <small className="text-gray-600 text-xs sm:text-sm text-center sm:text-left">
+                      <span className="hidden sm:inline">
+                        Mostrando {filters.offset + 1}-{Math.min(filters.offset + filters.limit, consultationsData.total)} de {consultationsData.total} registros
+                      </span>
+                      <span className="sm:hidden">
+                        {filters.offset + 1}-{Math.min(filters.offset + filters.limit, consultationsData.total)} de {consultationsData.total}
+                      </span>
                     </small>
                     <nav>
                       <div className="flex gap-2">
@@ -1028,8 +1050,10 @@ export function Dashboard() {
                           disabled={filters.offset === 0}
                           onClick={() => setFilters({ ...filters, offset: Math.max(0, filters.offset - filters.limit) })}
                           data-testid="button-previousPage"
+                          className="text-xs sm:text-sm"
                         >
-                          Anterior
+                          <span className="hidden sm:inline">Anterior</span>
+                          <span className="sm:hidden">Ant.</span>
                         </Button>
                         <Button
                           variant="outline"
@@ -1037,8 +1061,10 @@ export function Dashboard() {
                           disabled={filters.offset + filters.limit >= consultationsData.total}
                           onClick={() => setFilters({ ...filters, offset: filters.offset + filters.limit })}
                           data-testid="button-nextPage"
+                          className="text-xs sm:text-sm"
                         >
-                          Siguiente
+                          <span className="hidden sm:inline">Siguiente</span>
+                          <span className="sm:hidden">Sig.</span>
                         </Button>
                       </div>
                     </nav>
@@ -1051,21 +1077,21 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Modal de Detalle de Consulta */}
+      {/* Modal de Detalle de Consulta - Responsive */}
       <Dialog open={showConsultationDetail} onOpenChange={setShowConsultationDetail}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl lg:max-w-4xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <MessageSquare className="w-5 h-5 mr-2" style={{ color: '#1bd1e8' }} />
+            <DialogTitle className="flex items-center text-sm sm:text-base">
+              <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 mr-2" style={{ color: '#1bd1e8' }} />
               Detalle de Consulta Ciudadana
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               Información completa de la consulta seleccionada
             </DialogDescription>
           </DialogHeader>
           {selectedConsultation && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3 sm:space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label className="font-semibold">ID de Consulta</Label>
                   <p className="text-sm"><code>{selectedConsultation.id}</code></p>
@@ -1094,8 +1120,8 @@ export function Dashboard() {
 
               {/* Datos Personales */}
               <div>
-                <Label className="font-semibold text-lg">Datos Personales</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                <Label className="font-semibold text-sm sm:text-lg">Datos Personales</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mt-2">
                   {selectedConsultation.personType === 'natural' && (
                     <>
                       <div>
@@ -1145,25 +1171,25 @@ export function Dashboard() {
 
               {/* Ubicación */}
               <div>
-                <Label className="font-semibold text-lg">Ubicación</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                <Label className="font-semibold text-sm sm:text-lg">Ubicación</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mt-2">
                   <div>
-                    <Label className="text-sm">Ubicación Completa</Label>
-                    <p className="text-sm">{getLocationString(selectedConsultation)}</p>
+                    <Label className="text-xs sm:text-sm">Ubicación Completa</Label>
+                    <p className="text-xs sm:text-sm break-words">{getLocationString(selectedConsultation)}</p>
                   </div>
                   <div>
-                    <Label className="text-sm">Geocódigo</Label>
-                    <p className="text-sm">{selectedConsultation.geocode}</p>
+                    <Label className="text-xs sm:text-sm">Geocódigo</Label>
+                    <p className="text-xs sm:text-sm break-words">{selectedConsultation.geocode}</p>
                   </div>
                 </div>
               </div>
 
               {/* Sectores */}
               <div>
-                <Label className="font-semibold text-lg">Sectores Seleccionados</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
+                <Label className="font-semibold text-sm sm:text-lg">Sectores Seleccionados</Label>
+                <div className="flex flex-wrap gap-1 sm:gap-2 mt-2">
                   {selectedConsultation.selectedSectors.map((sector: string, index: number) => (
-                    <Badge key={index} variant="secondary">
+                    <Badge key={index} variant="secondary" className="text-xs sm:text-sm">
                       {sector}
                     </Badge>
                   ))}
@@ -1172,17 +1198,18 @@ export function Dashboard() {
 
               {/* Mensaje */}
               <div>
-                <Label className="font-semibold text-lg">Mensaje Ciudadano</Label>
-                <div className="border rounded p-3 mt-2" style={{ backgroundColor: '#f5f7fa' }}>
-                  <p className="text-sm mb-0">{selectedConsultation.message}</p>
+                <Label className="font-semibold text-sm sm:text-lg">Mensaje Ciudadano</Label>
+                <div className="border rounded p-2 sm:p-3 mt-2" style={{ backgroundColor: '#f5f7fa' }}>
+                  <p className="text-xs sm:text-sm mb-0 break-words">{selectedConsultation.message}</p>
                 </div>
               </div>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
             <Button 
               variant="outline" 
               onClick={() => setShowConsultationDetail(false)}
+              className="w-full sm:w-auto text-xs sm:text-sm"
             >
               Cerrar
             </Button>
@@ -1190,19 +1217,20 @@ export function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Crear Planificador */}
+      {/* Modal de Crear Planificador - Responsive */}
       <Dialog open={showCreatePlanificador} onOpenChange={setShowCreatePlanificador}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Crear Usuario Planificador</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-sm sm:text-base">Crear Usuario Planificador</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
               Esta funcionalidad será implementada próximamente.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
             <Button 
               variant="outline" 
               onClick={() => setShowCreatePlanificador(false)}
+              className="w-full sm:w-auto text-xs sm:text-sm"
             >
               Cerrar
             </Button>
@@ -1210,27 +1238,27 @@ export function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Perfil */}
+      {/* Modal de Perfil - Responsive */}
       <Dialog open={showProfile} onOpenChange={setShowProfile}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <User className="w-6 h-6 mr-2" style={{ color: '#1bd1e8' }} />
+            <DialogTitle className="flex items-center text-sm sm:text-base">
+              <User className="w-4 h-4 sm:w-6 sm:h-6 mr-2" style={{ color: '#1bd1e8' }} />
               Mi Perfil de Usuario
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Avatar y Info Principal */}
-            <div className="flex items-center space-x-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border">
+            <div className="flex items-center space-x-3 sm:space-x-4 p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border">
               <div 
-                className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl"
+                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-white font-bold text-lg sm:text-xl"
                 style={{ backgroundColor: '#1bd1e8' }}
               >
                 {user?.username?.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1">
-                <h3 className="font-bold text-lg">{user?.username}</h3>
+                <h3 className="font-bold text-base sm:text-lg">{user?.username}</h3>
                 <Badge 
                   variant={user?.role === 'super_admin' ? 'destructive' : 'default'}
                   className="mt-1"
@@ -1278,10 +1306,11 @@ export function Dashboard() {
 
           </div>
           
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
             <Button 
               variant="outline" 
               onClick={() => setShowProfile(false)}
+              className="w-full sm:w-auto text-xs sm:text-sm"
             >
               Cerrar
             </Button>
@@ -1294,6 +1323,7 @@ export function Dashboard() {
                 setShowProfile(false);
               }}
               style={{ backgroundColor: '#1bd1e8', borderColor: '#1bd1e8' }}
+              className="w-full sm:w-auto text-xs sm:text-sm"
             >
               Actualizar Perfil
             </Button>
@@ -1301,15 +1331,15 @@ export function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Cambio de Contraseña */}
+      {/* Modal de Cambio de Contraseña - Responsive */}
       <Dialog open={showChangePassword} onOpenChange={setShowChangePassword}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <Key className="w-5 h-5 mr-2" style={{ color: '#1bd1e8' }} />
+            <DialogTitle className="flex items-center text-sm sm:text-base">
+              <Key className="w-4 h-4 sm:w-5 sm:h-5 mr-2" style={{ color: '#1bd1e8' }} />
               Cambiar Contraseña
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               Actualiza tu contraseña para mantener tu cuenta segura
             </DialogDescription>
           </DialogHeader>
