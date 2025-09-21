@@ -10,6 +10,7 @@
   --honduras-primary-dark: hsl(188, 85%, 30%);
   --honduras-bg-light: hsl(0, 0%, 96%);
   --honduras-white: hsl(0, 0%, 100%);
+  --honduras-text: #88cfe0;
   
   /* Placeholder Colors */
   --placeholder-light: hsl(0, 0%, 75%);
@@ -17,17 +18,17 @@
   
   /* Shadcn Variables */
   --background: var(--honduras-white);
-  --foreground: hsl(210, 25%, 8%);
+  --foreground: var(--honduras-text);
   --card: var(--honduras-white);
-  --card-foreground: hsl(210, 25%, 8%);
+  --card-foreground: var(--honduras-text);
   --popover: var(--honduras-white);
-  --popover-foreground: hsl(210, 25%, 8%);
+  --popover-foreground: var(--honduras-text);
   --primary: var(--honduras-primary);
-  --primary-foreground: hsl(0, 0%, 0%);
-  --secondary: hsl(210, 25%, 8%);
+  --primary-foreground: var(--honduras-text);
+  --secondary: var(--honduras-text);
   --secondary-foreground: var(--honduras-white);
   --muted: var(--honduras-bg-light);
-  --muted-foreground: hsl(210, 25%, 8%);
+  --muted-foreground: var(--honduras-text);
   --accent: hsl(211, 51%, 93%);
   --accent-foreground: var(--honduras-primary);
   --destructive: hsl(356, 91%, 54%);
@@ -41,7 +42,7 @@
   --chart-4: hsl(147, 79%, 42%);
   --chart-5: hsl(341, 75%, 51%);
   --sidebar: var(--honduras-bg-light);
-  --sidebar-foreground: hsl(210, 25%, 8%);
+  --sidebar-foreground: var(--honduras-text);
   --sidebar-primary: var(--honduras-primary);
   --sidebar-primary-foreground: var(--honduras-white);
   --sidebar-accent: hsl(211, 51%, 93%);
@@ -55,16 +56,16 @@
 }
 
 .dark {
-  --background: hsl(0, 0%, 0%);
+  --background: hsl(228, 10%, 10%);
   --foreground: hsl(200, 7%, 91%);
   --card: hsl(228, 10%, 10%);
   --card-foreground: hsl(0, 0%, 85%);
-  --popover: hsl(0, 0%, 0%);
+  --popover: hsl(228, 10%, 10%);
   --popover-foreground: hsl(200, 7%, 91%);
   --primary: var(--honduras-primary);
-  --primary-foreground: hsl(0, 0%, 0%);
+  --primary-foreground: var(--honduras-text);
   --secondary: hsl(195, 15%, 95%);
-  --secondary-foreground: hsl(210, 25%, 8%);
+  --secondary-foreground: var(--honduras-text);
   --muted: hsl(0, 0%, 9%);
   --muted-foreground: hsl(210, 3%, 46%);
   --accent: hsl(206, 70%, 8%);
@@ -103,7 +104,7 @@
 .btn-primary {
   background-color: var(--honduras-primary);
   border-color: var(--honduras-primary);
-  color: #000;
+  color: var(--honduras-text);
 }
 
 .btn-primary:hover {
