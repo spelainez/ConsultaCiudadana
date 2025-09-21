@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +38,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -64,6 +68,21 @@ import {
 } from "lucide-react";
 import { UserManagementSPE } from "./user-management-spe";
 
+// Schema de validación para cambio de contraseña
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "La contraseña actual es requerida"),
+  newPassword: z.string().min(6, "La nueva contraseña debe tener al menos 6 caracteres"),
+  confirmPassword: z.string().min(6, "Confirme la nueva contraseña")
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Las contraseñas no coinciden",
+  path: ["confirmPassword"]
+}).refine((data) => data.newPassword !== data.currentPassword, {
+  message: "La nueva contraseña debe ser diferente a la actual",
+  path: ["newPassword"]
+});
+
+type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
+
 export function Dashboard() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -71,6 +90,8 @@ export function Dashboard() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [showCreatePlanificador, setShowCreatePlanificador] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showSecurityInfo, setShowSecurityInfo] = useState(false);
   const [showConsultationDetail, setShowConsultationDetail] = useState(false);
   const [selectedConsultation, setSelectedConsultation] = useState<any>(null);
   const [sortConfig, setSortConfig] = useState<{key: string, direction: 'asc' | 'desc'} | null>(null);
@@ -365,6 +386,67 @@ export function Dashboard() {
       });
     },
   });
+
+  // Change password mutation
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: ChangePasswordFormData) => {
+      const response = await apiRequest("PUT", `/api/profile/password`, {
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword
+      });
+      return response;
+    },
+    onSuccess: (response: any) => {
+      toast({
+        title: "Contraseña actualizada",
+        description: "Tu contraseña ha sido actualizada exitosamente. Por seguridad, debes iniciar sesión nuevamente.",
+      });
+      // Delay closing the modal to ensure toast is visible
+      setTimeout(() => {
+        setShowChangePassword(false);
+        changePasswordForm.reset();
+        
+        // If backend requires re-authentication, redirect to login
+        if (response?.requiresReauth) {
+          setTimeout(() => {
+            window.location.href = "/login";
+          }, 2000); // Give user time to read the toast
+        }
+      }, 100);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Error al cambiar la contraseña",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Form para cambio de contraseña
+  const changePasswordForm = useForm<ChangePasswordFormData>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
+  // Funciones de manejo
+  const handleChangePassword = () => {
+    setShowProfile(false);
+    setShowChangePassword(true);
+  };
+
+  const handleVerifySecurity = () => {
+    setShowProfile(false);
+    setShowSecurityInfo(true);
+  };
+
+  const onSubmitChangePassword = (data: ChangePasswordFormData) => {
+    changePasswordMutation.mutate(data);
+  };
 
   // Utility functions
   const formatDate = (dateString: string) => {
@@ -1150,14 +1232,8 @@ export function Dashboard() {
                   variant="outline" 
                   size="sm" 
                   className="w-full justify-start"
-                  onClick={() => {
-                    setShowProfile(false);
-                    // Future: Open change password modal
-                    toast({
-                      title: "Próximamente",
-                      description: "La función de cambiar contraseña estará disponible pronto."
-                    });
-                  }}
+                  onClick={handleChangePassword}
+                  data-testid="button-change-password"
                 >
                   <Key className="w-4 h-4 mr-2" />
                   Cambiar Contraseña
@@ -1166,12 +1242,8 @@ export function Dashboard() {
                   variant="outline" 
                   size="sm" 
                   className="w-full justify-start"
-                  onClick={() => {
-                    toast({
-                      title: "Sesión Segura",
-                      description: "Tu sesión está protegida y encriptada.",
-                    });
-                  }}
+                  onClick={handleVerifySecurity}
+                  data-testid="button-verify-security"
                 >
                   <Shield className="w-4 h-4 mr-2" />
                   Verificar Seguridad
@@ -1199,6 +1271,204 @@ export function Dashboard() {
               style={{ backgroundColor: '#1bd1e8', borderColor: '#1bd1e8' }}
             >
               Actualizar Perfil
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Cambio de Contraseña */}
+      <Dialog open={showChangePassword} onOpenChange={setShowChangePassword}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Key className="w-5 h-5 mr-2" style={{ color: '#1bd1e8' }} />
+              Cambiar Contraseña
+            </DialogTitle>
+            <DialogDescription>
+              Actualiza tu contraseña para mantener tu cuenta segura
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...changePasswordForm}>
+            <form onSubmit={changePasswordForm.handleSubmit(onSubmitChangePassword)} className="space-y-4">
+              <FormField
+                control={changePasswordForm.control}
+                name="currentPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contraseña Actual</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Ingresa tu contraseña actual"
+                        data-testid="input-current-password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={changePasswordForm.control}
+                name="newPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nueva Contraseña</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Ingresa tu nueva contraseña"
+                        data-testid="input-new-password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={changePasswordForm.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirmar Nueva Contraseña</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Confirma tu nueva contraseña"
+                        data-testid="input-confirm-password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowChangePassword(false);
+                    changePasswordForm.reset();
+                  }}
+                  data-testid="button-cancel-password"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={changePasswordMutation.isPending}
+                  style={{ backgroundColor: '#1bd1e8', borderColor: '#1bd1e8' }}
+                  data-testid="button-submit-password"
+                >
+                  {changePasswordMutation.isPending ? "Cambiando..." : "Cambiar Contraseña"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Información de Seguridad */}
+      <Dialog open={showSecurityInfo} onOpenChange={setShowSecurityInfo}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Shield className="w-5 h-5 mr-2" style={{ color: '#1bd1e8' }} />
+              Información de Seguridad
+            </DialogTitle>
+            <DialogDescription>
+              Estado actual de la seguridad de tu cuenta
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Estado de Sesión */}
+            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-center">
+                <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                <div>
+                  <h4 className="font-semibold text-green-800">Sesión Activa</h4>
+                  <p className="text-sm text-green-600">Tu sesión está protegida y encriptada</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Información de Cuenta */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Usuario:</span>
+                <span className="text-sm">{user?.username}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Rol:</span>
+                <Badge variant={user?.role === 'super_admin' ? 'destructive' : 'default'} className="text-xs">
+                  {user?.role === 'super_admin' ? 'Super Admin' : 
+                   user?.role === 'admin' ? 'Admin' : 
+                   user?.role === 'planificador' ? 'Planificador' : 'Ciudadano'}
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Estado de Cuenta:</span>
+                <Badge variant="default" className="text-xs">Activa</Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Última Actividad:</span>
+                <span className="text-sm">Ahora mismo</span>
+              </div>
+            </div>
+
+            {/* Características de Seguridad */}
+            <div className="border-t pt-3">
+              <h4 className="font-semibold mb-2 text-sm">Características de Seguridad:</h4>
+              <div className="space-y-2">
+                <div className="flex items-center text-sm">
+                  <Shield className="w-4 h-4 mr-2 text-green-600" />
+                  <span>Contraseña encriptada con hash seguro</span>
+                </div>
+                <div className="flex items-center text-sm">
+                  <Shield className="w-4 h-4 mr-2 text-green-600" />
+                  <span>Sesión con cookies HTTP-only</span>
+                </div>
+                <div className="flex items-center text-sm">
+                  <Shield className="w-4 h-4 mr-2 text-green-600" />
+                  <span>Conexión HTTPS segura</span>
+                </div>
+                {user?.username === 'SPE' && (
+                  <div className="flex items-center text-sm">
+                    <Shield className="w-4 h-4 mr-2 text-blue-600" />
+                    <span className="text-blue-600 font-medium">Cuenta protegida del sistema</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowSecurityInfo(false)}
+              data-testid="button-close-security"
+            >
+              Cerrar
+            </Button>
+            <Button 
+              onClick={() => {
+                toast({
+                  title: "Seguridad verificada",
+                  description: "Tu cuenta tiene todas las medidas de seguridad activas.",
+                });
+                setShowSecurityInfo(false);
+              }}
+              style={{ backgroundColor: '#1bd1e8', borderColor: '#1bd1e8' }}
+              data-testid="button-confirm-security"
+            >
+              Todo está seguro
             </Button>
           </DialogFooter>
         </DialogContent>

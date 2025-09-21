@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import rateLimit from "express-rate-limit";
-import { setupAuth, requireAuth, requireRole, hashPassword } from "./auth";
+import { setupAuth, requireAuth, requireRole, hashPassword, comparePasswords } from "./auth";
 import { storage } from "./storage";
 import { insertConsultationSchema, insertSectorSchema, insertUserSchema } from "@shared/schema";
 import * as XLSX from 'xlsx';
@@ -560,6 +560,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating user status:", error);
       res.status(500).json({ error: "Error al actualizar el estado del usuario" });
+    }
+  });
+
+  // Change own password (for any authenticated user)
+  app.put("/api/profile/password", requireAuth, async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: "Se requiere contraseña actual y nueva contraseña" });
+      }
+      
+      if (newPassword.length < 6) {
+        return res.status(400).json({ error: "La nueva contraseña debe tener al menos 6 caracteres" });
+      }
+      
+      // Get current user data
+      const currentUser = await storage.getUser(req.user!.id);
+      if (!currentUser) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+      
+      // Verify current password
+      const isValidCurrentPassword = await comparePasswords(currentPassword, currentUser.password);
+      if (!isValidCurrentPassword) {
+        return res.status(401).json({ error: "La contraseña actual es incorrecta" });
+      }
+      
+      // Hash the new password
+      const hashedNewPassword = await hashPassword(newPassword);
+      const updated = await storage.updateUserPassword(req.user!.id, hashedNewPassword);
+      
+      if (!updated) {
+        return res.status(500).json({ error: "Error al actualizar la contraseña" });
+      }
+      
+      // Invalidate current session for security - user will need to re-login
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Error destroying session after password change:", err);
+          return res.status(500).json({ error: "Contraseña actualizada pero error en sesión" });
+        }
+        res.json({ 
+          message: "Contraseña actualizada exitosamente",
+          requiresReauth: true 
+        });
+      });
+    } catch (error) {
+      console.error("Error updating own password:", error);
+      res.status(500).json({ error: "Error interno del servidor" });
     }
   });
 
