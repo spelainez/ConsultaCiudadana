@@ -131,11 +131,8 @@ export function ConsultationForm() {
         <div className="col-12 col-lg-10">
           <Card className="form-section">
             <CardHeader>
-              <CardTitle className="d-flex align-items-center">
-                <i className="bi bi-person-lines-fill text-primary fs-2 me-3"></i>
-                <div>
-                  <h2 className="mb-1">Nueva Consulta Ciudadana</h2>
-                </div>
+              <CardTitle className="text-center">
+                <h2 className="mb-1">Construyamos una Honduras Próspera Juntos</h2>
               </CardTitle>
             </CardHeader>
             
