@@ -680,11 +680,11 @@ export function ConsultationForm() {
                 </div>
 
                 {/* Submit Button */}
-                <div className="d-grid gap-2 d-md-flex justify-content-md-end">
+                <div className="form-buttons-container">
                   <Button
                     type="button"
                     variant="outline"
-                    className="me-md-2"
+                    className="btn-reset-custom"
                     onClick={() => {
                       form.reset();
                       setSelectedSectors([]);
@@ -697,7 +697,7 @@ export function ConsultationForm() {
                   </Button>
                   <Button
                     type="submit"
-                    className="btn-primary btn-lg"
+                    className="btn-submit-custom"
                     disabled={createConsultationMutation.isPending || selectedSectors.length === 0}
                     data-testid="button-submit"
                   >
