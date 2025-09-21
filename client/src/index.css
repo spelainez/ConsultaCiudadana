@@ -122,6 +122,76 @@
   font-size: 0.875rem;
 }
 
+/* Person Type Card Styles */
+.person-type-card {
+  background-color: var(--honduras-white);
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.person-type-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-color: #1bd1e8;
+}
+
+.person-type-card.selected {
+  border-color: #1bd1e8;
+  box-shadow: 0 4px 12px rgba(27, 209, 232, 0.15);
+  background-color: #f8fdff;
+}
+
+.person-type-content h6 {
+  color: #495057;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.person-type-card.selected .person-type-content h6 {
+  color: #1bd1e8;
+}
+
+/* Conditional Fields Animation */
+.conditional-fields {
+  animation: slideDown 0.4s ease-out;
+  overflow: hidden;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design for Cards */
+@media (max-width: 768px) {
+  .person-type-card {
+    margin-bottom: 16px;
+    height: 70px;
+    padding: 16px;
+  }
+  
+  .person-type-content h6 {
+    font-size: 0.9rem;
+  }
+}
+
 .location-selector {
   border-left: 3px solid var(--honduras-primary);
 }

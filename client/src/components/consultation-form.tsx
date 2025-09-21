@@ -135,59 +135,73 @@ export function ConsultationForm() {
             
             <CardContent>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                {/* Person Type Selection */}
+                {/* Person Type Selection - Card Style */}
                 <div className="mb-4">
-                  <Label className="form-label fw-bold">Tipo de Persona</Label>
-                  <div className="row">
+                  <Label className="form-label fw-bold mb-3">Tipo de Persona</Label>
+                  <div className="row g-3">
+                    {/* Persona Natural */}
                     <div className="col-md-4">
-                      <div className="form-check">
-                        <input
-                          className="form-check-input"
-                          type="radio"
-                          name="personType"
-                          id="natural"
-                          value="natural"
-                          checked={personType === "natural"}
-                          onChange={(e) => setPersonType(e.target.value)}
-                          data-testid="radio-natural"
-                        />
-                        <label className="form-check-label" htmlFor="natural">
-                          <i className="bi bi-person me-2"></i>Persona Natural
-                        </label>
+                      <div 
+                        className={`person-type-card ${personType === "natural" ? "selected" : ""}`}
+                        onClick={() => setPersonType("natural")}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setPersonType("natural");
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        data-testid="card-natural"
+                        aria-label="Seleccionar Persona Natural"
+                      >
+                        <div className="person-type-content">
+                          <h6 className="mb-0 text-dark-emphasis">Persona Natural</h6>
+                        </div>
                       </div>
                     </div>
+                    
+                    {/* Persona Jurídica */}
                     <div className="col-md-4">
-                      <div className="form-check">
-                        <input
-                          className="form-check-input"
-                          type="radio"
-                          name="personType"
-                          id="juridica"
-                          value="juridica"
-                          checked={personType === "juridica"}
-                          onChange={(e) => setPersonType(e.target.value)}
-                          data-testid="radio-juridica"
-                        />
-                        <label className="form-check-label" htmlFor="juridica">
-                          <i className="bi bi-building me-2"></i>Persona Jurídica
-                        </label>
+                      <div 
+                        className={`person-type-card ${personType === "juridica" ? "selected" : ""}`}
+                        onClick={() => setPersonType("juridica")}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setPersonType("juridica");
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        data-testid="card-juridica"
+                        aria-label="Seleccionar Persona Jurídica"
+                      >
+                        <div className="person-type-content">
+                          <h6 className="mb-0 text-dark-emphasis">Persona Jurídica</h6>
+                        </div>
                       </div>
                     </div>
+                    
+                    {/* Anónimo */}
                     <div className="col-md-4">
-                      <div className="form-check">
-                        <input
-                          className="form-check-input"
-                          type="radio"
-                          name="personType"
-                          id="anonimo"
-                          value="anonimo"
-                          checked={personType === "anonimo"}
-                          onChange={(e) => setPersonType(e.target.value)}
-                          data-testid="radio-anonimo"
-                        />
-                        <label className="form-check-label" htmlFor="anonimo">
-                          <i className="bi bi-incognito me-2"></i>Anónimo
-                        </label>
+                      <div 
+                        className={`person-type-card ${personType === "anonimo" ? "selected" : ""}`}
+                        onClick={() => setPersonType("anonimo")}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setPersonType("anonimo");
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        data-testid="card-anonimo"
+                        aria-label="Seleccionar Anónimo"
+                      >
+                        <div className="person-type-content">
+                          <h6 className="mb-0 text-dark-emphasis">Anónimo</h6>
+                        </div>
                       </div>
                     </div>
                   </div>
