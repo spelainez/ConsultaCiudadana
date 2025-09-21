@@ -420,7 +420,7 @@ export function Dashboard() {
           <div className="flex justify-between items-center py-3">
             <div className="flex items-center">
               <Settings className="w-6 h-6 text-white mr-3" />
-              <h4 className="mb-0 font-bold text-white text-lg">Panel Super Administrador</h4>
+              <h4 className="mb-0 font-bold text-white text-lg">Panel Principal</h4>
             </div>
             
             <div className="flex items-center gap-3">
