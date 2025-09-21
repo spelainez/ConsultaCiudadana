@@ -192,6 +192,206 @@
   }
 }
 
+/* Modern Location Selector Styles */
+.modern-location-selector {
+  background: linear-gradient(135deg, #f8fdff 0%, #ffffff 100%);
+  border-radius: 16px;
+  padding: 32px;
+  border: 1px solid #e3f2fd;
+  box-shadow: 0 4px 20px rgba(27, 209, 232, 0.08);
+}
+
+.location-icon {
+  font-size: 1.8rem;
+  margin-right: 12px;
+}
+
+.location-step {
+  opacity: 0;
+  animation: slideInUp 0.5s ease-out forwards;
+}
+
+.location-label {
+  font-weight: 600;
+  color: #1bd1e8;
+  font-size: 1rem;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.location-select {
+  border: 2px solid #e9f4f7;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  background: white;
+  font-size: 1rem;
+  padding: 12px 16px;
+  height: auto;
+}
+
+.location-select:hover {
+  border-color: #1bd1e8;
+  box-shadow: 0 2px 8px rgba(27, 209, 232, 0.15);
+}
+
+.location-select:focus-within {
+  border-color: #1bd1e8;
+  box-shadow: 0 0 0 3px rgba(27, 209, 232, 0.1);
+}
+
+/* Zone Selection Cards */
+.zone-selection {
+  margin-top: 8px;
+}
+
+.zone-card {
+  background: white;
+  border: 2px solid #e9f4f7;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zone-card:hover {
+  border-color: #1bd1e8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(27, 209, 232, 0.15);
+}
+
+.zone-card.selected {
+  border-color: #1bd1e8;
+  background: linear-gradient(135deg, #f8fdff 0%, #ffffff 100%);
+  box-shadow: 0 4px 16px rgba(27, 209, 232, 0.2);
+}
+
+.zone-content {
+  text-align: center;
+}
+
+.zone-emoji {
+  font-size: 1.8rem;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.zone-text {
+  font-weight: 600;
+  color: #333;
+  font-size: 1rem;
+  display: block;
+}
+
+.zone-card.selected .zone-text {
+  color: #1bd1e8;
+}
+
+.zone-subtitle {
+  color: #666;
+  font-size: 0.8rem;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Geocode Display */
+.geocode-display {
+  margin-top: 24px;
+}
+
+.geocode-container {
+  background: linear-gradient(135deg, #1bd1e8 0%, #0ea5c7 100%);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  color: white;
+}
+
+.geocode-label {
+  color: white;
+  font-weight: 600;
+  margin-bottom: 8px;
+  opacity: 0.9;
+}
+
+.geocode-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 2px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.geocode-subtitle {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+}
+
+/* Animations */
+.animate-fade-in {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design for Location Selector */
+@media (max-width: 768px) {
+  .modern-location-selector {
+    padding: 20px;
+    margin: 0 -10px;
+  }
+  
+  .zone-card {
+    height: 90px;
+    padding: 16px;
+  }
+  
+  .zone-emoji {
+    font-size: 1.5rem;
+  }
+  
+  .zone-text {
+    font-size: 0.9rem;
+  }
+  
+  .geocode-value {
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+  }
+  
+  .location-icon {
+    font-size: 1.5rem;
+  }
+}
+
 .location-selector {
   border-left: 3px solid var(--honduras-primary);
 }

@@ -13,7 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, X, Plus } from "lucide-react";
+import { Loader2, X, Plus, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const consultationFormSchema = insertConsultationSchema;
 
@@ -25,6 +28,9 @@ export function ConsultationForm() {
   const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
   const [sectorSearch, setSectorSearch] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedZone, setSelectedZone] = useState<string>("");
+  const [openDepartment, setOpenDepartment] = useState(false);
+  const [openMunicipality, setOpenMunicipality] = useState(false);
 
   const form = useForm<ConsultationFormData>({
     resolver: zodResolver(consultationFormSchema),
@@ -46,8 +52,8 @@ export function ConsultationForm() {
   });
 
   const { data: localities = [] } = useQuery<any[]>({
-    queryKey: ["/api/localities", form.watch("municipalityId")],
-    enabled: !!form.watch("municipalityId"),
+    queryKey: ["/api/localities", form.watch("municipalityId"), selectedZone],
+    enabled: !!form.watch("municipalityId") && !!selectedZone,
   });
 
   const { data: sectors = [] } = useQuery<any[]>({
@@ -356,91 +362,236 @@ export function ConsultationForm() {
                   </div>
                 )}
 
-                {/* Hierarchical Location Selection */}
-                <div className="location-selector p-3 mb-4 border-start border-primary border-3">
-                  <h5 className="mb-3">
-                    <i className="bi bi-geo-alt-fill me-2"></i>Ubicación
+                {/* Modern Location Selection */}
+                <div className="modern-location-selector mb-4">
+                  <h5 className="mb-4 text-center">
+                    <span className="location-icon">📍</span> Ubicación
                   </h5>
-                  <div className="row">
-                    <div className="col-md-3">
-                      <Label htmlFor="department">Departamento *</Label>
-                      <Select
-                        onValueChange={(value) => {
-                          form.setValue("departmentId", value);
-                          form.setValue("municipalityId", "");
-                          form.setValue("localityId", "");
-                        }}
-                      >
-                        <SelectTrigger data-testid="select-department">
-                          <SelectValue placeholder="Seleccionar..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {departments.map((dept) => (
-                            <SelectItem key={dept.id} value={dept.id}>
-                              {dept.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {form.formState.errors.departmentId && (
-                        <div className="text-danger small">{form.formState.errors.departmentId.message}</div>
-                      )}
-                    </div>
-                    <div className="col-md-3">
-                      <Label htmlFor="municipality">Municipio *</Label>
-                      <Select
-                        disabled={!form.watch("departmentId")}
-                        onValueChange={(value) => {
-                          form.setValue("municipalityId", value);
-                          form.setValue("localityId", "");
-                        }}
-                      >
-                        <SelectTrigger data-testid="select-municipality">
-                          <SelectValue placeholder={form.watch("departmentId") ? "Seleccionar..." : "Primero seleccione departamento"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {municipalities.map((muni) => (
-                            <SelectItem key={muni.id} value={muni.id}>
-                              {muni.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  
+                  {/* Department */}
+                  <div className="location-step mb-3">
+                    <Label htmlFor="department" className="location-label">1. Departamento *</Label>
+                    <Popover open={openDepartment} onOpenChange={setOpenDepartment}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={openDepartment}
+                          className="location-select justify-between"
+                          data-testid="select-department"
+                        >
+                          {form.watch("departmentId")
+                            ? departments.find((dept) => dept.id === form.watch("departmentId"))?.name
+                            : "🌎 Seleccione su departamento..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0">
+                        <Command>
+                          <CommandInput placeholder="Buscar departamento..." />
+                          <CommandEmpty>No se encontró el departamento.</CommandEmpty>
+                          <CommandGroup>
+                            {departments.map((dept) => (
+                              <CommandItem
+                                key={dept.id}
+                                value={dept.name}
+                                onSelect={() => {
+                                  form.setValue("departmentId", dept.id);
+                                  form.setValue("municipalityId", "");
+                                  form.setValue("localityId", "");
+                                  setSelectedZone("");
+                                  setOpenDepartment(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    form.watch("departmentId") === dept.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {dept.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    {form.formState.errors.departmentId && (
+                      <div className="text-danger small mt-1">{form.formState.errors.departmentId.message}</div>
+                    )}
+                  </div>
+
+                  {/* Municipality */}
+                  {form.watch("departmentId") && (
+                    <div className="location-step mb-3 animate-fade-in">
+                      <Label htmlFor="municipality" className="location-label">2. Municipio *</Label>
+                      <Popover open={openMunicipality} onOpenChange={setOpenMunicipality}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={openMunicipality}
+                            className="location-select justify-between"
+                            data-testid="select-municipality"
+                          >
+                            {form.watch("municipalityId")
+                              ? municipalities.find((muni) => muni.id === form.watch("municipalityId"))?.name
+                              : "🏘️ Seleccione su municipio..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0">
+                          <Command>
+                            <CommandInput placeholder="Buscar municipio..." />
+                            <CommandEmpty>No se encontró el municipio.</CommandEmpty>
+                            <CommandGroup>
+                              {municipalities.map((muni) => (
+                                <CommandItem
+                                  key={muni.id}
+                                  value={muni.name}
+                                  onSelect={() => {
+                                    form.setValue("municipalityId", muni.id);
+                                    form.setValue("localityId", "");
+                                    setSelectedZone("");
+                                    setOpenMunicipality(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      form.watch("municipalityId") === muni.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {muni.name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                       {form.formState.errors.municipalityId && (
-                        <div className="text-danger small">{form.formState.errors.municipalityId.message}</div>
+                        <div className="text-danger small mt-1">{form.formState.errors.municipalityId.message}</div>
                       )}
                     </div>
-                    <div className="col-md-3">
-                      <Label htmlFor="locality">Colonia/Aldea *</Label>
+                  )}
+
+                  {/* Zone Selection */}
+                  {form.watch("municipalityId") && (
+                    <div className="location-step mb-3 animate-fade-in">
+                      <Label className="location-label">3. Zona *</Label>
+                      <div className="zone-selection">
+                        <div className="row g-2">
+                          <div className="col-6">
+                            <div 
+                              className={`zone-card ${selectedZone === "urbano" ? "selected" : ""}`}
+                              onClick={() => {
+                                setSelectedZone("urbano");
+                                form.setValue("localityId", "");
+                              }}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  setSelectedZone("urbano");
+                                  form.setValue("localityId", "");
+                                }
+                              }}
+                              data-testid="zone-urbano"
+                            >
+                              <div className="zone-content">
+                                <span className="zone-emoji">🏙️</span>
+                                <span className="zone-text">Urbano</span>
+                                <small className="zone-subtitle">Colonias y Barrios</small>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-6">
+                            <div 
+                              className={`zone-card ${selectedZone === "rural" ? "selected" : ""}`}
+                              onClick={() => {
+                                setSelectedZone("rural");
+                                form.setValue("localityId", "");
+                              }}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  setSelectedZone("rural");
+                                  form.setValue("localityId", "");
+                                }
+                              }}
+                              data-testid="zone-rural"
+                            >
+                              <div className="zone-content">
+                                <span className="zone-emoji">🌾</span>
+                                <span className="zone-text">Rural</span>
+                                <small className="zone-subtitle">Aldeas y Caseríos</small>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Locality Selection */}
+                  {selectedZone && (
+                    <div className="location-step mb-3 animate-fade-in">
+                      <Label className="location-label">
+                        4. {selectedZone === "urbano" ? "Colonia o Barrio" : "Aldea o Caserío"} *
+                      </Label>
                       <Select
-                        disabled={!form.watch("municipalityId")}
                         onValueChange={(value) => form.setValue("localityId", value)}
+                        key={selectedZone} // Force re-render when zone changes
                       >
-                        <SelectTrigger data-testid="select-locality">
-                          <SelectValue placeholder={form.watch("municipalityId") ? "Seleccionar..." : "Primero seleccione municipio"} />
+                        <SelectTrigger className="location-select" data-testid="select-locality">
+                          <SelectValue placeholder={
+                            selectedZone === "urbano" 
+                              ? "🏘️ Seleccione su colonia o barrio..." 
+                              : "🌾 Seleccione su aldea o caserío..."
+                          } />
                         </SelectTrigger>
                         <SelectContent>
-                          {localities.map((locality) => (
-                            <SelectItem key={locality.id} value={locality.id}>
-                              {locality.name} ({locality.area})
-                            </SelectItem>
-                          ))}
+                          {localities
+                            .filter(locality => locality.area === selectedZone)
+                            .map((locality) => (
+                              <SelectItem key={locality.id} value={locality.id}>
+                                {locality.name}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                       {form.formState.errors.localityId && (
-                        <div className="text-danger small">{form.formState.errors.localityId.message}</div>
+                        <div className="text-danger small mt-1">{form.formState.errors.localityId.message}</div>
                       )}
                     </div>
-                    <div className="col-md-3">
-                      <Label>Geocódigo</Label>
-                      <div className="form-control-plaintext small text-muted" data-testid="text-geocode">
-                        {form.watch("departmentId") && form.watch("municipalityId") && form.watch("localityId")
-                          ? `${form.watch("departmentId")}-${form.watch("municipalityId")}-${form.watch("localityId")}`
-                          : "Se generará automáticamente"
-                        }
+                  )}
+
+                  {/* Geocode Display */}
+                  {form.watch("localityId") && (
+                    <div className="geocode-display animate-fade-in">
+                      <div className="geocode-container">
+                        <Label className="geocode-label">Geocódigo Generado</Label>
+                        <div className="geocode-value" data-testid="text-geocode">
+                          {(() => {
+                            const selectedDept = departments.find(d => d.id === form.watch("departmentId"));
+                            const selectedMuni = municipalities.find(m => m.id === form.watch("municipalityId"));
+                            const selectedLocality = localities.find(l => l.id === form.watch("localityId"));
+                            
+                            if (selectedDept && selectedMuni && selectedLocality) {
+                              return `${selectedDept.geocode}-${selectedMuni.geocode}-${selectedLocality.geocode}`;
+                            }
+                            return "Generando...";
+                          })()}
+                        </div>
+                        <small className="geocode-subtitle">
+                          Este código identifica únicamente su ubicación
+                        </small>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Intelligent Sector Search */}
@@ -538,6 +689,7 @@ export function ConsultationForm() {
                       form.reset();
                       setSelectedSectors([]);
                       setPersonType("natural");
+                      setSelectedZone("");
                     }}
                     data-testid="button-reset"
                   >
