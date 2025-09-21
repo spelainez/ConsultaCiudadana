@@ -642,7 +642,6 @@ export function ConsultationForm() {
                 <Card className="form-section-card">
                   <CardHeader className="form-section-header">
                     <h3 className="form-section-title">4. Su Consulta Popular</h3>
-                    <p className="form-section-description">Exprese su consulta, sugerencia o preocupación</p>
                   </CardHeader>
                   <CardContent>
                     <div className="mb-4">
