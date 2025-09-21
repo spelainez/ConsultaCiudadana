@@ -157,7 +157,7 @@ export function setupAuth(app: Express) {
       res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'none',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
       });
 
@@ -176,7 +176,7 @@ export function setupAuth(app: Express) {
     res.clearCookie('token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'none',
       path: '/'
     });
     res.json({ message: "Sesión cerrada exitosamente" });

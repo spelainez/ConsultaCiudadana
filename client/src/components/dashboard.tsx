@@ -1246,6 +1246,9 @@ export function Dashboard() {
               <User className="w-4 h-4 sm:w-6 sm:h-6 mr-2" style={{ color: '#1bd1e8' }} />
               Mi Perfil de Usuario
             </DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
+              Información de tu cuenta y opciones de seguridad
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 sm:space-y-6">
