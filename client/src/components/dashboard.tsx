@@ -28,6 +28,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Calendar, Filter, Download, RefreshCw, Eye, ChevronDown, BarChart3, PieChart, MapPin, MessageSquare } from "lucide-react";
+import { UserManagementSPE } from "./user-management-spe";
 
 export function Dashboard() {
   const { toast } = useToast();
@@ -300,24 +301,32 @@ export function Dashboard() {
           </div>
 
 
-          {/* Charts Row */}
-          <div className="row mb-4">
-            <div className="col-md-6">
-              <Card className="border-0 shadow-sm">
-                <CardHeader className="bg-white">
-                  <CardTitle className="mb-0">
-                    <PieChart className="w-5 h-5 me-2" />
-                    Consultas por Sector
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="chart-container" style={{ position: 'relative', height: '300px' }}>
-                    <canvas id="sectorsChart"></canvas>
-                  </div>
-                </CardContent>
-              </Card>
+          {/* SPE ve gestión de usuarios, otros ven gráficos */}
+          {user?.username === "SPE" ? (
+            <div className="row mb-4">
+              <div className="col-md-8">
+                <UserManagementSPE />
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="row mb-4">
+              <div className="col-md-6">
+                <Card className="border-0 shadow-sm">
+                  <CardHeader className="bg-white">
+                    <CardTitle className="mb-0">
+                      <PieChart className="w-5 h-5 me-2" />
+                      Consultas por Sector
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="chart-container" style={{ position: 'relative', height: '300px' }}>
+                      <canvas id="sectorsChart"></canvas>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
 
           {/* Data Table */}
           <Card className="border-0 shadow-sm">

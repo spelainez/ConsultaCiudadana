@@ -8,6 +8,16 @@ This is a citizen consultation web application for Honduras that enables citizen
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+**September 21, 2025:**
+- Completely removed sidebar navigation and statistics cards from dashboard for streamlined SPE interface
+- Implemented role-specific dashboard views: SPE sees user management interface instead of charts
+- Added "planificador" role to schema and updated role hierarchy
+- Created SPE-exclusive user management component for creating planificador users
+- Added `/login` route alias for easier access to authentication page
+- Verified SPE credentials and functionality through automated testing
+
 ## System Architecture
 
 ### Frontend Architecture
@@ -39,9 +49,10 @@ Preferred communication style: Simple, everyday language.
 
 ### Authentication & Authorization
 - **Strategy**: Session-based authentication with PostgreSQL session store
-- **User Roles**: Three-tier system (ciudadano, admin, super_admin)
+- **User Roles**: Four-tier system (ciudadano, admin, super_admin, planificador)
 - **Protected Routes**: Role-based route protection on frontend
 - **Password Policy**: Minimum 6 characters with secure hashing
+- **SPE Super Admin**: Permanent super administrator account (username: SPE) with deletion protection and exclusive user management capabilities
 
 ### Form Architecture
 - **Validation**: Zod schemas shared between frontend and backend

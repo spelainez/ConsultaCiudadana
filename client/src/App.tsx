@@ -17,10 +17,11 @@ function Router() {
       <Switch>
         <Route path="/" component={HomePage} />
         <Route path="/auth" component={AuthPage} />
+        <Route path="/login" component={AuthPage} />
         <ProtectedRoute 
           path="/admin" 
           component={() => <Dashboard />} 
-          requiredRole={["admin", "super_admin"]} 
+          requiredRole={["admin", "super_admin", "planificador"]} 
         />
         <Route component={NotFound} />
       </Switch>

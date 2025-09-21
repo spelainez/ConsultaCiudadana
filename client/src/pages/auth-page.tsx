@@ -64,7 +64,7 @@ export default function AuthPage() {
                         id="loginUsername"
                         placeholder="Ingrese su nombre de usuario"
                         {...loginForm.register("username")}
-                        data-testid="input-loginUsername"
+                        data-testid="input-username"
                       />
                       {loginForm.formState.errors.username && (
                         <div className="text-danger small">
@@ -81,7 +81,7 @@ export default function AuthPage() {
                           type={showPassword ? "text" : "password"}
                           placeholder="Ingrese su contraseña"
                           {...loginForm.register("password")}
-                          data-testid="input-loginPassword"
+                          data-testid="input-password"
                           className="password-input"
                         />
                         <button
