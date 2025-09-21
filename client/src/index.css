@@ -385,7 +385,7 @@
 .creative-title {
   color: white;
   font-weight: 700;
-  font-size: 2.5rem;
+  font-size: 2rem;
   letter-spacing: -0.02em;
   line-height: 1.2;
   text-shadow: 0 4px 8px rgba(97, 200, 216, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -461,14 +461,14 @@
 /* Responsive adjustments for creative title */
 @media (max-width: 768px) {
   .creative-title {
-    font-size: 2rem;
+    font-size: 1.5rem;
     letter-spacing: -0.01em;
   }
 }
 
 @media (max-width: 480px) {
   .creative-title {
-    font-size: 1.75rem;
+    font-size: 1.25rem;
     letter-spacing: 0;
     line-height: 1.3;
   }
