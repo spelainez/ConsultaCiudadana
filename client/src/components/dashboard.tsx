@@ -27,13 +27,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { Calendar, Filter, Download, RefreshCw, Eye, ChevronDown, BarChart3, PieChart, Users, MapPin, MessageSquare } from "lucide-react";
-import { UserManagement } from "./user-management";
+import { Calendar, Filter, Download, RefreshCw, Eye, ChevronDown, BarChart3, PieChart, MapPin, MessageSquare } from "lucide-react";
 
 export function Dashboard() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [activeView, setActiveView] = useState("overview");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState({
     dateFrom: "",
@@ -254,29 +252,10 @@ export function Dashboard() {
   return (
     <div className="container-fluid mt-4">
       <div className="row">
-        {/* Sidebar */}
-        <div className="col-md-2">
-          <div className="sidebar bg-muted p-3 rounded">
-            <nav className="nav flex-column">
-              {user?.role === "super_admin" && (
-                <button 
-                  className={`nav-link ${activeView === 'users' ? 'active' : ''}`} 
-                  onClick={() => setActiveView('users')}
-                  data-testid="nav-users"
-                >
-                  <Users className="w-4 h-4 me-2" />Usuarios
-                </button>
-              )}
-            </nav>
-          </div>
-        </div>
 
         {/* Main Content */}
-        <div className="col-md-10">
-          {activeView === 'users' ? (
-            <UserManagement />
-          ) : (
-            <>
+        <div className="col-12">
+          <>
               {/* Dashboard Header */}
               <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
@@ -646,7 +625,6 @@ export function Dashboard() {
             </CardContent>
           </Card>
             </>
-          )}
         </div>
       </div>
     </div>
