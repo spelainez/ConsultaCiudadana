@@ -482,32 +482,6 @@ export function Dashboard() {
         <div className="grid grid-cols-1 gap-4">
           <div className="w-full">
 
-            {/* SPE ve gestión de usuarios, otros ven gráficos */}
-            {user?.username === "SPE" ? (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-                <div className="lg:col-span-2">
-                  <UserManagementSPE />
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <Card className="border-0 shadow-sm rounded-lg">
-                    <CardHeader style={{ backgroundColor: '#fff' }} className="border-0 rounded-t-lg">
-                      <CardTitle className="mb-0 flex items-center">
-                        <PieChart className="w-5 h-5 mr-2" style={{ color: '#1bd1e8' }} />
-                        Consultas por Sector
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="chart-container" style={{ position: 'relative', height: '300px' }}>
-                        <canvas id="sectorsChart"></canvas>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            )}
 
             {/* Data Table */}
             <Card className="border-0 shadow-sm rounded-lg">
