@@ -214,140 +214,151 @@ export function ConsultationForm() {
                     </div>
                     </div>
 
-                    {/* Conditional Fields for Natural Person */}
-                    {personType === "natural" && (
-                  <div className="conditional-fields">
-                    <div className="row mb-3">
-                      <div className="col-md-6">
-                        <Label htmlFor="firstName">Primer Nombre *</Label>
-                        <Input
-                          id="firstName"
-                          {...form.register("firstName")}
-                          data-testid="input-firstName"
-                        />
-                        {form.formState.errors.firstName && (
-                          <div className="text-danger small">{form.formState.errors.firstName.message}</div>
-                        )}
+                    {/* Información Personal - Persona Natural */}
+                    <div className="conditional-fields mt-4">
+                      <h6 className="mb-3 text-muted">Información de Persona Natural</h6>
+                      <div className="row mb-3">
+                        <div className="col-md-6">
+                          <Label htmlFor="firstName">Primer Nombre *</Label>
+                          <Input
+                            id="firstName"
+                            {...form.register("firstName")}
+                            data-testid="input-firstName"
+                            disabled={personType !== "natural"}
+                            placeholder={personType !== "natural" ? "Solo para personas naturales" : "Ingrese su primer nombre"}
+                          />
+                          {form.formState.errors.firstName && (
+                            <div className="text-danger small">{form.formState.errors.firstName.message}</div>
+                          )}
+                        </div>
+                        <div className="col-md-6">
+                          <Label htmlFor="lastName">Apellido *</Label>
+                          <Input
+                            id="lastName"
+                            {...form.register("lastName")}
+                            data-testid="input-lastName"
+                            disabled={personType !== "natural"}
+                            placeholder={personType !== "natural" ? "Solo para personas naturales" : "Ingrese su apellido"}
+                          />
+                          {form.formState.errors.lastName && (
+                            <div className="text-danger small">{form.formState.errors.lastName.message}</div>
+                          )}
+                        </div>
                       </div>
-                      <div className="col-md-6">
-                        <Label htmlFor="lastName">Apellido *</Label>
-                        <Input
-                          id="lastName"
-                          {...form.register("lastName")}
-                          data-testid="input-lastName"
-                        />
-                        {form.formState.errors.lastName && (
-                          <div className="text-danger small">{form.formState.errors.lastName.message}</div>
-                        )}
+                      <div className="row mb-3">
+                        <div className="col-md-6">
+                          <Label htmlFor="identity">Número de Identidad *</Label>
+                          <Input
+                            id="identity"
+                            placeholder={personType !== "natural" ? "Solo para personas naturales" : "0801-1990-12345"}
+                            {...form.register("identity")}
+                            data-testid="input-identity"
+                            disabled={personType !== "natural"}
+                          />
+                          {form.formState.errors.identity && (
+                            <div className="text-danger small">{form.formState.errors.identity.message}</div>
+                          )}
+                        </div>
+                        <div className="col-md-6">
+                          <Label htmlFor="email">Correo Electrónico *</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            {...form.register("email")}
+                            data-testid="input-email"
+                            disabled={personType !== "natural"}
+                            placeholder={personType !== "natural" ? "Solo para personas naturales" : "nombre@ejemplo.com"}
+                          />
+                          {form.formState.errors.email && (
+                            <div className="text-danger small">{form.formState.errors.email.message}</div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div className="row mb-3">
-                      <div className="col-md-6">
-                        <Label htmlFor="identity">Número de Identidad *</Label>
-                        <Input
-                          id="identity"
-                          placeholder="0801-1990-12345"
-                          {...form.register("identity")}
-                          data-testid="input-identity"
-                        />
-                        {form.formState.errors.identity && (
-                          <div className="text-danger small">{form.formState.errors.identity.message}</div>
-                        )}
-                      </div>
-                      <div className="col-md-6">
-                        <Label htmlFor="email">Correo Electrónico *</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          {...form.register("email")}
-                          data-testid="input-email"
-                        />
-                        {form.formState.errors.email && (
-                          <div className="text-danger small">{form.formState.errors.email.message}</div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
 
-                {/* Conditional Fields for Juridica Person */}
-                {personType === "juridica" && (
-                  <div className="conditional-fields">
-                    <div className="row mb-3">
-                      <div className="col-md-6">
-                        <Label htmlFor="companyName">Nombre de la Empresa *</Label>
-                        <Input
-                          id="companyName"
-                          {...form.register("companyName")}
-                          data-testid="input-companyName"
-                        />
-                        {form.formState.errors.companyName && (
-                          <div className="text-danger small">{form.formState.errors.companyName.message}</div>
-                        )}
-                      </div>
-                      <div className="col-md-6">
-                        <Label htmlFor="rtn">RTN *</Label>
-                        <Input
-                          id="rtn"
-                          placeholder="08019901234567"
-                          {...form.register("rtn")}
-                          data-testid="input-rtn"
-                        />
-                        {form.formState.errors.rtn && (
-                          <div className="text-danger small">{form.formState.errors.rtn.message}</div>
-                        )}
-                      </div>
+                {/* Información Personal - Persona Jurídica */}
+                <div className="conditional-fields mt-4">
+                  <h6 className="mb-3 text-muted">Información de Persona Jurídica</h6>
+                  <div className="row mb-3">
+                    <div className="col-md-6">
+                      <Label htmlFor="companyName">Nombre de la Empresa *</Label>
+                      <Input
+                        id="companyName"
+                        {...form.register("companyName")}
+                        data-testid="input-companyName"
+                        disabled={personType !== "juridica"}
+                        placeholder={personType !== "juridica" ? "Solo para personas jurídicas" : "Nombre de su empresa"}
+                      />
+                      {form.formState.errors.companyName && (
+                        <div className="text-danger small">{form.formState.errors.companyName.message}</div>
+                      )}
                     </div>
-                    <div className="row mb-3">
-                      <div className="col-md-6">
-                        <Label htmlFor="legalRepresentative">Representante Legal *</Label>
-                        <Input
-                          id="legalRepresentative"
-                          {...form.register("legalRepresentative")}
-                          data-testid="input-legalRepresentative"
-                        />
-                        {form.formState.errors.legalRepresentative && (
-                          <div className="text-danger small">{form.formState.errors.legalRepresentative.message}</div>
-                        )}
-                      </div>
-                      <div className="col-md-6">
-                        <Label htmlFor="companyContact">Correo/Teléfono *</Label>
-                        <Input
-                          id="companyContact"
-                          {...form.register("companyContact")}
-                          data-testid="input-companyContact"
-                        />
-                        {form.formState.errors.companyContact && (
-                          <div className="text-danger small">{form.formState.errors.companyContact.message}</div>
-                        )}
-                      </div>
+                    <div className="col-md-6">
+                      <Label htmlFor="rtn">RTN *</Label>
+                      <Input
+                        id="rtn"
+                        placeholder={personType !== "juridica" ? "Solo para personas jurídicas" : "08019901234567"}
+                        {...form.register("rtn")}
+                        data-testid="input-rtn"
+                        disabled={personType !== "juridica"}
+                      />
+                      {form.formState.errors.rtn && (
+                        <div className="text-danger small">{form.formState.errors.rtn.message}</div>
+                      )}
                     </div>
                   </div>
-                )}
+                  <div className="row mb-3">
+                    <div className="col-md-6">
+                      <Label htmlFor="legalRepresentative">Representante Legal *</Label>
+                      <Input
+                        id="legalRepresentative"
+                        {...form.register("legalRepresentative")}
+                        data-testid="input-legalRepresentative"
+                        disabled={personType !== "juridica"}
+                        placeholder={personType !== "juridica" ? "Solo para personas jurídicas" : "Nombre del representante"}
+                      />
+                      {form.formState.errors.legalRepresentative && (
+                        <div className="text-danger small">{form.formState.errors.legalRepresentative.message}</div>
+                      )}
+                    </div>
+                    <div className="col-md-6">
+                      <Label htmlFor="companyContact">Correo/Teléfono *</Label>
+                      <Input
+                        id="companyContact"
+                        {...form.register("companyContact")}
+                        data-testid="input-companyContact"
+                        disabled={personType !== "juridica"}
+                        placeholder={personType !== "juridica" ? "Solo para personas jurídicas" : "empresa@ejemplo.com"}
+                      />
+                      {form.formState.errors.companyContact && (
+                        <div className="text-danger small">{form.formState.errors.companyContact.message}</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
                 {/* Optional Contact Information */}
-                {personType !== "anonimo" && (
-                  <div>
-                    <h5 className="mb-3">
-                      Información de Contacto (Opcional)
-                    </h5>
+                <div className="mt-4">
+                  <h6 className="mb-3 text-muted">Información de Contacto (Opcional)</h6>
                     <div className="row mb-3">
                       <div className="col-md-4">
                         <Label htmlFor="mobile">Celular</Label>
                         <Input
                           id="mobile"
-                          placeholder="+504 9999-9999"
+                          placeholder={personType === "anonimo" ? "No disponible para usuarios anónimos" : "+504 9999-9999"}
                           {...form.register("mobile")}
                           data-testid="input-mobile"
+                          disabled={personType === "anonimo"}
                         />
                       </div>
                       <div className="col-md-4">
                         <Label htmlFor="phone">Teléfono Fijo</Label>
                         <Input
                           id="phone"
-                          placeholder="+504 2222-2222"
+                          placeholder={personType === "anonimo" ? "No disponible para usuarios anónimos" : "+504 2222-2222"}
                           {...form.register("phone")}
                           data-testid="input-phone"
+                          disabled={personType === "anonimo"}
                         />
                       </div>
                       <div className="col-md-4">
@@ -357,11 +368,12 @@ export function ConsultationForm() {
                           type="email"
                           {...form.register("altEmail")}
                           data-testid="input-altEmail"
+                          placeholder={personType === "anonimo" ? "No disponible para usuarios anónimos" : "correo@ejemplo.com"}
+                          disabled={personType === "anonimo"}
                         />
                       </div>
                     </div>
-                  </div>
-                )}
+                </div>
                   </CardContent>
                 </Card>
 
@@ -427,137 +439,140 @@ export function ConsultationForm() {
                   </div>
 
                   {/* Municipality */}
-                  {form.watch("departmentId") && (
-                    <div className="location-step mb-3 animate-fade-in">
-                      <Label htmlFor="municipality" className="location-label">2. Municipio *</Label>
-                      <Popover open={openMunicipality} onOpenChange={setOpenMunicipality}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={openMunicipality}
-                            className="location-select justify-between"
-                            data-testid="select-municipality"
-                          >
-                            {form.watch("municipalityId")
-                              ? municipalities.find((muni) => muni.id === form.watch("municipalityId"))?.name
+                  <div className="location-step mb-3">
+                    <Label htmlFor="municipality" className="location-label">2. Municipio *</Label>
+                    <Popover open={openMunicipality} onOpenChange={setOpenMunicipality}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={openMunicipality}
+                          className="location-select justify-between"
+                          data-testid="select-municipality"
+                          disabled={!form.watch("departmentId")}
+                        >
+                          {form.watch("municipalityId")
+                            ? municipalities.find((muni) => muni.id === form.watch("municipalityId"))?.name
+                            : !form.watch("departmentId") 
+                              ? "Primero seleccione un departamento..."
                               : "Seleccione su municipio..."}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-full p-0">
-                          <Command>
-                            <CommandInput placeholder="Buscar municipio..." />
-                            <CommandEmpty>No se encontró el municipio.</CommandEmpty>
-                            <CommandGroup>
-                              {municipalities.map((muni) => (
-                                <CommandItem
-                                  key={muni.id}
-                                  value={muni.name}
-                                  onSelect={() => {
-                                    form.setValue("municipalityId", muni.id);
-                                    form.setValue("localityId", "");
-                                    setSelectedZone("");
-                                    setOpenMunicipality(false);
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      form.watch("municipalityId") === muni.id ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  {muni.name}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                      {form.formState.errors.municipalityId && (
-                        <div className="text-danger small mt-1">{form.formState.errors.municipalityId.message}</div>
-                      )}
-                    </div>
-                  )}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0">
+                        <Command>
+                          <CommandInput placeholder="Buscar municipio..." />
+                          <CommandEmpty>No se encontró el municipio.</CommandEmpty>
+                          <CommandGroup>
+                            {municipalities.map((muni) => (
+                              <CommandItem
+                                key={muni.id}
+                                value={muni.name}
+                                onSelect={() => {
+                                  form.setValue("municipalityId", muni.id);
+                                  form.setValue("localityId", "");
+                                  setSelectedZone("");
+                                  setOpenMunicipality(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    form.watch("municipalityId") === muni.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {muni.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    {form.formState.errors.municipalityId && (
+                      <div className="text-danger small mt-1">{form.formState.errors.municipalityId.message}</div>
+                    )}
+                  </div>
 
                   {/* Zone Selection */}
-                  {form.watch("municipalityId") && (
-                    <div className="location-step mb-3 animate-fade-in">
-                      <Label className="location-label">3. Zona *</Label>
-                      <Select
-                        onValueChange={(value) => {
-                          setSelectedZone(value);
-                          form.setValue("localityId", "");
-                        }}
-                        value={selectedZone}
-                      >
-                        <SelectTrigger className="location-select" data-testid="select-zone">
-                          <SelectValue placeholder="Seleccione el tipo de zona..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="urbano">Urbano - Colonias y Barrios</SelectItem>
-                          <SelectItem value="rural">Rural - Aldeas y Caseríos</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
+                  <div className="location-step mb-3">
+                    <Label className="location-label">3. Zona *</Label>
+                    <Select
+                      onValueChange={(value) => {
+                        setSelectedZone(value);
+                        form.setValue("localityId", "");
+                      }}
+                      value={selectedZone}
+                      disabled={!form.watch("municipalityId")}
+                    >
+                      <SelectTrigger className="location-select" data-testid="select-zone">
+                        <SelectValue placeholder={
+                          !form.watch("municipalityId") 
+                            ? "Primero seleccione un municipio..."
+                            : "Seleccione el tipo de zona..."
+                        } />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="urbano">Urbano - Colonias y Barrios</SelectItem>
+                        <SelectItem value="rural">Rural - Aldeas y Caseríos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
                   {/* Locality Selection */}
-                  {selectedZone && (
-                    <div className="location-step mb-3 animate-fade-in">
-                      <Label className="location-label">
-                        4. {selectedZone === "urbano" ? "Colonia o Barrio" : "Aldea o Caserío"} *
-                      </Label>
-                      <Select
-                        onValueChange={(value) => form.setValue("localityId", value)}
-                        key={selectedZone} // Force re-render when zone changes
-                      >
-                        <SelectTrigger className="location-select" data-testid="select-locality">
-                          <SelectValue placeholder={
-                            selectedZone === "urbano" 
+                  <div className="location-step mb-3">
+                    <Label className="location-label">
+                      4. {selectedZone === "urbano" ? "Colonia o Barrio" : selectedZone === "rural" ? "Aldea o Caserío" : "Localidad"} *
+                    </Label>
+                    <Select
+                      onValueChange={(value) => form.setValue("localityId", value)}
+                      key={selectedZone} // Force re-render when zone changes
+                      disabled={!selectedZone}
+                    >
+                      <SelectTrigger className="location-select" data-testid="select-locality">
+                        <SelectValue placeholder={
+                          !selectedZone 
+                            ? "Primero seleccione un tipo de zona..."
+                            : selectedZone === "urbano" 
                               ? "Seleccione su colonia o barrio..." 
                               : "Seleccione su aldea o caserío..."
-                          } />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {localities
-                            .filter(locality => locality.area === selectedZone)
-                            .map((locality) => (
-                              <SelectItem key={locality.id} value={locality.id}>
-                                {locality.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                      {form.formState.errors.localityId && (
-                        <div className="text-danger small mt-1">{form.formState.errors.localityId.message}</div>
-                      )}
-                    </div>
-                  )}
+                        } />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selectedZone && localities
+                          .filter(locality => locality.area === selectedZone)
+                          .map((locality) => (
+                            <SelectItem key={locality.id} value={locality.id}>
+                              {locality.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    {form.formState.errors.localityId && (
+                      <div className="text-danger small mt-1">{form.formState.errors.localityId.message}</div>
+                    )}
+                  </div>
 
                   {/* Geocode Display */}
-                  {form.watch("localityId") && (
-                    <div className="geocode-display animate-fade-in">
-                      <div className="geocode-container">
-                        <Label className="geocode-label">Geocódigo Generado</Label>
-                        <div className="geocode-value" data-testid="text-geocode">
-                          {(() => {
-                            const selectedDept = departments.find(d => d.id === form.watch("departmentId"));
-                            const selectedMuni = municipalities.find(m => m.id === form.watch("municipalityId"));
-                            const selectedLocality = localities.find(l => l.id === form.watch("localityId"));
-                            
-                            if (selectedDept && selectedMuni && selectedLocality) {
-                              return `${selectedDept.geocode}-${selectedMuni.geocode}-${selectedLocality.geocode}`;
-                            }
-                            return "Generando...";
-                          })()}
-                        </div>
-                        <small className="geocode-subtitle">
-                          Este código identifica únicamente su ubicación
-                        </small>
+                  <div className="geocode-display">
+                    <div className="geocode-container">
+                      <Label className="geocode-label">Geocódigo Generado</Label>
+                      <div className={`geocode-value ${!form.watch("localityId") ? 'opacity-50' : ''}`} data-testid="text-geocode">
+                        {(() => {
+                          const selectedDept = departments.find(d => d.id === form.watch("departmentId"));
+                          const selectedMuni = municipalities.find(m => m.id === form.watch("municipalityId"));
+                          const selectedLocality = localities.find(l => l.id === form.watch("localityId"));
+                          
+                          if (selectedDept && selectedMuni && selectedLocality) {
+                            return `${selectedDept.geocode}-${selectedMuni.geocode}-${selectedLocality.geocode}`;
+                          }
+                          return "Se generará automáticamente cuando complete la ubicación";
+                        })()}
                       </div>
+                      <small className="geocode-subtitle">
+                        Este código identifica únicamente su ubicación
+                      </small>
                     </div>
-                  )}
+                  </div>
                   </CardContent>
                 </Card>
 
