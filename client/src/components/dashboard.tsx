@@ -26,10 +26,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { Calendar, Filter, Download, RefreshCw, Eye, ChevronDown, BarChart3, PieChart, Users, MapPin, MessageSquare } from "lucide-react";
+import { UserManagement } from "./user-management";
 
 export function Dashboard() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [activeView, setActiveView] = useState("overview");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState({
     dateFrom: "",
@@ -255,32 +259,54 @@ export function Dashboard() {
           <div className="sidebar bg-muted p-3 rounded">
             <h6 className="text-muted text-uppercase mb-3">Administración</h6>
             <nav className="nav flex-column">
-              <a className="nav-link active" href="#" data-testid="nav-overview">
+              <button 
+                className={`nav-link ${activeView === 'overview' ? 'active' : ''}`} 
+                onClick={() => setActiveView('overview')}
+                data-testid="nav-overview"
+              >
                 <BarChart3 className="w-4 h-4 me-2" />Resumen
-              </a>
-              <a className="nav-link" href="#" data-testid="nav-consultations">
+              </button>
+              <button 
+                className={`nav-link ${activeView === 'consultations' ? 'active' : ''}`} 
+                onClick={() => setActiveView('consultations')}
+                data-testid="nav-consultations"
+              >
                 <MessageSquare className="w-4 h-4 me-2" />Consultas
-              </a>
-              <a className="nav-link" href="#" data-testid="nav-reports">
+              </button>
+              <button 
+                className={`nav-link ${activeView === 'reports' ? 'active' : ''}`} 
+                onClick={() => setActiveView('reports')}
+                data-testid="nav-reports"
+              >
                 <Download className="w-4 h-4 me-2" />Reportes
-              </a>
-              <a className="nav-link" href="#" data-testid="nav-users">
-                <Users className="w-4 h-4 me-2" />Usuarios
-              </a>
+              </button>
+              {user?.role === "super_admin" && (
+                <button 
+                  className={`nav-link ${activeView === 'users' ? 'active' : ''}`} 
+                  onClick={() => setActiveView('users')}
+                  data-testid="nav-users"
+                >
+                  <Users className="w-4 h-4 me-2" />Usuarios
+                </button>
+              )}
             </nav>
           </div>
         </div>
 
         {/* Main Content */}
         <div className="col-md-10">
-          {/* Dashboard Header */}
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <div>
-              <h3>Dashboard Administrativo</h3>
-              <p className="text-muted mb-0">
-                Última actualización: {new Date().toLocaleString('es-HN')}
-              </p>
-            </div>
+          {activeView === 'users' ? (
+            <UserManagement />
+          ) : (
+            <>
+              {/* Dashboard Header */}
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                  <h3>Dashboard Administrativo</h3>
+                  <p className="text-muted mb-0">
+                    Última actualización: {new Date().toLocaleString('es-HN')}
+                  </p>
+                </div>
             <div>
               <Button variant="outline" className="me-2" data-testid="button-refresh">
                 <RefreshCw className="w-4 h-4 me-2" />Actualizar
@@ -656,6 +682,8 @@ export function Dashboard() {
               )}
             </CardContent>
           </Card>
+            </>
+          )}
         </div>
       </div>
     </div>

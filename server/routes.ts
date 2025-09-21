@@ -1,13 +1,26 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { setupAuth, requireAuth, requireRole } from "./auth";
+import rateLimit from "express-rate-limit";
+import { setupAuth, requireAuth, requireRole, hashPassword } from "./auth";
 import { storage } from "./storage";
-import { insertConsultationSchema, insertSectorSchema } from "@shared/schema";
+import { insertConsultationSchema, insertSectorSchema, insertUserSchema } from "@shared/schema";
 import * as XLSX from 'xlsx';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
+
+  // Rate limiting for user creation
+  const userCreationLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 3, // 3 user creation attempts per window
+    message: {
+      error: "Demasiados intentos de creación de usuarios. Intente nuevamente en 15 minutos."
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+  });
 
   // Location endpoints
   app.get("/api/departments", async (req, res) => {
@@ -77,7 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/consultations", requireRole(["admin", "super_admin"]), async (req, res) => {
+  app.get("/api/consultations", requireAuth, requireRole(["admin", "super_admin"]), async (req, res) => {
     try {
       const filters = {
         dateFrom: req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined,
@@ -96,7 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/consultations/:id", requireRole(["admin", "super_admin"]), async (req, res) => {
+  app.get("/api/consultations/:id", requireAuth, requireRole(["admin", "super_admin"]), async (req, res) => {
     try {
       const consultation = await storage.getConsultationById(req.params.id);
       if (!consultation) {
@@ -110,7 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard endpoints
-  app.get("/api/dashboard/stats", requireRole(["admin", "super_admin"]), async (req, res) => {
+  app.get("/api/dashboard/stats", requireAuth, requireRole(["admin", "super_admin"]), async (req, res) => {
     try {
       const stats = await storage.getConsultationStats();
       res.json(stats);
@@ -120,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/dashboard/consultations-by-date", requireRole(["admin", "super_admin"]), async (req, res) => {
+  app.get("/api/dashboard/consultations-by-date", requireAuth, requireRole(["admin", "super_admin"]), async (req, res) => {
     try {
       const days = parseInt(req.query.days as string) || 30;
       const data = await storage.getConsultationsByDate(days);
@@ -131,7 +144,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/dashboard/consultations-by-sector", requireRole(["admin", "super_admin"]), async (req, res) => {
+  app.get("/api/dashboard/consultations-by-sector", requireAuth, requireRole(["admin", "super_admin"]), async (req, res) => {
     try {
       const data = await storage.getConsultationsBySector();
       res.json(data);
@@ -142,7 +155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Export endpoints
-  app.get("/api/export/consultations/csv", requireRole(["admin", "super_admin"]), async (req, res) => {
+  app.get("/api/export/consultations/csv", requireAuth, requireRole(["admin", "super_admin"]), async (req, res) => {
     try {
       const filters = {
         dateFrom: req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined,
@@ -216,7 +229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/export/consultations/excel", requireRole(["admin", "super_admin"]), async (req, res) => {
+  app.get("/api/export/consultations/excel", requireAuth, requireRole(["admin", "super_admin"]), async (req, res) => {
     try {
       const filters = {
         dateFrom: req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined,
@@ -298,7 +311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/export/consultations/pdf", requireRole(["admin", "super_admin"]), async (req, res) => {
+  app.get("/api/export/consultations/pdf", requireAuth, requireRole(["admin", "super_admin"]), async (req, res) => {
     try {
       const filters = {
         dateFrom: req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined,
@@ -401,8 +414,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User management endpoints (super_admin only)
+  app.get("/api/users", requireAuth, requireRole(["super_admin"]), async (req, res) => {
+    try {
+      const users = await storage.getUsers();
+      // Remove password hashes from response for security
+      const sanitizedUsers = users.map(({ password, ...userWithoutPassword }) => userWithoutPassword);
+      res.json(sanitizedUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  app.post("/api/users", requireAuth, requireRole(["super_admin"]), userCreationLimiter, async (req, res) => {
+    try {
+      const validatedData = insertUserSchema.parse(req.body);
+      
+      // Hash password before storing
+      const hashedPassword = await hashPassword(validatedData.password);
+      const userData = {
+        ...validatedData,
+        password: hashedPassword
+      };
+      
+      const user = await storage.createUser(userData);
+      
+      // Return user without password
+      const { password, ...userWithoutPassword } = user;
+      res.status(201).json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      if (error instanceof Error && error.message.includes('duplicate key')) {
+        res.status(400).json({ error: "El nombre de usuario ya existe" });
+      } else {
+        res.status(400).json({ error: "Datos de usuario inválidos" });
+      }
+    }
+  });
+
+  app.delete("/api/users/:id", requireAuth, requireRole(["super_admin"]), async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Prevent deleting own account
+      if (req.user?.id === id) {
+        return res.status(400).json({ error: "No puede eliminar su propia cuenta" });
+      }
+      
+      const deleted = await storage.deleteUser(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+      
+      res.json({ message: "Usuario eliminado exitosamente" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
+
   // Admin-only endpoints
-  app.post("/api/sectors", requireRole(["super_admin"]), async (req, res) => {
+  app.post("/api/sectors", requireAuth, requireRole(["super_admin"]), async (req, res) => {
     try {
       const validatedData = insertSectorSchema.parse(req.body);
       // Note: Would need to add createSector method to storage
