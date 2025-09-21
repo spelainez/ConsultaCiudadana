@@ -259,13 +259,6 @@ export function Dashboard() {
           <div className="sidebar bg-muted p-3 rounded">
             <h6 className="text-muted text-uppercase mb-3">Administración</h6>
             <nav className="nav flex-column">
-              <button 
-                className={`nav-link ${activeView === 'overview' ? 'active' : ''}`} 
-                onClick={() => setActiveView('overview')}
-                data-testid="nav-overview"
-              >
-                <BarChart3 className="w-4 h-4 me-2" />Resumen
-              </button>
               {user?.role === "super_admin" && (
                 <button 
                   className={`nav-link ${activeView === 'users' ? 'active' : ''}`} 
