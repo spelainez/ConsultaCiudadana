@@ -257,7 +257,6 @@ export function Dashboard() {
         {/* Sidebar */}
         <div className="col-md-2">
           <div className="sidebar bg-muted p-3 rounded">
-            <h6 className="text-muted text-uppercase mb-3">Administración</h6>
             <nav className="nav flex-column">
               {user?.role === "super_admin" && (
                 <button 
