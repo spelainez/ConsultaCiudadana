@@ -65,21 +65,22 @@ export function UserManagementSPE() {
     <Card className="border-0 shadow-sm">
       <CardHeader className="bg-white">
         <CardTitle className="mb-0">
-          <Users className="w-5 h-5 me-2" />
-          Gestión de Planificadores
+          <Users className="w-5 h-5 mr-2" style={{ color: '#1bd1e8' }} />
+          Usuarios Planificadores
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4">
         {!isCreating ? (
-          <div className="text-center py-4">
-            <p className="text-muted mb-3">Crear nuevos usuarios planificadores</p>
+          <div className="text-center py-6">
             <Button 
               onClick={() => setIsCreating(true)}
-              className="btn-primary"
+              className="px-6 py-3 text-white rounded-lg font-medium hover:bg-[#17b8cd] hover:border-[#17b8cd] transition-colors"
+              style={{ backgroundColor: '#1bd1e8', borderColor: '#1bd1e8' }}
+              size="lg"
               data-testid="button-create-planificador"
             >
-              <Plus className="w-4 h-4 me-2" />
-              Crear Planificador
+              <Plus className="w-5 h-5 mr-2" />
+              + Crear Planificador
             </Button>
           </div>
         ) : (
@@ -122,11 +123,12 @@ export function UserManagementSPE() {
                 )}
               />
 
-              <div className="d-flex gap-2">
+              <div className="flex gap-2">
                 <Button
                   type="submit"
                   disabled={createPlanificadorMutation.isPending}
-                  className="btn-primary"
+                  className="text-white"
+                  style={{ backgroundColor: '#1bd1e8', borderColor: '#1bd1e8' }}
                   data-testid="button-submit-planificador"
                 >
                   {createPlanificadorMutation.isPending ? "Creando..." : "Crear Planificador"}

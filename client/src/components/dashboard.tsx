@@ -418,62 +418,23 @@ export function Dashboard() {
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center py-3">
             <div className="flex items-center">
-              <h4 className="mb-0 font-bold text-white mr-3 text-lg">Dashboard Administrativo</h4>
-              <span className="text-white opacity-75 text-sm">
-                Última actualización: {new Date().toLocaleString('es-HN')}
-              </span>
+              <h4 className="mb-0 font-bold text-white text-lg">Panel Super Administrador</h4>
             </div>
             
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  className="border-white text-white hover:bg-white hover:text-slate-800 bg-transparent" 
-                  size="sm" 
-                  onClick={handleRefresh}
-                  data-testid="button-refresh"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />Actualizar
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      className="border-white text-white hover:bg-white hover:text-slate-800 bg-transparent" 
-                      variant="outline"
-                      size="sm" 
-                      data-testid="button-export"
-                    >
-                      <Download className="w-4 h-4 mr-2" />Exportar
-                      <ChevronDown className="w-4 h-4 ml-1" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem 
-                      onClick={() => handleExportCSV()}
-                      data-testid="button-export-csv"
-                    >
-                      <Download className="w-4 h-4 mr-2" />Exportar CSV
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleExportExcel()}
-                      data-testid="button-export-excel"
-                    >
-                      <Download className="w-4 h-4 mr-2" />Exportar Excel
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleExportPDF()}
-                      data-testid="button-export-pdf"
-                    >
-                      <Download className="w-4 h-4 mr-2" />Exportar PDF
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              <Button 
+                variant="outline" 
+                className="border-white text-white hover:bg-white hover:text-slate-800 bg-transparent" 
+                size="sm" 
+                onClick={handleRefresh}
+                data-testid="button-refresh"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
 
               {/* User Menu */}
               <div className="flex items-center text-white">
-                <User className="w-5 h-5 mr-2" />
-                <span className="font-medium mr-2">{user?.username}</span>
+                <span className="font-medium mr-1">{user?.username}</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button 
@@ -491,7 +452,7 @@ export function Dashboard() {
                       data-testid="button-create-planificador"
                     >
                       <UserPlus className="w-4 h-4 mr-2" />
-                      Crear Usuario Planificador
+                      Crear Usuario
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       onClick={handleProfile}
@@ -551,13 +512,65 @@ export function Dashboard() {
             {/* Data Table */}
             <Card className="border-0 shadow-sm rounded-lg">
               <CardHeader style={{ backgroundColor: '#fff' }} className="border-0 rounded-t-lg">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-4">
                   <div>
                     <CardTitle className="mb-0 flex items-center">
-                      <MessageSquare className="w-5 h-5 mr-2" style={{ color: '#1bd1e8' }} />
+                      <BarChart3 className="w-5 h-5 mr-2" style={{ color: '#1bd1e8' }} />
                       Consultas Ciudadanas
                     </CardTitle>
                   </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleRefresh}
+                      data-testid="button-refresh-table"
+                      className="border text-gray-600 hover:bg-gray-50"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-1" />
+                      Actualizar
+                    </Button>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="outline"
+                          size="sm" 
+                          data-testid="button-export-table"
+                          className="border text-gray-600 hover:bg-gray-50"
+                        >
+                          <Download className="w-4 h-4 mr-1" />
+                          Exportar
+                          <ChevronDown className="w-4 h-4 ml-1" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem 
+                          onClick={() => handleExportCSV()}
+                          data-testid="button-export-csv"
+                        >
+                          <Download className="w-4 h-4 mr-2" />CSV
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleExportExcel()}
+                          data-testid="button-export-excel"
+                        >
+                          <Download className="w-4 h-4 mr-2" />Excel
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleExportPDF()}
+                          data-testid="button-export-pdf"
+                        >
+                          <Download className="w-4 h-4 mr-2" />PDF
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  
                   <div>
                     <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
                       <CollapsibleTrigger asChild>
@@ -793,38 +806,32 @@ export function Dashboard() {
                                 size="sm" 
                                 onClick={() => handleViewDetail(consultation)}
                                 data-testid={`button-view-${consultation.id}`}
+                                title="Ver detalles"
                               >
                                 <Eye className="w-4 h-4" />
                               </Button>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    data-testid={`button-actions-${consultation.id}`}
-                                  >
-                                    <ChevronDown className="w-4 h-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                  <DropdownMenuItem 
-                                    onClick={() => updateStatusMutation.mutate({
-                                      consultationId: consultation.id,
-                                      status: consultation.status === 'active' ? 'archived' : 'active'
-                                    })}
-                                  >
-                                    <Edit className="w-4 h-4 mr-2" />
-                                    {consultation.status === 'active' ? 'Archivar' : 'Activar'}
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem 
-                                    onClick={() => deleteConsultationMutation.mutate(consultation.id)}
-                                    className="text-red-600"
-                                  >
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    Eliminar
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => updateStatusMutation.mutate({
+                                  consultationId: consultation.id,
+                                  status: consultation.status === 'active' ? 'archived' : 'active'
+                                })}
+                                data-testid={`button-edit-${consultation.id}`}
+                                title={consultation.status === 'active' ? 'Archivar' : 'Activar'}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => deleteConsultationMutation.mutate(consultation.id)}
+                                data-testid={`button-delete-${consultation.id}`}
+                                className="text-red-600 hover:bg-red-50 border-red-200"
+                                title="Eliminar"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -897,35 +904,28 @@ export function Dashboard() {
                           >
                             <Eye className="w-4 h-4 mr-1" />Ver
                           </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                data-testid={`button-actions-mobile-${consultation.id}`}
-                              >
-                                <ChevronDown className="w-4 h-4 mr-1" />Acciones
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuItem 
-                                onClick={() => updateStatusMutation.mutate({
-                                  consultationId: consultation.id,
-                                  status: consultation.status === 'active' ? 'archived' : 'active'
-                                })}
-                              >
-                                <Edit className="w-4 h-4 mr-2" />
-                                {consultation.status === 'active' ? 'Archivar' : 'Activar'}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => deleteConsultationMutation.mutate(consultation.id)}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Eliminar
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => updateStatusMutation.mutate({
+                              consultationId: consultation.id,
+                              status: consultation.status === 'active' ? 'archived' : 'active'
+                            })}
+                            data-testid={`button-edit-mobile-${consultation.id}`}
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            {consultation.status === 'active' ? 'Archivar' : 'Activar'}
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => deleteConsultationMutation.mutate(consultation.id)}
+                            data-testid={`button-delete-mobile-${consultation.id}`}
+                            className="text-red-600 hover:bg-red-50 border-red-200"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Eliminar
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
