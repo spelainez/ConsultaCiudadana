@@ -646,7 +646,7 @@ export function ConsultationForm() {
                   </CardHeader>
                   <CardContent>
                     <div className="mb-4">
-                      <Label htmlFor="message" className="fw-bold">
+                      <Label htmlFor="message">
                         Mensaje *
                       </Label>
                   <Textarea

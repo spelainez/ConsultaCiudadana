@@ -338,7 +338,7 @@
 }
 
 .form-section-title {
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #1bd1e8;
   margin: 0;
@@ -380,7 +380,7 @@
   }
   
   .form-section-title {
-    font-size: 1.125rem;
+    font-size: 0.9rem;
   }
   
   .form-section-card .CardContent {
@@ -429,8 +429,8 @@
 /* Creative Title Styles */
 .creative-title {
   color: white;
-  font-weight: 700;
-  font-size: 2rem;
+  font-weight: 600;
+  font-size: 1.5rem;
   letter-spacing: -0.02em;
   line-height: 1.2;
   text-shadow: 0 4px 8px rgba(97, 200, 216, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -506,14 +506,14 @@
 /* Responsive adjustments for creative title */
 @media (max-width: 768px) {
   .creative-title {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     letter-spacing: -0.01em;
   }
 }
 
 @media (max-width: 480px) {
   .creative-title {
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     letter-spacing: 0;
     line-height: 1.3;
   }
@@ -562,8 +562,8 @@
 
 .person-type-content h6 {
   color: #495057;
-  font-weight: 600;
-  font-size: 1rem;
+  font-weight: 500;
+  font-size: 0.875rem;
 }
 
 .person-type-card.selected .person-type-content h6 {
@@ -598,7 +598,7 @@
   }
   
   .person-type-content h6 {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
   }
 }
 
@@ -622,9 +622,9 @@
 }
 
 .location-label {
-  font-weight: 600;
+  font-weight: 500;
   color: #1bd1e8;
-  font-size: 1rem;
+  font-size: 0.875rem;
   margin-bottom: 8px;
   display: block;
 }
@@ -723,7 +723,8 @@
 
 .geocode-label {
   color: white;
-  font-weight: 600;
+  font-weight: 500;
+  font-size: 0.875rem;
   margin-bottom: 8px;
   opacity: 0.9;
 }
