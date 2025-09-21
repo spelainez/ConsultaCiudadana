@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,8 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, ShieldCheck, MessageSquare, BarChart3 } from "lucide-react";
 
 const loginSchema = z.object({
@@ -17,18 +14,10 @@ const loginSchema = z.object({
   password: z.string().min(1, "La contraseña es requerida"),
 });
 
-const registerSchema = z.object({
-  username: z.string().min(3, "El usuario debe tener al menos 3 caracteres"),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
-  role: z.enum(["admin", "super_admin"]),
-});
-
 type LoginFormData = z.infer<typeof loginSchema>;
-type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function AuthPage() {
-  const { user, loginMutation, registerMutation } = useAuth();
-  const [activeTab, setActiveTab] = useState("login");
+  const { user, loginMutation } = useAuth();
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -38,14 +27,6 @@ export default function AuthPage() {
     },
   });
 
-  const registerForm = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      username: "",
-      password: "",
-      role: "admin",
-    },
-  });
 
   // Redirect if already logged in
   if (user) {
@@ -56,9 +37,6 @@ export default function AuthPage() {
     loginMutation.mutate(data);
   };
 
-  const onRegister = (data: RegisterFormData) => {
-    registerMutation.mutate(data);
-  };
 
   return (
     <div className="min-h-screen bg-light">
@@ -74,134 +52,57 @@ export default function AuthPage() {
                     <ShieldCheck className="w-6 h-6 me-2 text-primary" />
                     Acceso Administrativo
                   </CardTitle>
+                  <p className="text-center text-muted mb-0">Acceso exclusivo para administradores autorizados</p>
                 </CardHeader>
                 <CardContent>
-                  <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="grid w-100 grid-cols-2">
-                      <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
-                      <TabsTrigger value="register">Registrarse</TabsTrigger>
-                    </TabsList>
-
-                    {/* Login Tab */}
-                    <TabsContent value="login">
-                      <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
-                        <div className="mb-3">
-                          <Label htmlFor="loginUsername">Usuario</Label>
-                          <Input
-                            id="loginUsername"
-                            {...loginForm.register("username")}
-                            data-testid="input-loginUsername"
-                          />
-                          {loginForm.formState.errors.username && (
-                            <div className="text-danger small">
-                              {loginForm.formState.errors.username.message}
-                            </div>
-                          )}
+                  <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
+                    <div className="mb-3">
+                      <Label htmlFor="loginUsername">Usuario</Label>
+                      <Input
+                        id="loginUsername"
+                        placeholder="Ingrese su nombre de usuario"
+                        {...loginForm.register("username")}
+                        data-testid="input-loginUsername"
+                      />
+                      {loginForm.formState.errors.username && (
+                        <div className="text-danger small">
+                          {loginForm.formState.errors.username.message}
                         </div>
+                      )}
+                    </div>
 
-                        <div className="mb-3">
-                          <Label htmlFor="loginPassword">Contraseña</Label>
-                          <Input
-                            id="loginPassword"
-                            type="password"
-                            {...loginForm.register("password")}
-                            data-testid="input-loginPassword"
-                          />
-                          {loginForm.formState.errors.password && (
-                            <div className="text-danger small">
-                              {loginForm.formState.errors.password.message}
-                            </div>
-                          )}
+                    <div className="mb-3">
+                      <Label htmlFor="loginPassword">Contraseña</Label>
+                      <Input
+                        id="loginPassword"
+                        type="password"
+                        placeholder="Ingrese su contraseña"
+                        {...loginForm.register("password")}
+                        data-testid="input-loginPassword"
+                      />
+                      {loginForm.formState.errors.password && (
+                        <div className="text-danger small">
+                          {loginForm.formState.errors.password.message}
                         </div>
+                      )}
+                    </div>
 
-                        <div className="d-grid">
-                          <Button
-                            type="submit"
-                            disabled={loginMutation.isPending}
-                            data-testid="button-login"
-                          >
-                            {loginMutation.isPending ? (
-                              <Loader2 className="w-4 h-4 me-2 animate-spin" />
-                            ) : (
-                              <i className="bi bi-box-arrow-in-right me-2"></i>
-                            )}
-                            Iniciar Sesión
-                          </Button>
-                        </div>
-                      </form>
-                    </TabsContent>
-
-                    {/* Register Tab */}
-                    <TabsContent value="register">
-                      <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
-                        <div className="mb-3">
-                          <Label htmlFor="registerUsername">Usuario</Label>
-                          <Input
-                            id="registerUsername"
-                            {...registerForm.register("username")}
-                            data-testid="input-registerUsername"
-                          />
-                          {registerForm.formState.errors.username && (
-                            <div className="text-danger small">
-                              {registerForm.formState.errors.username.message}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="mb-3">
-                          <Label htmlFor="registerPassword">Contraseña</Label>
-                          <Input
-                            id="registerPassword"
-                            type="password"
-                            {...registerForm.register("password")}
-                            data-testid="input-registerPassword"
-                          />
-                          {registerForm.formState.errors.password && (
-                            <div className="text-danger small">
-                              {registerForm.formState.errors.password.message}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="mb-3">
-                          <Label htmlFor="registerRole">Rol</Label>
-                          <Select
-                            onValueChange={(value) => 
-                              registerForm.setValue("role", value as "admin" | "super_admin")
-                            }
-                          >
-                            <SelectTrigger data-testid="select-registerRole">
-                              <SelectValue placeholder="Seleccionar rol" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="admin">Administrador/Planificador</SelectItem>
-                              <SelectItem value="super_admin">Super Administrador</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          {registerForm.formState.errors.role && (
-                            <div className="text-danger small">
-                              {registerForm.formState.errors.role.message}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="d-grid">
-                          <Button
-                            type="submit"
-                            disabled={registerMutation.isPending}
-                            data-testid="button-register"
-                          >
-                            {registerMutation.isPending ? (
-                              <Loader2 className="w-4 h-4 me-2 animate-spin" />
-                            ) : (
-                              <i className="bi bi-person-plus me-2"></i>
-                            )}
-                            Crear Cuenta
-                          </Button>
-                        </div>
-                      </form>
-                    </TabsContent>
-                  </Tabs>
+                    <div className="d-grid mt-4">
+                      <Button
+                        type="submit"
+                        className="btn-admin-login"
+                        disabled={loginMutation.isPending}
+                        data-testid="button-login"
+                      >
+                        {loginMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                        ) : (
+                          <i className="bi bi-box-arrow-in-right me-2"></i>
+                        )}
+                        Iniciar Sesión
+                      </Button>
+                    </div>
+                  </form>
                 </CardContent>
               </Card>
             </div>

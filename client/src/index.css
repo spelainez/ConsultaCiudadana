@@ -112,6 +112,33 @@
   color: var(--honduras-white);
 }
 
+/* Admin Login Button Styles */
+.btn-admin-login {
+  background-color: #1bd1e8 !important;
+  border-color: #1bd1e8 !important;
+  color: white !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 4px rgba(27, 209, 232, 0.2) !important;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-admin-login:hover {
+  background-color: #17b8cd !important;
+  border-color: #17b8cd !important;
+  color: white !important;
+  box-shadow: 0 4px 8px rgba(27, 209, 232, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+.btn-admin-login:focus,
+.btn-admin-login:active {
+  background-color: #17b8cd !important;
+  border-color: #17b8cd !important;
+  color: white !important;
+  box-shadow: 0 4px 8px rgba(27, 209, 232, 0.3) !important;
+}
+
 .navbar-brand {
   color: var(--honduras-primary) !important;
   font-weight: bold;
