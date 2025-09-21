@@ -249,7 +249,7 @@ export function ConsultationForm() {
                             <Label htmlFor="identity">Número de Identidad *</Label>
                             <Input
                               id="identity"
-                              placeholder="0801-1990-12345"
+                              placeholder="Ingrese su número de identidad"
                               {...form.register("identity")}
                               data-testid="input-identity"
                             />
@@ -264,7 +264,7 @@ export function ConsultationForm() {
                               type="email"
                               {...form.register("email")}
                               data-testid="input-email"
-                              placeholder="nombre@ejemplo.com"
+                              placeholder="Ingrese su correo electrónico"
                             />
                             {form.formState.errors.email && (
                               <div className="text-danger small">{form.formState.errors.email.message}</div>
@@ -285,7 +285,7 @@ export function ConsultationForm() {
                           id="companyName"
                           {...form.register("companyName")}
                           data-testid="input-companyName"
-                          placeholder="Nombre de su empresa"
+                          placeholder="Ingrese el nombre de su empresa"
                         />
                         {form.formState.errors.companyName && (
                           <div className="text-danger small">{form.formState.errors.companyName.message}</div>
@@ -295,7 +295,7 @@ export function ConsultationForm() {
                         <Label htmlFor="rtn">RTN *</Label>
                         <Input
                           id="rtn"
-                          placeholder="08019901234567"
+                          placeholder="Ingrese su RTN"
                           {...form.register("rtn")}
                           data-testid="input-rtn"
                         />
@@ -311,7 +311,7 @@ export function ConsultationForm() {
                           id="legalRepresentative"
                           {...form.register("legalRepresentative")}
                           data-testid="input-legalRepresentative"
-                          placeholder="Nombre del representante"
+                          placeholder="Ingrese el nombre del representante legal"
                         />
                         {form.formState.errors.legalRepresentative && (
                           <div className="text-danger small">{form.formState.errors.legalRepresentative.message}</div>
@@ -323,7 +323,7 @@ export function ConsultationForm() {
                           id="companyContact"
                           {...form.register("companyContact")}
                           data-testid="input-companyContact"
-                          placeholder="empresa@ejemplo.com"
+                          placeholder="Ingrese correo o teléfono de contacto"
                         />
                         {form.formState.errors.companyContact && (
                           <div className="text-danger small">{form.formState.errors.companyContact.message}</div>
@@ -342,7 +342,7 @@ export function ConsultationForm() {
                         <Label htmlFor="mobile">Celular</Label>
                         <Input
                           id="mobile"
-                          placeholder="+504 9999-9999"
+                          placeholder="Ingrese su número de celular"
                           {...form.register("mobile")}
                           data-testid="input-mobile"
                         />
@@ -351,7 +351,7 @@ export function ConsultationForm() {
                         <Label htmlFor="phone">Teléfono Fijo</Label>
                         <Input
                           id="phone"
-                          placeholder="+504 2222-2222"
+                          placeholder="Ingrese su teléfono fijo"
                           {...form.register("phone")}
                           data-testid="input-phone"
                         />
@@ -363,7 +363,7 @@ export function ConsultationForm() {
                           type="email"
                           {...form.register("altEmail")}
                           data-testid="input-altEmail"
-                          placeholder="correo@ejemplo.com"
+                          placeholder="Ingrese su correo alternativo"
                         />
                       </div>
                     </div>
@@ -585,7 +585,7 @@ export function ConsultationForm() {
                         setSectorSearch(e.target.value);
                         setShowSuggestions(e.target.value.length > 2);
                       }}
-                      placeholder="Escriba para buscar sectores (ej: educación, salud, infraestructura...)"
+                      placeholder="Ingrese el sector que busca"
                       data-testid="input-sectorSearch"
                     />
                     {showSuggestions && sectorSuggestions.length > 0 && (
@@ -652,7 +652,7 @@ export function ConsultationForm() {
                   <Textarea
                     id="message"
                     rows={5}
-                    placeholder="Describa su consulta, sugerencia o preocupación sobre los sectores seleccionados..."
+                    placeholder="Ingrese su consulta, sugerencia o preocupación"
                     {...form.register("message")}
                     data-testid="textarea-message"
                   />
