@@ -19,18 +19,8 @@ export function Navbar() {
           Construyamos una Honduras Próspera Juntos
         </Link>
         
-        <button 
-          className="navbar-toggler" 
-          type="button" 
-          data-bs-toggle="collapse" 
-          data-bs-target="#navbarNav"
-          data-testid="navbar-toggle"
-        >
-          <span className="navbar-toggler-icon"></span>
-        </button>
-        
-        <div className="collapse navbar-collapse" id="navbarNav">
-          <ul className="navbar-nav ms-auto">
+        <div className="d-flex ms-auto">
+          <ul className="navbar-nav">
             <li className="nav-item">
               <Link 
                 href="/" 
