@@ -137,23 +137,6 @@ export default function AuthPage() {
                 para el desarrollo de Honduras.
               </p>
               
-              <div className="row text-center">
-                <div className="col-4">
-                  <MessageSquare className="w-8 h-8 mx-auto mb-2" />
-                  <h6>Consultas</h6>
-                  <p className="small">Gestión completa de consultas ciudadanas</p>
-                </div>
-                <div className="col-4">
-                  <BarChart3 className="w-8 h-8 mx-auto mb-2" />
-                  <h6>Analytics</h6>
-                  <p className="small">Dashboards interactivos con métricas</p>
-                </div>
-                <div className="col-4">
-                  <i className="bi bi-download fs-1 mb-2 d-block"></i>
-                  <h6>Reportes</h6>
-                  <p className="small">Exportación en múltiples formatos</p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
