@@ -325,7 +325,7 @@ export function ConsultationForm() {
                 {personType !== "anonimo" && (
                   <div>
                     <h5 className="mb-3">
-                      <i className="bi bi-telephone me-2"></i>Información de Contacto (Opcional)
+                      Información de Contacto (Opcional)
                     </h5>
                     <div className="row mb-3">
                       <div className="col-md-4">
@@ -362,7 +362,7 @@ export function ConsultationForm() {
                 {/* Modern Location Selection */}
                 <div className="modern-location-selector mb-4">
                   <h5 className="mb-4 text-center">
-                    <span className="location-icon">📍</span> Ubicación
+                    Ubicación
                   </h5>
                   
                   {/* Department */}
@@ -379,7 +379,7 @@ export function ConsultationForm() {
                         >
                           {form.watch("departmentId")
                             ? departments.find((dept) => dept.id === form.watch("departmentId"))?.name
-                            : "🌎 Seleccione su departamento..."}
+                            : "Seleccione su departamento..."}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
@@ -433,7 +433,7 @@ export function ConsultationForm() {
                           >
                             {form.watch("municipalityId")
                               ? municipalities.find((muni) => muni.id === form.watch("municipalityId"))?.name
-                              : "🏘️ Seleccione su municipio..."}
+                              : "Seleccione su municipio..."}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
@@ -497,7 +497,6 @@ export function ConsultationForm() {
                               data-testid="zone-urbano"
                             >
                               <div className="zone-content">
-                                <span className="zone-emoji">🏙️</span>
                                 <span className="zone-text">Urbano</span>
                                 <small className="zone-subtitle">Colonias y Barrios</small>
                               </div>
@@ -522,7 +521,6 @@ export function ConsultationForm() {
                               data-testid="zone-rural"
                             >
                               <div className="zone-content">
-                                <span className="zone-emoji">🌾</span>
                                 <span className="zone-text">Rural</span>
                                 <small className="zone-subtitle">Aldeas y Caseríos</small>
                               </div>
@@ -546,8 +544,8 @@ export function ConsultationForm() {
                         <SelectTrigger className="location-select" data-testid="select-locality">
                           <SelectValue placeholder={
                             selectedZone === "urbano" 
-                              ? "🏘️ Seleccione su colonia o barrio..." 
-                              : "🌾 Seleccione su aldea o caserío..."
+                              ? "Seleccione su colonia o barrio..." 
+                              : "Seleccione su aldea o caserío..."
                           } />
                         </SelectTrigger>
                         <SelectContent>
@@ -594,7 +592,7 @@ export function ConsultationForm() {
                 {/* Intelligent Sector Search */}
                 <div className="mb-4">
                   <h5 className="mb-3">
-                    <i className="bi bi-tags-fill me-2"></i>Sectores de Interés
+                    Sectores de Interés
                   </h5>
                   <div className="position-relative">
                     <Input
@@ -658,7 +656,7 @@ export function ConsultationForm() {
                 {/* Message Field */}
                 <div className="mb-4">
                   <Label htmlFor="message" className="fw-bold">
-                    <i className="bi bi-chat-text me-2"></i>Su Consulta Popular *
+                    Su Consulta Popular *
                   </Label>
                   <Textarea
                     id="message"
@@ -668,7 +666,6 @@ export function ConsultationForm() {
                     data-testid="textarea-message"
                   />
                   <div className="form-text">
-                    <i className="bi bi-info-circle me-1"></i>
                     Sea específico y constructivo en su mensaje.
                   </div>
                   {form.formState.errors.message && (
@@ -690,7 +687,7 @@ export function ConsultationForm() {
                     }}
                     data-testid="button-reset"
                   >
-                    <i className="bi bi-arrow-clockwise me-2"></i>Limpiar Formulario
+                    Limpiar Formulario
                   </Button>
                   <Button
                     type="submit"
@@ -698,7 +695,7 @@ export function ConsultationForm() {
                     disabled={createConsultationMutation.isPending || selectedSectors.length === 0}
                     data-testid="button-submit"
                   >
-                    <i className="bi bi-send me-2"></i>Enviar Consulta
+                    Enviar Consulta
                     {createConsultationMutation.isPending && (
                       <Loader2 className="w-4 h-4 ms-2 animate-spin" />
                     )}
