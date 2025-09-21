@@ -130,7 +130,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(sectors.active, true),
-          like(sectors.name, `%${query}%`)
+          sql`${sectors.name} ILIKE ${`%${query}%`}`
         )
       )
       .orderBy(sectors.name);

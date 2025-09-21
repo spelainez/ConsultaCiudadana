@@ -15,17 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, X, Plus } from "lucide-react";
 
-const consultationFormSchema = insertConsultationSchema.extend({
-  confirmEmail: z.string().optional(),
-}).refine((data) => {
-  if (data.personType === 'natural' && data.email !== data.confirmEmail) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Los correos electrónicos no coinciden",
-  path: ["confirmEmail"],
-});
+const consultationFormSchema = insertConsultationSchema;
 
 type ConsultationFormData = z.infer<typeof consultationFormSchema>;
 
@@ -65,18 +55,14 @@ export function ConsultationForm() {
   });
 
   const { data: sectorSuggestions = [] } = useQuery<any[]>({
-    queryKey: ["/api/sectors/search", sectorSearch],
+    queryKey: [`/api/sectors/search?q=${sectorSearch}`],
     enabled: sectorSearch.length > 2,
   });
 
   // Mutation
   const createConsultationMutation = useMutation({
     mutationFn: async (data: ConsultationFormData) => {
-      const { confirmEmail, ...consultationData } = data;
-      const res = await apiRequest("POST", "/api/consultations", {
-        ...consultationData,
-        selectedSectors,
-      });
+      const res = await apiRequest("POST", "/api/consultations", data);
       return await res.json();
     },
     onSuccess: () => {
@@ -99,7 +85,10 @@ export function ConsultationForm() {
   });
 
   const onSubmit = (data: ConsultationFormData) => {
-    createConsultationMutation.mutate(data);
+    createConsultationMutation.mutate({
+      ...data,
+      selectedSectors,
+    });
   };
 
   const handleSectorAdd = (sectorName: string) => {
