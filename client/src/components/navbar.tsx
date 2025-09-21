@@ -16,7 +16,7 @@ export function Navbar() {
       <div className="container">
         <Link href="/" className="navbar-brand text-primary fw-bold" data-testid="navbar-brand">
           <i className="bi bi-chat-square-text-fill me-2"></i>
-          Consulta Ciudadana Honduras
+          Construyamos una Honduras Próspera Juntos
         </Link>
         
         <button 
