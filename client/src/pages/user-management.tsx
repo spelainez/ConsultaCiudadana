@@ -55,12 +55,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-
-const createUserSchema = z.object({
-  username: z.string().min(3, "El nombre de usuario debe tener al menos 3 caracteres"),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
-  role: z.enum(["ciudadano", "admin", "super_admin", "planificador"])
-});
+import { insertUserSchema } from "@shared/schema";
 
 const changePasswordSchema = z.object({
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
@@ -70,7 +65,7 @@ const changePasswordSchema = z.object({
   path: ["confirmPassword"]
 });
 
-type CreateUserFormData = z.infer<typeof createUserSchema>;
+type CreateUserFormData = z.infer<typeof insertUserSchema>;
 type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
 
 export default function UserManagement() {
@@ -171,7 +166,7 @@ export default function UserManagement() {
 
   // Forms
   const createUserForm = useForm<CreateUserFormData>({
-    resolver: zodResolver(createUserSchema),
+    resolver: zodResolver(insertUserSchema),
     defaultValues: {
       username: "",
       password: "",

@@ -501,6 +501,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Usuario no encontrado" });
       }
       
+      // Prevent changing password of the protected SPE account
+      if (userToUpdate.username === "SPE") {
+        return res.status(403).json({ error: "La cuenta SPE está protegida y no puede ser modificada" });
+      }
+      
       // Hash the new password
       const hashedPassword = await hashPassword(password);
       const updated = await storage.updateUserPassword(id, hashedPassword);
