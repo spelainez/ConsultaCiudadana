@@ -309,6 +309,116 @@
   }
 }
 
+/* Creative Title Styles */
+.creative-title {
+  background: linear-gradient(135deg, #61c8d8 0%, #1bd1e8 50%, #17b8cd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+  font-size: 2.5rem;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  text-shadow: 0 4px 8px rgba(97, 200, 216, 0.2);
+  position: relative;
+  display: inline-block;
+  animation: creativeGlow 3s ease-in-out infinite alternate;
+}
+
+.creative-title::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #61c8d8 0%, #1bd1e8 50%, #17b8cd 100%);
+  border-radius: 12px;
+  opacity: 0.1;
+  z-index: -1;
+  transform: scale(1.05);
+  animation: creativeBackground 4s ease-in-out infinite alternate;
+}
+
+.creative-title::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #61c8d8, #1bd1e8, #17b8cd, #61c8d8);
+  border-radius: 14px;
+  opacity: 0.3;
+  z-index: -2;
+  animation: creativeRotate 6s linear infinite;
+  background-size: 300% 300%;
+}
+
+@keyframes creativeGlow {
+  0% {
+    filter: brightness(1) contrast(1);
+    transform: translateY(0px);
+  }
+  100% {
+    filter: brightness(1.1) contrast(1.05);
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes creativeBackground {
+  0% {
+    opacity: 0.1;
+    transform: scale(1.05) rotate(0deg);
+  }
+  100% {
+    opacity: 0.15;
+    transform: scale(1.08) rotate(1deg);
+  }
+}
+
+@keyframes creativeRotate {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Responsive adjustments for creative title */
+@media (max-width: 768px) {
+  .creative-title {
+    font-size: 2rem;
+    letter-spacing: -0.01em;
+  }
+}
+
+@media (max-width: 480px) {
+  .creative-title {
+    font-size: 1.75rem;
+    letter-spacing: 0;
+    line-height: 1.3;
+  }
+}
+
+/* Accessibility: Preserve text readability in high contrast mode */
+.accessibility-high-contrast .creative-title {
+  -webkit-text-fill-color: inherit;
+  background: none;
+  color: inherit !important;
+  text-shadow: none;
+}
+
+.accessibility-high-contrast .creative-title::before,
+.accessibility-high-contrast .creative-title::after {
+  display: none;
+}
+
 /* Person Type Card Styles */
 .person-type-card {
   background-color: var(--honduras-white);

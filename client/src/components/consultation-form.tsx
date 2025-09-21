@@ -132,7 +132,7 @@ export function ConsultationForm() {
           <Card className="form-section">
             <CardHeader>
               <CardTitle className="text-center">
-                <h2 className="mb-1">Construyamos una Honduras Próspera Juntos</h2>
+                <h2 className="mb-1 creative-title">Construyamos una Honduras Próspera Juntos</h2>
               </CardTitle>
             </CardHeader>
             
