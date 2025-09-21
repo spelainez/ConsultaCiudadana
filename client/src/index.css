@@ -1,0 +1,173 @@
+@import url('https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css');
+@import url('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Honduras Colors */
+  --honduras-primary: hsl(188, 85%, 51%);
+  --honduras-primary-dark: hsl(188, 85%, 30%);
+  --honduras-bg-light: hsl(0, 0%, 96%);
+  --honduras-white: hsl(0, 0%, 100%);
+  
+  /* Shadcn Variables */
+  --background: var(--honduras-white);
+  --foreground: hsl(210, 25%, 8%);
+  --card: var(--honduras-white);
+  --card-foreground: hsl(210, 25%, 8%);
+  --popover: var(--honduras-white);
+  --popover-foreground: hsl(210, 25%, 8%);
+  --primary: var(--honduras-primary);
+  --primary-foreground: hsl(0, 0%, 0%);
+  --secondary: hsl(210, 25%, 8%);
+  --secondary-foreground: var(--honduras-white);
+  --muted: var(--honduras-bg-light);
+  --muted-foreground: hsl(210, 25%, 8%);
+  --accent: hsl(211, 51%, 93%);
+  --accent-foreground: var(--honduras-primary);
+  --destructive: hsl(356, 91%, 54%);
+  --destructive-foreground: var(--honduras-white);
+  --border: hsl(201, 30%, 91%);
+  --input: hsl(200, 23%, 97%);
+  --ring: var(--honduras-primary);
+  --chart-1: var(--honduras-primary);
+  --chart-2: hsl(160, 100%, 36%);
+  --chart-3: hsl(42, 93%, 56%);
+  --chart-4: hsl(147, 79%, 42%);
+  --chart-5: hsl(341, 75%, 51%);
+  --sidebar: var(--honduras-bg-light);
+  --sidebar-foreground: hsl(210, 25%, 8%);
+  --sidebar-primary: var(--honduras-primary);
+  --sidebar-primary-foreground: var(--honduras-white);
+  --sidebar-accent: hsl(211, 51%, 93%);
+  --sidebar-accent-foreground: var(--honduras-primary);
+  --sidebar-border: hsl(205, 25%, 91%);
+  --sidebar-ring: var(--honduras-primary);
+  --font-sans: 'Inter', sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: 'Fira Code', monospace;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: hsl(0, 0%, 0%);
+  --foreground: hsl(200, 7%, 91%);
+  --card: hsl(228, 10%, 10%);
+  --card-foreground: hsl(0, 0%, 85%);
+  --popover: hsl(0, 0%, 0%);
+  --popover-foreground: hsl(200, 7%, 91%);
+  --primary: var(--honduras-primary);
+  --primary-foreground: hsl(0, 0%, 0%);
+  --secondary: hsl(195, 15%, 95%);
+  --secondary-foreground: hsl(210, 25%, 8%);
+  --muted: hsl(0, 0%, 9%);
+  --muted-foreground: hsl(210, 3%, 46%);
+  --accent: hsl(206, 70%, 8%);
+  --accent-foreground: var(--honduras-primary);
+  --destructive: hsl(356, 91%, 54%);
+  --destructive-foreground: var(--honduras-white);
+  --border: hsl(210, 5%, 15%);
+  --input: hsl(208, 28%, 18%);
+  --ring: var(--honduras-primary);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Bootstrap Customizations for Honduras Theme */
+.btn-primary {
+  background-color: var(--honduras-primary);
+  border-color: var(--honduras-primary);
+  color: #000;
+}
+
+.btn-primary:hover {
+  background-color: var(--honduras-primary-dark);
+  border-color: var(--honduras-primary-dark);
+  color: var(--honduras-white);
+}
+
+.navbar-brand {
+  color: var(--honduras-primary) !important;
+  font-weight: bold;
+}
+
+.bg-primary-custom {
+  background-color: var(--honduras-primary) !important;
+}
+
+.text-primary-custom {
+  color: var(--honduras-primary) !important;
+}
+
+.border-primary-custom {
+  border-color: var(--honduras-primary) !important;
+}
+
+.sector-tag {
+  background-color: var(--honduras-bg-light);
+  border: 1px solid var(--honduras-primary);
+  border-radius: 20px;
+  padding: 5px 12px;
+  margin: 2px;
+  display: inline-block;
+  font-size: 0.875rem;
+}
+
+.location-selector {
+  border-left: 3px solid var(--honduras-primary);
+}
+
+.form-section {
+  background-color: var(--honduras-white);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.dashboard-card {
+  transition: transform 0.2s;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-2px);
+}
+
+.navbar {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.sidebar {
+  background-color: var(--honduras-bg-light);
+  min-height: calc(100vh - 76px);
+}
+
+.chart-container {
+  position: relative;
+  height: 300px;
+}
+
+/* Custom scrollbar for better UX */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--honduras-bg-light);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--honduras-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--honduras-primary-dark);
+}
