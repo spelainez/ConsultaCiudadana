@@ -652,7 +652,7 @@ export function ConsultationForm() {
                   <Textarea
                     id="message"
                     rows={5}
-                    placeholder="Ingrese su consulta, sugerencia o preocupación"
+                    placeholder="Ejemplo: En mi barrio necesitamos mejor alumbrado público."
                     {...form.register("message")}
                     data-testid="textarea-message"
                   />
