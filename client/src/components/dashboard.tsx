@@ -266,13 +266,6 @@ export function Dashboard() {
               >
                 <BarChart3 className="w-4 h-4 me-2" />Resumen
               </button>
-              <button 
-                className={`nav-link ${activeView === 'consultations' ? 'active' : ''}`} 
-                onClick={() => setActiveView('consultations')}
-                data-testid="nav-consultations"
-              >
-                <MessageSquare className="w-4 h-4 me-2" />Consultas
-              </button>
               {user?.role === "super_admin" && (
                 <button 
                   className={`nav-link ${activeView === 'users' ? 'active' : ''}`} 
