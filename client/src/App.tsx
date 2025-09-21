@@ -18,14 +18,9 @@ function Router() {
         <Route path="/" component={HomePage} />
         <Route path="/auth" component={AuthPage} />
         <ProtectedRoute 
-          path="/dashboard" 
-          component={() => <Dashboard />} 
-          requiredRole={["admin", "super_admin"]} 
-        />
-        <ProtectedRoute 
           path="/admin" 
           component={() => <Dashboard />} 
-          requiredRole={["super_admin"]} 
+          requiredRole={["admin", "super_admin"]} 
         />
         <Route component={NotFound} />
       </Switch>

@@ -32,7 +32,7 @@ export default function AuthPage() {
 
   // Redirect if already logged in
   if (user) {
-    return <Redirect to="/" />;
+    return <Redirect to="/admin" />;
   }
 
   const onLogin = (data: LoginFormData) => {

@@ -34,9 +34,9 @@ export function Navbar() {
             {user && (user.role === 'admin' || user.role === 'super_admin') && (
               <li className="nav-item">
                 <Link 
-                  href="/dashboard" 
-                  className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`}
-                  data-testid="nav-dashboard"
+                  href="/admin" 
+                  className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
+                  data-testid="nav-admin-dashboard"
                 >
                   <i className="bi bi-graph-up me-1"></i>Dashboard
                 </Link>
@@ -65,17 +65,7 @@ export function Navbar() {
                   <i className="bi bi-box-arrow-right me-1"></i>Salir
                 </button>
               </li>
-            ) : (
-              <li className="nav-item">
-                <Link 
-                  href="/auth" 
-                  className={`nav-link ${isActive('/auth') ? 'active' : ''}`}
-                  data-testid="nav-login"
-                >
-                  <i className="bi bi-box-arrow-in-right me-1"></i>Iniciar Sesión
-                </Link>
-              </li>
-            )}
+            ) : null}
           </ul>
         </div>
       </div>

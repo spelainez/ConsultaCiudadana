@@ -1,0 +1,73 @@
+Corrige la lógica y la UI de autenticación y rutas del proyecto con estas reglas precisas:
+
+Rutas principales
+
+La ruta pública principal / debe ser la página de formulario ciudadano (acceso libre, sin login).
+
+La ruta /auth NO debe ser la página principal. /auth será exclusivamente la ruta de acceso administrativo y no debe aparecer como navegación pública en el sitio.
+
+Todas las rutas administrativas deben estar protegidas bajo /admin (por ejemplo: /admin/dashboard, /admin/users).
+
+Acceso administrativo
+
+El formulario de login en /auth debe pedir solo:
+
+username (nombre de usuario)
+
+password (contraseña)
+
+No incluir campo de correo en ningún lugar.
+
+Eliminar cualquier opción de "Registrarse" de la interfaz pública y de la página /auth. La creación de cuentas solo se hace desde el panel del Super Administrador (interno).
+
+Visibilidad y navegación
+
+No mostrar enlaces hacia /auth en el header/footer público.
+
+Si un usuario no autenticado intenta acceder a /admin o subrutas, redirigir a /auth.
+
+/ (formulario ciudadano) debe ser la landing pública (sin login ni llamada a autenticación).
+
+UI / Usabilidad del login
+
+Input de contraseña con ícono de ojo para alternar mostrar/ocultar.
+
+Botón Iniciar Sesión: color #1bd1e8 (texto blanco), hover #17b8cd, bordes redondeados, responsive.
+
+Subtítulo en la tarjeta de login: "Acceso exclusivo para administradores autorizados".
+
+Mostrar mensajes claros de error (ej.: "Usuario o contraseña incorrectos") sin revelar detalles.
+
+Seguridad / Backend
+
+Hash de contraseñas con bcrypt antes de almacenar.
+
+Autenticación con JWT (tokens con expiración razonable).
+
+Endpoint /auth/login (POST) que reciba { username, password } y devuelva token.
+
+Implementar middleware que valide JWT para rutas /admin/*.
+
+Añadir limitación de intentos (rate limiting / bloqueo temporal) en /auth/login para evitar fuerza bruta.
+
+Gestión de usuarios
+
+Solo el rol super_admin puede crear/editar/eliminar usuarios administradores desde el panel interno (/admin/users).
+
+La creación de usuarios admin requiere:
+
+username (obligatorio)
+
+password (obligatorio)
+
+role (admin_planificador)
+
+Email no se usa en ningún flujo.
+
+Mensajes y guía para desarrollador
+
+Ajusta cualquier referencia o enlace que apunte a /auth como página principal y cámbiala para que apunte a /.
+
+Revisa todos los menús y botones: quitar cualquier CTA de registro público.
+
+Asegura que el formulario público en / no tenga links o elementos que pidan autenticación.
