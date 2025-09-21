@@ -311,16 +311,12 @@
 
 /* Creative Title Styles */
 .creative-title {
-  background: linear-gradient(135deg, #61c8d8 0%, #1bd1e8 50%, #17b8cd 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  color: transparent;
+  color: white;
   font-weight: 700;
   font-size: 2.5rem;
   letter-spacing: -0.02em;
   line-height: 1.2;
-  text-shadow: 0 4px 8px rgba(97, 200, 216, 0.2);
+  text-shadow: 0 4px 8px rgba(97, 200, 216, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
   position: relative;
   display: inline-block;
   animation: creativeGlow 3s ease-in-out infinite alternate;
