@@ -686,7 +686,7 @@ export function ConsultationForm() {
                     disabled={createConsultationMutation.isPending || selectedSectors.length === 0}
                     data-testid="button-submit"
                   >
-                    Enviar Consulta
+                    Enviar Consulta Ciudadana
                     {createConsultationMutation.isPending && (
                       <Loader2 className="w-4 h-4 ms-2 animate-spin" />
                     )}
