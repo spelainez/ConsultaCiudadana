@@ -29,7 +29,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Calendar, Filter, Download, RefreshCw, Eye, ChevronDown, BarChart3, PieChart, MapPin, MessageSquare } from "lucide-react";
 import { UserManagementSPE } from "./user-management-spe";
-import { NavbarAdmin } from "./navbar-admin";
 
 export function Dashboard() {
   const { toast } = useToast();
