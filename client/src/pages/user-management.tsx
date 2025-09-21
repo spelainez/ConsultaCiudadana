@@ -170,7 +170,7 @@ export default function UserManagement() {
     defaultValues: {
       username: "",
       password: "",
-      role: "ciudadano",
+      role: "planificador",
     },
   });
 
@@ -491,10 +491,7 @@ export default function UserManagement() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="ciudadano">Ciudadano</SelectItem>
                         <SelectItem value="planificador">Planificador</SelectItem>
-                        <SelectItem value="admin">Administrador</SelectItem>
-                        <SelectItem value="super_admin">Super Admin</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
