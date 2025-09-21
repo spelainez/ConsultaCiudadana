@@ -140,6 +140,52 @@
   box-shadow: 0 4px 8px rgba(27, 209, 232, 0.3) !important;
 }
 
+/* Password Toggle Styles */
+.password-input-container {
+  position: relative;
+}
+
+.password-input {
+  padding-right: 45px !important;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.password-toggle-btn:hover {
+  background-color: rgba(27, 209, 232, 0.1);
+}
+
+.password-toggle-icon {
+  width: 18px;
+  height: 18px;
+  color: #999;
+  transition: color 0.2s ease;
+}
+
+.password-toggle-btn:hover .password-toggle-icon {
+  color: #1bd1e8;
+}
+
+.password-toggle-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(27, 209, 232, 0.2);
+}
+
 .navbar-brand {
   color: var(--honduras-primary) !important;
   font-weight: bold;

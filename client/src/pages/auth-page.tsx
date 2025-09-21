@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -7,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ShieldCheck, MessageSquare, BarChart3 } from "lucide-react";
+import { Loader2, ShieldCheck, MessageSquare, BarChart3, Eye, EyeOff } from "lucide-react";
 
 const loginSchema = z.object({
   username: z.string().min(1, "El usuario es requerido"),
@@ -18,6 +19,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function AuthPage() {
   const { user, loginMutation } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -73,13 +75,28 @@ export default function AuthPage() {
 
                     <div className="mb-3">
                       <Label htmlFor="loginPassword">Contraseña</Label>
-                      <Input
-                        id="loginPassword"
-                        type="password"
-                        placeholder="Ingrese su contraseña"
-                        {...loginForm.register("password")}
-                        data-testid="input-loginPassword"
-                      />
+                      <div className="password-input-container position-relative">
+                        <Input
+                          id="loginPassword"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Ingrese su contraseña"
+                          {...loginForm.register("password")}
+                          data-testid="input-loginPassword"
+                          className="password-input"
+                        />
+                        <button
+                          type="button"
+                          className="password-toggle-btn"
+                          onClick={() => setShowPassword(!showPassword)}
+                          data-testid="button-toggle-password"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="password-toggle-icon" />
+                          ) : (
+                            <Eye className="password-toggle-icon" />
+                          )}
+                        </button>
+                      </div>
                       {loginForm.formState.errors.password && (
                         <div className="text-danger small">
                           {loginForm.formState.errors.password.message}
