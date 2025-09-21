@@ -361,7 +361,7 @@ export function ConsultationForm() {
 
                 {/* Modern Location Selection */}
                 <div className="modern-location-selector mb-4">
-                  <h5 className="mb-4 text-center">
+                  <h5 className="mb-4">
                     Ubicación
                   </h5>
                   
