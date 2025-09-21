@@ -889,11 +889,34 @@ export function Dashboard() {
                           </TableCell>
                         </TableRow>
                       )) : (
-                        <TableRow>
-                          <TableCell colSpan={9} className="text-center text-gray-500 py-4">
-                            No hay consultas disponibles
-                          </TableCell>
-                        </TableRow>
+                        <>
+                          {/* Filas vacías para mantener la estructura visible */}
+                          {[...Array(5)].map((_, index) => (
+                            <TableRow key={`empty-${index}`} className="h-16">
+                              <TableCell className="text-center text-gray-300">-</TableCell>
+                              <TableCell className="text-center text-gray-300">-</TableCell>
+                              <TableCell className="text-center text-gray-300">-</TableCell>
+                              <TableCell className="text-center text-gray-300">-</TableCell>
+                              <TableCell className="text-center text-gray-300">-</TableCell>
+                              <TableCell className="text-center text-gray-300">-</TableCell>
+                              <TableCell className="text-center text-gray-300">-</TableCell>
+                              <TableCell className="text-center text-gray-300">-</TableCell>
+                              <TableCell className="text-center text-gray-300">-</TableCell>
+                            </TableRow>
+                          ))}
+                          {/* Mensaje de no hay datos en una fila separada */}
+                          <TableRow>
+                            <TableCell colSpan={9} className="text-center text-gray-500 py-4 bg-gray-50 border-t-2 border-gray-200">
+                              <div className="flex flex-col items-center justify-center">
+                                <div className="mb-2">
+                                  <BarChart3 className="w-8 h-8 text-gray-400" />
+                                </div>
+                                <p className="font-medium text-lg mb-1">No hay consultas disponibles</p>
+                                <p className="text-sm text-gray-400">Los datos aparecerán aquí cuando estén disponibles</p>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        </>
                       )}
                     </TableBody>
                   </Table>
