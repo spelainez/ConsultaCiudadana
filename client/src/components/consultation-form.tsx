@@ -52,8 +52,8 @@ export function ConsultationForm() {
   });
 
   const { data: localities = [] } = useQuery<any[]>({
-    queryKey: ["/api/localities", form.watch("municipalityId"), selectedZone],
-    enabled: !!form.watch("municipalityId") && !!selectedZone,
+    queryKey: ["/api/localities", form.watch("municipalityId")],
+    enabled: !!form.watch("municipalityId"),
   });
 
   const { data: sectors = [] } = useQuery<any[]>({
@@ -215,150 +215,145 @@ export function ConsultationForm() {
                     </div>
 
                     {/* Información Personal - Persona Natural */}
-                    <div className="conditional-fields mt-4">
-                      <h6 className="mb-3 text-muted">Información de Persona Natural</h6>
-                      <div className="row mb-3">
-                        <div className="col-md-6">
-                          <Label htmlFor="firstName">Primer Nombre *</Label>
-                          <Input
-                            id="firstName"
-                            {...form.register("firstName")}
-                            data-testid="input-firstName"
-                            disabled={personType !== "natural"}
-                            placeholder={personType !== "natural" ? "Solo para personas naturales" : "Ingrese su primer nombre"}
-                          />
-                          {form.formState.errors.firstName && (
-                            <div className="text-danger small">{form.formState.errors.firstName.message}</div>
-                          )}
+                    {personType === "natural" && (
+                      <div className="conditional-fields mt-4">
+                        <h6 className="mb-3 text-muted">Información de Persona Natural</h6>
+                        <div className="row mb-3">
+                          <div className="col-md-6">
+                            <Label htmlFor="firstName">Primer Nombre *</Label>
+                            <Input
+                              id="firstName"
+                              {...form.register("firstName")}
+                              data-testid="input-firstName"
+                              placeholder="Ingrese su primer nombre"
+                            />
+                            {form.formState.errors.firstName && (
+                              <div className="text-danger small">{form.formState.errors.firstName.message}</div>
+                            )}
+                          </div>
+                          <div className="col-md-6">
+                            <Label htmlFor="lastName">Apellido *</Label>
+                            <Input
+                              id="lastName"
+                              {...form.register("lastName")}
+                              data-testid="input-lastName"
+                              placeholder="Ingrese su apellido"
+                            />
+                            {form.formState.errors.lastName && (
+                              <div className="text-danger small">{form.formState.errors.lastName.message}</div>
+                            )}
+                          </div>
                         </div>
-                        <div className="col-md-6">
-                          <Label htmlFor="lastName">Apellido *</Label>
-                          <Input
-                            id="lastName"
-                            {...form.register("lastName")}
-                            data-testid="input-lastName"
-                            disabled={personType !== "natural"}
-                            placeholder={personType !== "natural" ? "Solo para personas naturales" : "Ingrese su apellido"}
-                          />
-                          {form.formState.errors.lastName && (
-                            <div className="text-danger small">{form.formState.errors.lastName.message}</div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="row mb-3">
-                        <div className="col-md-6">
-                          <Label htmlFor="identity">Número de Identidad *</Label>
-                          <Input
-                            id="identity"
-                            placeholder={personType !== "natural" ? "Solo para personas naturales" : "0801-1990-12345"}
-                            {...form.register("identity")}
-                            data-testid="input-identity"
-                            disabled={personType !== "natural"}
-                          />
-                          {form.formState.errors.identity && (
-                            <div className="text-danger small">{form.formState.errors.identity.message}</div>
-                          )}
-                        </div>
-                        <div className="col-md-6">
-                          <Label htmlFor="email">Correo Electrónico *</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            {...form.register("email")}
-                            data-testid="input-email"
-                            disabled={personType !== "natural"}
-                            placeholder={personType !== "natural" ? "Solo para personas naturales" : "nombre@ejemplo.com"}
-                          />
-                          {form.formState.errors.email && (
-                            <div className="text-danger small">{form.formState.errors.email.message}</div>
-                          )}
+                        <div className="row mb-3">
+                          <div className="col-md-6">
+                            <Label htmlFor="identity">Número de Identidad *</Label>
+                            <Input
+                              id="identity"
+                              placeholder="0801-1990-12345"
+                              {...form.register("identity")}
+                              data-testid="input-identity"
+                            />
+                            {form.formState.errors.identity && (
+                              <div className="text-danger small">{form.formState.errors.identity.message}</div>
+                            )}
+                          </div>
+                          <div className="col-md-6">
+                            <Label htmlFor="email">Correo Electrónico *</Label>
+                            <Input
+                              id="email"
+                              type="email"
+                              {...form.register("email")}
+                              data-testid="input-email"
+                              placeholder="nombre@ejemplo.com"
+                            />
+                            {form.formState.errors.email && (
+                              <div className="text-danger small">{form.formState.errors.email.message}</div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
 
                 {/* Información Personal - Persona Jurídica */}
-                <div className="conditional-fields mt-4">
-                  <h6 className="mb-3 text-muted">Información de Persona Jurídica</h6>
-                  <div className="row mb-3">
-                    <div className="col-md-6">
-                      <Label htmlFor="companyName">Nombre de la Empresa *</Label>
-                      <Input
-                        id="companyName"
-                        {...form.register("companyName")}
-                        data-testid="input-companyName"
-                        disabled={personType !== "juridica"}
-                        placeholder={personType !== "juridica" ? "Solo para personas jurídicas" : "Nombre de su empresa"}
-                      />
-                      {form.formState.errors.companyName && (
-                        <div className="text-danger small">{form.formState.errors.companyName.message}</div>
-                      )}
+                {personType === "juridica" && (
+                  <div className="conditional-fields mt-4">
+                    <h6 className="mb-3 text-muted">Información de Persona Jurídica</h6>
+                    <div className="row mb-3">
+                      <div className="col-md-6">
+                        <Label htmlFor="companyName">Nombre de la Empresa *</Label>
+                        <Input
+                          id="companyName"
+                          {...form.register("companyName")}
+                          data-testid="input-companyName"
+                          placeholder="Nombre de su empresa"
+                        />
+                        {form.formState.errors.companyName && (
+                          <div className="text-danger small">{form.formState.errors.companyName.message}</div>
+                        )}
+                      </div>
+                      <div className="col-md-6">
+                        <Label htmlFor="rtn">RTN *</Label>
+                        <Input
+                          id="rtn"
+                          placeholder="08019901234567"
+                          {...form.register("rtn")}
+                          data-testid="input-rtn"
+                        />
+                        {form.formState.errors.rtn && (
+                          <div className="text-danger small">{form.formState.errors.rtn.message}</div>
+                        )}
+                      </div>
                     </div>
-                    <div className="col-md-6">
-                      <Label htmlFor="rtn">RTN *</Label>
-                      <Input
-                        id="rtn"
-                        placeholder={personType !== "juridica" ? "Solo para personas jurídicas" : "08019901234567"}
-                        {...form.register("rtn")}
-                        data-testid="input-rtn"
-                        disabled={personType !== "juridica"}
-                      />
-                      {form.formState.errors.rtn && (
-                        <div className="text-danger small">{form.formState.errors.rtn.message}</div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="row mb-3">
-                    <div className="col-md-6">
-                      <Label htmlFor="legalRepresentative">Representante Legal *</Label>
-                      <Input
-                        id="legalRepresentative"
-                        {...form.register("legalRepresentative")}
-                        data-testid="input-legalRepresentative"
-                        disabled={personType !== "juridica"}
-                        placeholder={personType !== "juridica" ? "Solo para personas jurídicas" : "Nombre del representante"}
-                      />
-                      {form.formState.errors.legalRepresentative && (
-                        <div className="text-danger small">{form.formState.errors.legalRepresentative.message}</div>
-                      )}
-                    </div>
-                    <div className="col-md-6">
-                      <Label htmlFor="companyContact">Correo/Teléfono *</Label>
-                      <Input
-                        id="companyContact"
-                        {...form.register("companyContact")}
-                        data-testid="input-companyContact"
-                        disabled={personType !== "juridica"}
-                        placeholder={personType !== "juridica" ? "Solo para personas jurídicas" : "empresa@ejemplo.com"}
-                      />
-                      {form.formState.errors.companyContact && (
-                        <div className="text-danger small">{form.formState.errors.companyContact.message}</div>
-                      )}
+                    <div className="row mb-3">
+                      <div className="col-md-6">
+                        <Label htmlFor="legalRepresentative">Representante Legal *</Label>
+                        <Input
+                          id="legalRepresentative"
+                          {...form.register("legalRepresentative")}
+                          data-testid="input-legalRepresentative"
+                          placeholder="Nombre del representante"
+                        />
+                        {form.formState.errors.legalRepresentative && (
+                          <div className="text-danger small">{form.formState.errors.legalRepresentative.message}</div>
+                        )}
+                      </div>
+                      <div className="col-md-6">
+                        <Label htmlFor="companyContact">Correo/Teléfono *</Label>
+                        <Input
+                          id="companyContact"
+                          {...form.register("companyContact")}
+                          data-testid="input-companyContact"
+                          placeholder="empresa@ejemplo.com"
+                        />
+                        {form.formState.errors.companyContact && (
+                          <div className="text-danger small">{form.formState.errors.companyContact.message}</div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Optional Contact Information */}
-                <div className="mt-4">
-                  <h6 className="mb-3 text-muted">Información de Contacto (Opcional)</h6>
+                {personType !== "anonimo" && (
+                  <div className="mt-4">
+                    <h6 className="mb-3 text-muted">Información de Contacto (Opcional)</h6>
                     <div className="row mb-3">
                       <div className="col-md-4">
                         <Label htmlFor="mobile">Celular</Label>
                         <Input
                           id="mobile"
-                          placeholder={personType === "anonimo" ? "No disponible para usuarios anónimos" : "+504 9999-9999"}
+                          placeholder="+504 9999-9999"
                           {...form.register("mobile")}
                           data-testid="input-mobile"
-                          disabled={personType === "anonimo"}
                         />
                       </div>
                       <div className="col-md-4">
                         <Label htmlFor="phone">Teléfono Fijo</Label>
                         <Input
                           id="phone"
-                          placeholder={personType === "anonimo" ? "No disponible para usuarios anónimos" : "+504 2222-2222"}
+                          placeholder="+504 2222-2222"
                           {...form.register("phone")}
                           data-testid="input-phone"
-                          disabled={personType === "anonimo"}
                         />
                       </div>
                       <div className="col-md-4">
@@ -368,12 +363,12 @@ export function ConsultationForm() {
                           type="email"
                           {...form.register("altEmail")}
                           data-testid="input-altEmail"
-                          placeholder={personType === "anonimo" ? "No disponible para usuarios anónimos" : "correo@ejemplo.com"}
-                          disabled={personType === "anonimo"}
+                          placeholder="correo@ejemplo.com"
                         />
                       </div>
                     </div>
-                </div>
+                  </div>
+                )}
                   </CardContent>
                 </Card>
 
