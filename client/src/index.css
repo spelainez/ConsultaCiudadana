@@ -6,11 +6,18 @@
 
 :root {
   /* Honduras Colors */
-  --honduras-primary: hsl(188, 85%, 51%);
-  --honduras-primary-dark: hsl(188, 85%, 30%);
+  --honduras-primary: #1bd1e8;
+  --honduras-primary-dark: #17b8cd;
+  --honduras-secondary: #88cfe0;
   --honduras-bg-light: hsl(0, 0%, 96%);
   --honduras-white: hsl(0, 0%, 100%);
-  --honduras-text: #88cfe0;
+  --honduras-text-dark: hsl(220, 15%, 15%);
+  
+  /* Bootstrap Color Overrides */
+  --bs-primary: var(--honduras-primary);
+  --bs-primary-rgb: 27, 209, 232;
+  --bs-link-color: var(--honduras-primary);
+  --bs-link-hover-color: var(--honduras-primary-dark);
   
   /* Placeholder Colors */
   --placeholder-light: hsl(0, 0%, 75%);
@@ -18,17 +25,17 @@
   
   /* Shadcn Variables */
   --background: var(--honduras-white);
-  --foreground: var(--honduras-text);
+  --foreground: var(--honduras-text-dark);
   --card: var(--honduras-white);
-  --card-foreground: var(--honduras-text);
+  --card-foreground: var(--honduras-text-dark);
   --popover: var(--honduras-white);
-  --popover-foreground: var(--honduras-text);
+  --popover-foreground: var(--honduras-text-dark);
   --primary: var(--honduras-primary);
-  --primary-foreground: var(--honduras-text);
-  --secondary: var(--honduras-text);
+  --primary-foreground: var(--honduras-white);
+  --secondary: var(--honduras-secondary);
   --secondary-foreground: var(--honduras-white);
   --muted: var(--honduras-bg-light);
-  --muted-foreground: var(--honduras-text);
+  --muted-foreground: var(--honduras-text-dark);
   --accent: hsl(211, 51%, 93%);
   --accent-foreground: var(--honduras-primary);
   --destructive: hsl(356, 91%, 54%);
@@ -42,7 +49,7 @@
   --chart-4: hsl(147, 79%, 42%);
   --chart-5: hsl(341, 75%, 51%);
   --sidebar: var(--honduras-bg-light);
-  --sidebar-foreground: var(--honduras-text);
+  --sidebar-foreground: var(--honduras-text-dark);
   --sidebar-primary: var(--honduras-primary);
   --sidebar-primary-foreground: var(--honduras-white);
   --sidebar-accent: hsl(211, 51%, 93%);
@@ -63,9 +70,9 @@
   --popover: hsl(228, 10%, 10%);
   --popover-foreground: hsl(200, 7%, 91%);
   --primary: var(--honduras-primary);
-  --primary-foreground: var(--honduras-text);
-  --secondary: hsl(195, 15%, 95%);
-  --secondary-foreground: var(--honduras-text);
+  --primary-foreground: var(--honduras-white);
+  --secondary: var(--honduras-secondary);
+  --secondary-foreground: var(--honduras-white);
   --muted: hsl(0, 0%, 9%);
   --muted-foreground: hsl(210, 3%, 46%);
   --accent: hsl(206, 70%, 8%);
@@ -104,7 +111,7 @@
 .btn-primary {
   background-color: var(--honduras-primary);
   border-color: var(--honduras-primary);
-  color: var(--honduras-text);
+  color: var(--honduras-white);
 }
 
 .btn-primary:hover {
@@ -115,9 +122,9 @@
 
 /* Admin Login Button Styles */
 .btn-admin-login {
-  background-color: #1bd1e8 !important;
-  border-color: #1bd1e8 !important;
-  color: white !important;
+  background-color: var(--honduras-primary) !important;
+  border-color: var(--honduras-primary) !important;
+  color: var(--honduras-white) !important;
   border-radius: 8px !important;
   box-shadow: 0 2px 4px rgba(27, 209, 232, 0.2) !important;
   font-weight: 500;
@@ -125,18 +132,18 @@
 }
 
 .btn-admin-login:hover {
-  background-color: #17b8cd !important;
-  border-color: #17b8cd !important;
-  color: white !important;
+  background-color: var(--honduras-primary-dark) !important;
+  border-color: var(--honduras-primary-dark) !important;
+  color: var(--honduras-white) !important;
   box-shadow: 0 4px 8px rgba(27, 209, 232, 0.3) !important;
   transform: translateY(-1px);
 }
 
 .btn-admin-login:focus,
 .btn-admin-login:active {
-  background-color: #17b8cd !important;
-  border-color: #17b8cd !important;
-  color: white !important;
+  background-color: var(--honduras-primary-dark) !important;
+  border-color: var(--honduras-primary-dark) !important;
+  color: var(--honduras-white) !important;
   box-shadow: 0 4px 8px rgba(27, 209, 232, 0.3) !important;
 }
 
@@ -178,7 +185,7 @@
 }
 
 .password-toggle-btn:hover .password-toggle-icon {
-  color: #1bd1e8;
+  color: var(--honduras-primary);
 }
 
 .password-toggle-btn:focus {
@@ -223,9 +230,9 @@
 }
 
 .accessibility-button {
-  background-color: #1bd1e8 !important;
-  border-color: #1bd1e8 !important;
-  color: white !important;
+  background-color: var(--honduras-primary) !important;
+  border-color: var(--honduras-primary) !important;
+  color: var(--honduras-white) !important;
   width: 50px;
   height: 50px;
   border-radius: 50%;
@@ -237,14 +244,14 @@
 }
 
 .accessibility-button:hover {
-  background-color: #17b8cd !important;
-  border-color: #17b8cd !important;
+  background-color: var(--honduras-primary-dark) !important;
+  border-color: var(--honduras-primary-dark) !important;
   transform: scale(1.1);
   box-shadow: 0 6px 16px rgba(27, 209, 232, 0.4);
 }
 
 .accessibility-button:focus {
-  outline: 3px solid #1bd1e8;
+  outline: 3px solid var(--honduras-primary);
   outline-offset: 2px;
 }
 
@@ -268,7 +275,7 @@
   gap: 0.5rem;
   font-weight: 600;
   margin-bottom: 0.75rem;
-  color: #1bd1e8;
+  color: var(--honduras-primary);
 }
 
 .accessibility-controls-row {
@@ -285,8 +292,8 @@
 .accessibility-font-indicator {
   min-width: 60px;
   text-align: center;
-  background-color: #1bd1e8;
-  color: white;
+  background-color: var(--honduras-primary);
+  color: var(--honduras-white);
 }
 
 .accessibility-help-text {
@@ -317,21 +324,21 @@
 .accessibility-visual-guides [role="button"],
 .accessibility-visual-guides button {
   text-decoration: underline !important;
-  outline: 2px solid #1bd1e8 !important;
+  outline: 2px solid var(--honduras-primary) !important;
   outline-offset: 2px !important;
 }
 
 .accessibility-visual-guides input,
 .accessibility-visual-guides textarea,
 .accessibility-visual-guides select {
-  border: 3px solid #1bd1e8 !important;
+  border: 3px solid var(--honduras-primary) !important;
   box-shadow: 0 0 0 2px rgba(27, 209, 232, 0.3) !important;
 }
 
 .accessibility-visual-guides input:focus,
 .accessibility-visual-guides textarea:focus,
 .accessibility-visual-guides select:focus {
-  border-color: #17b8cd !important;
+  border-color: var(--honduras-primary-dark) !important;
   box-shadow: 0 0 0 4px rgba(27, 209, 232, 0.5) !important;
 }
 
@@ -386,7 +393,7 @@
 .form-section-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #1bd1e8;
+  color: var(--honduras-primary);
   margin: 0;
   margin-bottom: 8px;
 }
@@ -408,7 +415,7 @@
   display: inline-block;
   width: 6px;
   height: 6px;
-  background-color: #1bd1e8;
+  background-color: var(--honduras-primary);
   border-radius: 50%;
   margin-right: 12px;
   vertical-align: middle;
@@ -492,7 +499,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, #61c8d8 0%, #1bd1e8 50%, #17b8cd 100%);
+  background: linear-gradient(135deg, var(--honduras-secondary) 0%, var(--honduras-primary) 50%, var(--honduras-primary-dark) 100%);
   border-radius: 12px;
   opacity: 0.1;
   z-index: -1;
@@ -507,7 +514,7 @@
   left: -2px;
   right: -2px;
   bottom: -2px;
-  background: linear-gradient(45deg, #61c8d8, #1bd1e8, #17b8cd, #61c8d8);
+  background: linear-gradient(45deg, var(--honduras-secondary), var(--honduras-primary), var(--honduras-primary-dark), var(--honduras-secondary));
   border-radius: 14px;
   opacity: 0.3;
   z-index: -2;
@@ -597,11 +604,11 @@
 .person-type-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border-color: #1bd1e8;
+  border-color: var(--honduras-primary);
 }
 
 .person-type-card.selected {
-  border-color: #1bd1e8;
+  border-color: var(--honduras-primary);
   box-shadow: 0 4px 12px rgba(27, 209, 232, 0.15);
   background-color: #f8fdff;
 }
@@ -613,7 +620,7 @@
 }
 
 .person-type-card.selected .person-type-content h6 {
-  color: #1bd1e8;
+  color: var(--honduras-primary);
 }
 
 /* Conditional Fields Animation */
@@ -669,7 +676,7 @@
 
 .location-label {
   font-weight: 500;
-  color: #1bd1e8;
+  color: var(--honduras-primary);
   font-size: 0.8rem;
   margin-bottom: 8px;
   display: block;
@@ -686,12 +693,12 @@
 }
 
 .location-select:hover {
-  border-color: #1bd1e8;
+  border-color: var(--honduras-primary);
   box-shadow: 0 2px 8px rgba(27, 209, 232, 0.15);
 }
 
 .location-select:focus-within {
-  border-color: #1bd1e8;
+  border-color: var(--honduras-primary);
   box-shadow: 0 0 0 3px rgba(27, 209, 232, 0.1);
 }
 
@@ -715,13 +722,13 @@
 }
 
 .zone-card:hover {
-  border-color: #1bd1e8;
+  border-color: var(--honduras-primary);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(27, 209, 232, 0.15);
 }
 
 .zone-card.selected {
-  border-color: #1bd1e8;
+  border-color: var(--honduras-primary);
   background: linear-gradient(135deg, #f8fdff 0%, #ffffff 100%);
   box-shadow: 0 4px 16px rgba(27, 209, 232, 0.2);
 }
@@ -744,7 +751,7 @@
 }
 
 .zone-card.selected .zone-text {
-  color: #1bd1e8;
+  color: var(--honduras-primary);
 }
 
 .zone-subtitle {
@@ -768,7 +775,7 @@
 }
 
 .geocode-label {
-  color: #1bd1e8;
+  color: var(--honduras-primary);
   font-weight: 500;
   font-size: 0.7rem;
   margin-bottom: 4px;
@@ -861,9 +868,9 @@
 
 /* Submit Button - Primary Honduras Style */
 .btn-submit-custom {
-  background-color: #1bd1e8 !important;
-  border-color: #1bd1e8 !important;
-  color: #ffffff !important;
+  background-color: var(--honduras-primary) !important;
+  border-color: var(--honduras-primary) !important;
+  color: var(--honduras-white) !important;
   font-weight: 600;
   font-size: 1.1rem;
   padding: 16px 32px;
@@ -872,7 +879,7 @@
   transition: all 0.3s ease;
   text-transform: none;
   letter-spacing: 0.5px;
-  border: 2px solid #1bd1e8;
+  border: 2px solid var(--honduras-primary);
   width: 100%;
   min-height: 56px;
   display: flex;
@@ -881,9 +888,9 @@
 }
 
 .btn-submit-custom:hover:not(:disabled) {
-  background-color: #17b8cd !important;
-  border-color: #17b8cd !important;
-  color: #ffffff !important;
+  background-color: var(--honduras-primary-dark) !important;
+  border-color: var(--honduras-primary-dark) !important;
+  color: var(--honduras-white) !important;
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(23, 184, 205, 0.4);
 }
@@ -904,9 +911,9 @@
 
 /* Reset Button - Outline Honduras Style */
 .btn-reset-custom {
-  background-color: #ffffff !important;
-  border-color: #1bd1e8 !important;
-  color: #1bd1e8 !important;
+  background-color: var(--honduras-white) !important;
+  border-color: var(--honduras-primary) !important;
+  color: var(--honduras-primary) !important;
   font-weight: 600;
   font-size: 1rem;
   padding: 14px 28px;
@@ -915,7 +922,7 @@
   transition: all 0.3s ease;
   text-transform: none;
   letter-spacing: 0.3px;
-  border: 2px solid #1bd1e8;
+  border: 2px solid var(--honduras-primary);
   width: 100%;
   min-height: 50px;
   display: flex;
@@ -925,8 +932,8 @@
 
 .btn-reset-custom:hover {
   background-color: #e6f9fb !important;
-  border-color: #1bd1e8 !important;
-  color: #1bd1e8 !important;
+  border-color: var(--honduras-primary) !important;
+  color: var(--honduras-primary) !important;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(27, 209, 232, 0.2);
 }
