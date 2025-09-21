@@ -124,7 +124,7 @@ export function Dashboard() {
   });
 
   const { data: consultationsData } = useQuery<any>({
-    queryKey: ["/api/consultations", filters],
+    queryKey: [`/api/consultations?${new URLSearchParams(Object.entries(filters).filter(([_, value]) => value).map(([key, value]) => [key, String(value)])).toString()}`],
   });
 
   const { data: departments = [] } = useQuery<any[]>({
@@ -136,8 +136,12 @@ export function Dashboard() {
   });
 
   const handleFilterApply = () => {
-    // Trigger query refetch with new filters
-    setFilters({ ...filters });
+    // Convert "all" values to empty strings and trigger query refetch
+    setFilters({
+      ...filters,
+      departmentId: filters.departmentId === "all" ? "" : filters.departmentId,
+      sector: filters.sector === "all" ? "" : filters.sector,
+    });
   };
 
   const handleFilterClear = () => {
@@ -371,7 +375,7 @@ export function Dashboard() {
                               <SelectValue placeholder="Todos" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">Todos</SelectItem>
+                              <SelectItem value="all">Todos</SelectItem>
                               {departments.map((dept) => (
                                 <SelectItem key={dept.id} value={dept.id}>
                                   {dept.name}
@@ -390,7 +394,7 @@ export function Dashboard() {
                               <SelectValue placeholder="Todos" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">Todos</SelectItem>
+                              <SelectItem value="all">Todos</SelectItem>
                               {sectors.map((sector) => (
                                 <SelectItem key={sector.id} value={sector.name}>
                                   {sector.name}
