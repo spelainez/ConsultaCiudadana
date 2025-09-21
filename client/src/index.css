@@ -122,6 +122,193 @@
   font-size: 0.875rem;
 }
 
+/* Accessibility Button Styles */
+.accessibility-button-container {
+  position: fixed;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1000;
+}
+
+.accessibility-button {
+  background-color: #1bd1e8 !important;
+  border-color: #1bd1e8 !important;
+  color: white !important;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(27, 209, 232, 0.3);
+  transition: all 0.3s ease;
+}
+
+.accessibility-button:hover {
+  background-color: #17b8cd !important;
+  border-color: #17b8cd !important;
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(27, 209, 232, 0.4);
+}
+
+.accessibility-button:focus {
+  outline: 3px solid #1bd1e8;
+  outline-offset: 2px;
+}
+
+.accessibility-panel {
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.accessibility-controls {
+  padding: 0;
+}
+
+.accessibility-section {
+  margin-bottom: 1rem;
+}
+
+.accessibility-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #1bd1e8;
+}
+
+.accessibility-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.accessibility-toggle-button {
+  min-width: 120px;
+}
+
+.accessibility-font-indicator {
+  min-width: 60px;
+  text-align: center;
+  background-color: #1bd1e8;
+  color: white;
+}
+
+.accessibility-help-text {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+/* High Contrast Mode */
+.accessibility-high-contrast {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+.accessibility-high-contrast img,
+.accessibility-high-contrast video,
+.accessibility-high-contrast iframe,
+.accessibility-high-contrast svg {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+.accessibility-high-contrast .accessibility-button {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Visual Guides Mode */
+.accessibility-visual-guides a,
+.accessibility-visual-guides [role="button"],
+.accessibility-visual-guides button {
+  text-decoration: underline !important;
+  outline: 2px solid #1bd1e8 !important;
+  outline-offset: 2px !important;
+}
+
+.accessibility-visual-guides input,
+.accessibility-visual-guides textarea,
+.accessibility-visual-guides select {
+  border: 3px solid #1bd1e8 !important;
+  box-shadow: 0 0 0 2px rgba(27, 209, 232, 0.3) !important;
+}
+
+.accessibility-visual-guides input:focus,
+.accessibility-visual-guides textarea:focus,
+.accessibility-visual-guides select:focus {
+  border-color: #17b8cd !important;
+  box-shadow: 0 0 0 4px rgba(27, 209, 232, 0.5) !important;
+}
+
+/* Simple Mode */
+.accessibility-simple-mode .complex-text {
+  display: none;
+}
+
+.accessibility-simple-mode .simple-text {
+  display: block;
+}
+
+.accessibility-simple-mode h1,
+.accessibility-simple-mode h2,
+.accessibility-simple-mode h3,
+.accessibility-simple-mode h4,
+.accessibility-simple-mode h5,
+.accessibility-simple-mode h6 {
+  font-size: 1.5rem !important;
+  font-weight: bold !important;
+  margin-bottom: 1rem !important;
+}
+
+.accessibility-simple-mode p,
+.accessibility-simple-mode span,
+.accessibility-simple-mode div {
+  font-size: 1.1rem !important;
+  line-height: 1.6 !important;
+}
+
+.accessibility-simple-mode .form-text,
+.accessibility-simple-mode .text-muted,
+.accessibility-simple-mode small {
+  font-size: 1rem !important;
+  color: #374151 !important;
+}
+
+/* Responsive Design for Accessibility Button */
+@media (max-width: 768px) {
+  .accessibility-button-container {
+    left: 10px;
+    top: 20px;
+    transform: none;
+  }
+  
+  .accessibility-button {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .accessibility-panel {
+    max-width: 95vw;
+    margin: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .accessibility-controls-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .accessibility-toggle-button {
+    min-width: auto;
+    width: 100%;
+  }
+}
+
 /* Person Type Card Styles */
 .person-type-card {
   background-color: var(--honduras-white);

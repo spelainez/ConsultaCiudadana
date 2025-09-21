@@ -9,6 +9,7 @@ import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import { Dashboard } from "@/components/dashboard";
 import NotFound from "@/pages/not-found";
+import { AccessibilityButton } from "@/components/accessibility-button";
 
 function Router() {
   return (
@@ -28,6 +29,7 @@ function Router() {
         />
         <Route component={NotFound} />
       </Switch>
+      <AccessibilityButton />
     </>
   );
 }
