@@ -52,7 +52,7 @@ export default function AuthPage() {
                     <ShieldCheck className="w-6 h-6 me-2 text-primary" />
                     Acceso Administrativo
                   </CardTitle>
-                  <p className="text-center text-muted mb-0">Acceso exclusivo para administradores autorizados</p>
+                  <p className="text-center text-muted mb-0 small">Acceso exclusivo para administradores autorizados</p>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
