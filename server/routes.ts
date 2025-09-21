@@ -462,6 +462,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No puede eliminar su propia cuenta" });
       }
       
+      // Get user data to check username before deletion
+      const userToDelete = await storage.getUser(id);
+      if (!userToDelete) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+      
+      // Prevent deleting the protected SPE account
+      if (userToDelete.username === "SPE") {
+        return res.status(403).json({ error: "La cuenta SPE está protegida y no puede ser eliminada" });
+      }
+      
       const deleted = await storage.deleteUser(id);
       if (!deleted) {
         return res.status(404).json({ error: "Usuario no encontrado" });
