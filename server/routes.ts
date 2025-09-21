@@ -485,6 +485,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Change user password
+  app.put("/api/users/:id/password", requireAuth, requireRole(["super_admin"]), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { password } = req.body;
+      
+      if (!password || password.length < 6) {
+        return res.status(400).json({ error: "La contraseña debe tener al menos 6 caracteres" });
+      }
+      
+      // Get user data to check if user exists
+      const userToUpdate = await storage.getUser(id);
+      if (!userToUpdate) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+      
+      // Hash the new password
+      const hashedPassword = await hashPassword(password);
+      const updated = await storage.updateUserPassword(id, hashedPassword);
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+      
+      res.json({ message: "Contraseña actualizada exitosamente" });
+    } catch (error) {
+      console.error("Error updating user password:", error);
+      res.status(500).json({ error: "Error al actualizar la contraseña" });
+    }
+  });
+
+  // Change user status (active/inactive)
+  app.put("/api/users/:id/status", requireAuth, requireRole(["super_admin"]), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { active } = req.body;
+      
+      if (typeof active !== 'boolean') {
+        return res.status(400).json({ error: "El estado debe ser true o false" });
+      }
+      
+      // Get user data to check username before status change
+      const userToUpdate = await storage.getUser(id);
+      if (!userToUpdate) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+      
+      // Prevent changing status of the protected SPE account
+      if (userToUpdate.username === "SPE") {
+        return res.status(403).json({ error: "La cuenta SPE está protegida y no puede ser modificada" });
+      }
+      
+      // Prevent changing own status
+      if (req.user?.id === id) {
+        return res.status(400).json({ error: "No puede cambiar su propio estado" });
+      }
+      
+      const updated = await storage.updateUserStatus(id, active);
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+      
+      res.json({ 
+        message: `Usuario ${active ? 'activado' : 'suspendido'} exitosamente`,
+        active
+      });
+    } catch (error) {
+      console.error("Error updating user status:", error);
+      res.status(500).json({ error: "Error al actualizar el estado del usuario" });
+    }
+  });
+
   // Admin-only endpoints
   app.post("/api/sectors", requireAuth, requireRole(["super_admin"]), async (req, res) => {
     try {

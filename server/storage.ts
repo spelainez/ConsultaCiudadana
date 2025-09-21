@@ -33,6 +33,8 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   getUsers(): Promise<User[]>;
   deleteUser(id: string): Promise<boolean>;
+  updateUserPassword(id: string, newPassword: string): Promise<boolean>;
+  updateUserStatus(id: string, active: boolean): Promise<boolean>;
 
   // Locations
   getDepartments(): Promise<Department[]>;
@@ -110,6 +112,24 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return !!deleted;
+  }
+
+  async updateUserPassword(id: string, newPassword: string): Promise<boolean> {
+    const [updated] = await db
+      .update(users)
+      .set({ password: newPassword })
+      .where(eq(users.id, id))
+      .returning();
+    return !!updated;
+  }
+
+  async updateUserStatus(id: string, active: boolean): Promise<boolean> {
+    const [updated] = await db
+      .update(users)
+      .set({ active })
+      .where(eq(users.id, id))
+      .returning();
+    return !!updated;
   }
 
   async getDepartments(): Promise<Department[]> {

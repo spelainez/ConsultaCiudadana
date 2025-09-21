@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -60,6 +61,7 @@ import {
 import { UserManagementSPE } from "./user-management-spe";
 
 export function Dashboard() {
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user, logoutMutation } = useAuth();
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -267,7 +269,7 @@ export function Dashboard() {
 
   // Navbar actions
   const handleCreatePlanificador = () => {
-    setShowCreatePlanificador(true);
+    navigate("/admin/users");
   };
 
   const handleProfile = () => {

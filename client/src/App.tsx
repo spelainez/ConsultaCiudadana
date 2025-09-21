@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
+import UserManagement from "@/pages/user-management";
 import { Dashboard } from "@/components/dashboard";
 import NotFound from "@/pages/not-found";
 import { AccessibilityButton } from "@/components/accessibility-button";
@@ -22,6 +23,11 @@ function Router() {
           path="/admin" 
           component={() => <Dashboard />} 
           requiredRole={["admin", "super_admin", "planificador"]} 
+        />
+        <ProtectedRoute 
+          path="/admin/users" 
+          component={() => <UserManagement />} 
+          requiredRole={["super_admin"]} 
         />
         <Route component={NotFound} />
       </Switch>
