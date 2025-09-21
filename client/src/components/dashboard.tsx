@@ -19,9 +19,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 import { Calendar, Filter, Download, RefreshCw, Eye, ChevronDown, BarChart3, PieChart, Users, MapPin, MessageSquare } from "lucide-react";
 
 export function Dashboard() {
+  const { toast } = useToast();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState({
     dateFrom: "",
@@ -155,6 +163,69 @@ export function Dashboard() {
     });
   };
 
+  // Export functions
+  const downloadFile = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        credentials: 'include', // Include session cookies
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast({
+        title: "Error al exportar",
+        description: "No se pudo descargar el archivo. Inténtelo de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const buildExportUrl = (format: string) => {
+    const baseUrl = `/api/export/consultations/${format}`;
+    
+    // Add current filters to export URL
+    const params = new URLSearchParams();
+    if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
+    if (filters.dateTo) params.append('dateTo', filters.dateTo);
+    if (filters.departmentId && filters.departmentId !== 'all') params.append('departmentId', filters.departmentId);
+    if (filters.sector && filters.sector !== 'all') params.append('sector', filters.sector);
+    
+    return `${baseUrl}?${params.toString()}`;
+  };
+
+  const handleExportCSV = () => {
+    const url = buildExportUrl('csv');
+    const filename = `consultas_${new Date().toISOString().split('T')[0]}.csv`;
+    downloadFile(url, filename);
+  };
+
+  const handleExportExcel = () => {
+    const url = buildExportUrl('excel');
+    const filename = `consultas_${new Date().toISOString().split('T')[0]}.xlsx`;
+    downloadFile(url, filename);
+  };
+
+  const handleExportPDF = () => {
+    const url = buildExportUrl('pdf');
+    const filename = `consultas_${new Date().toISOString().split('T')[0]}.pdf`;
+    downloadFile(url, filename);
+  };
+
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-HN');
   };
@@ -214,9 +285,34 @@ export function Dashboard() {
               <Button variant="outline" className="me-2" data-testid="button-refresh">
                 <RefreshCw className="w-4 h-4 me-2" />Actualizar
               </Button>
-              <Button data-testid="button-export">
-                <Download className="w-4 h-4 me-2" />Exportar
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button data-testid="button-export">
+                    <Download className="w-4 h-4 me-2" />Exportar
+                    <ChevronDown className="w-4 h-4 ms-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem 
+                    onClick={() => handleExportCSV()}
+                    data-testid="button-export-csv"
+                  >
+                    <Download className="w-4 h-4 me-2" />Exportar CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => handleExportExcel()}
+                    data-testid="button-export-excel"
+                  >
+                    <Download className="w-4 h-4 me-2" />Exportar Excel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => handleExportPDF()}
+                    data-testid="button-export-pdf"
+                  >
+                    <Download className="w-4 h-4 me-2" />Exportar PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
@@ -483,9 +579,38 @@ export function Dashboard() {
                           <Button variant="outline" size="sm" data-testid={`button-view-${consultation.id}`}>
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button variant="outline" size="sm" className="ms-1" data-testid={`button-export-${consultation.id}`}>
-                            <Download className="w-4 h-4" />
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="ms-1"
+                                data-testid={`button-export-${consultation.id}`}
+                              >
+                                <Download className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem 
+                                onClick={() => handleExportCSV()}
+                                data-testid={`button-export-csv-${consultation.id}`}
+                              >
+                                <Download className="w-4 h-4 me-2" />CSV
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleExportExcel()}
+                                data-testid={`button-export-excel-${consultation.id}`}
+                              >
+                                <Download className="w-4 h-4 me-2" />Excel
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleExportPDF()}
+                                data-testid={`button-export-pdf-${consultation.id}`}
+                              >
+                                <Download className="w-4 h-4 me-2" />PDF
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     )) || (

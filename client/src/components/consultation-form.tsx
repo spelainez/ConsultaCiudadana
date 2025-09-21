@@ -129,7 +129,6 @@ export function ConsultationForm() {
                 <i className="bi bi-person-lines-fill text-primary fs-2 me-3"></i>
                 <div>
                   <h2 className="mb-1">Nueva Consulta Ciudadana</h2>
-                  <p className="text-muted mb-0">Comparte tu opinión para mejorar Honduras</p>
                 </div>
               </CardTitle>
             </CardHeader>
