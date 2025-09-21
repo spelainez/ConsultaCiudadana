@@ -524,17 +524,6 @@ export function Dashboard() {
                 {/* Action Buttons */}
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={handleRefresh}
-                      data-testid="button-refresh-table"
-                      className="border text-gray-600 hover:bg-gray-50"
-                    >
-                      <RefreshCw className="w-4 h-4 mr-1" />
-                      Actualizar
-                    </Button>
-                    
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button 
