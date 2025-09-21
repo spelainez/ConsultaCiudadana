@@ -476,58 +476,21 @@ export function ConsultationForm() {
                   {form.watch("municipalityId") && (
                     <div className="location-step mb-3 animate-fade-in">
                       <Label className="location-label">3. Zona *</Label>
-                      <div className="zone-selection">
-                        <div className="row g-2">
-                          <div className="col-6">
-                            <div 
-                              className={`zone-card ${selectedZone === "urbano" ? "selected" : ""}`}
-                              onClick={() => {
-                                setSelectedZone("urbano");
-                                form.setValue("localityId", "");
-                              }}
-                              role="button"
-                              tabIndex={0}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  e.preventDefault();
-                                  setSelectedZone("urbano");
-                                  form.setValue("localityId", "");
-                                }
-                              }}
-                              data-testid="zone-urbano"
-                            >
-                              <div className="zone-content">
-                                <span className="zone-text">Urbano</span>
-                                <small className="zone-subtitle">Colonias y Barrios</small>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="col-6">
-                            <div 
-                              className={`zone-card ${selectedZone === "rural" ? "selected" : ""}`}
-                              onClick={() => {
-                                setSelectedZone("rural");
-                                form.setValue("localityId", "");
-                              }}
-                              role="button"
-                              tabIndex={0}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  e.preventDefault();
-                                  setSelectedZone("rural");
-                                  form.setValue("localityId", "");
-                                }
-                              }}
-                              data-testid="zone-rural"
-                            >
-                              <div className="zone-content">
-                                <span className="zone-text">Rural</span>
-                                <small className="zone-subtitle">Aldeas y Caseríos</small>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      <Select
+                        onValueChange={(value) => {
+                          setSelectedZone(value);
+                          form.setValue("localityId", "");
+                        }}
+                        value={selectedZone}
+                      >
+                        <SelectTrigger className="location-select" data-testid="select-zone">
+                          <SelectValue placeholder="Seleccione el tipo de zona..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="urbano">Urbano - Colonias y Barrios</SelectItem>
+                          <SelectItem value="rural">Rural - Aldeas y Caseríos</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   )}
 
