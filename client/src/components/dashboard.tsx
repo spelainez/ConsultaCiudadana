@@ -1111,9 +1111,6 @@ export function Dashboard() {
               <User className="w-6 h-6 mr-2" style={{ color: '#1bd1e8' }} />
               Mi Perfil de Usuario
             </DialogTitle>
-            <DialogDescription>
-              Panel de información personal y configuración de cuenta
-            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-6">
