@@ -1166,66 +1166,43 @@ export function Dashboard() {
               </div>
             </div>
 
-            {/* Información Detallada */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <h4 className="font-semibold flex items-center">
-                  <Settings className="w-4 h-4 mr-2" style={{ color: '#1bd1e8' }} />
-                  Información de Cuenta
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">ID de Usuario:</span>
-                    <code className="text-xs">{user?.id?.slice(0, 8)}...</code>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Estado:</span>
-                    <Badge variant="default" className="text-xs">Activo</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Última Sesión:</span>
-                    <span>Ahora</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <h4 className="font-semibold flex items-center">
-                  <Shield className="w-4 h-4 mr-2" style={{ color: '#1bd1e8' }} />
-                  Seguridad
-                </h4>
-                <div className="space-y-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full justify-start"
-                    onClick={() => {
-                      setShowProfile(false);
-                      // Future: Open change password modal
-                      toast({
-                        title: "Próximamente",
-                        description: "La función de cambiar contraseña estará disponible pronto."
-                      });
-                    }}
-                  >
-                    <Key className="w-4 h-4 mr-2" />
-                    Cambiar Contraseña
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full justify-start"
-                    onClick={() => {
-                      toast({
-                        title: "Sesión Segura",
-                        description: "Tu sesión está protegida y encriptada.",
-                      });
-                    }}
-                  >
-                    <Shield className="w-4 h-4 mr-2" />
-                    Verificar Seguridad
-                  </Button>
-                </div>
+            {/* Seguridad */}
+            <div className="space-y-3">
+              <h4 className="font-semibold flex items-center">
+                <Shield className="w-4 h-4 mr-2" style={{ color: '#1bd1e8' }} />
+                Seguridad
+              </h4>
+              <div className="space-y-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setShowProfile(false);
+                    // Future: Open change password modal
+                    toast({
+                      title: "Próximamente",
+                      description: "La función de cambiar contraseña estará disponible pronto."
+                    });
+                  }}
+                >
+                  <Key className="w-4 h-4 mr-2" />
+                  Cambiar Contraseña
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start"
+                  onClick={() => {
+                    toast({
+                      title: "Sesión Segura",
+                      description: "Tu sesión está protegida y encriptada.",
+                    });
+                  }}
+                >
+                  <Shield className="w-4 h-4 mr-2" />
+                  Verificar Seguridad
+                </Button>
               </div>
             </div>
 
