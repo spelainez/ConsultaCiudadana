@@ -271,6 +271,78 @@
   line-height: 1.6 !important;
 }
 
+/* Google Forms Style Sections */
+.form-section-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.form-section-card:hover {
+  box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.12);
+}
+
+.form-section-header {
+  border-bottom: 1px solid #e8f0fe;
+  background-color: #f8f9fa;
+  border-radius: 8px 8px 0 0;
+  padding: 20px 24px 16px;
+}
+
+.form-section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1bd1e8;
+  margin: 0;
+  margin-bottom: 8px;
+}
+
+.form-section-description {
+  font-size: 0.875rem;
+  color: #5f6368;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.form-section-card .CardContent {
+  padding: 24px;
+}
+
+/* Section numbering visual enhancement */
+.form-section-title::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background-color: #1bd1e8;
+  border-radius: 50%;
+  margin-right: 12px;
+  vertical-align: middle;
+}
+
+/* Responsive section cards */
+@media (max-width: 768px) {
+  .form-section-card {
+    margin-bottom: 16px;
+    border-radius: 6px;
+  }
+  
+  .form-section-header {
+    padding: 16px 20px 12px;
+  }
+  
+  .form-section-title {
+    font-size: 1.125rem;
+  }
+  
+  .form-section-card .CardContent {
+    padding: 20px;
+  }
+}
+
 .accessibility-simple-mode .form-text,
 .accessibility-simple-mode .text-muted,
 .accessibility-simple-mode small {

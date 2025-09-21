@@ -137,11 +137,16 @@ export function ConsultationForm() {
             </CardHeader>
             
             <CardContent>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                {/* Person Type Selection - Card Style */}
-                <div className="mb-4">
-                  <Label className="form-label fw-bold mb-3">Tipo de Persona</Label>
-                  <div className="row g-3">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                
+                {/* SECCIÓN 1: TIPO DE PERSONA */}
+                <Card className="form-section-card">
+                  <CardHeader className="form-section-header">
+                    <h3 className="form-section-title">1. Tipo de Persona</h3>
+                    <p className="form-section-description">Seleccione el tipo de persona que mejor lo describa</p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="row g-3 mb-4">
                     {/* Persona Natural */}
                     <div className="col-md-4">
                       <div 
@@ -207,11 +212,10 @@ export function ConsultationForm() {
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div>
+                    </div>
 
-                {/* Conditional Fields for Natural Person */}
-                {personType === "natural" && (
+                    {/* Conditional Fields for Natural Person */}
+                    {personType === "natural" && (
                   <div className="conditional-fields">
                     <div className="row mb-3">
                       <div className="col-md-6">
@@ -358,12 +362,16 @@ export function ConsultationForm() {
                     </div>
                   </div>
                 )}
+                  </CardContent>
+                </Card>
 
-                {/* Modern Location Selection */}
-                <div className="modern-location-selector mb-4">
-                  <h5 className="mb-4">
-                    Ubicación
-                  </h5>
+                {/* SECCIÓN 2: UBICACIÓN */}
+                <Card className="form-section-card">
+                  <CardHeader className="form-section-header">
+                    <h3 className="form-section-title">2. Ubicación</h3>
+                    <p className="form-section-description">Seleccione su ubicación geográfica para una mejor atención</p>
+                  </CardHeader>
+                  <CardContent>
                   
                   {/* Department */}
                   <div className="location-step mb-3">
@@ -550,13 +558,16 @@ export function ConsultationForm() {
                       </div>
                     </div>
                   )}
-                </div>
+                  </CardContent>
+                </Card>
 
-                {/* Intelligent Sector Search */}
-                <div className="mb-4">
-                  <h5 className="mb-3">
-                    Sectores de Interés
-                  </h5>
+                {/* SECCIÓN 3: SECTORES DE INTERÉS */}
+                <Card className="form-section-card">
+                  <CardHeader className="form-section-header">
+                    <h3 className="form-section-title">3. Sectores de Interés</h3>
+                    <p className="form-section-description">Seleccione los sectores sobre los que desea consultar</p>
+                  </CardHeader>
+                  <CardContent>
                   <div className="position-relative">
                     <Input
                       value={sectorSearch}
@@ -614,13 +625,20 @@ export function ConsultationForm() {
                       )}
                     </div>
                   </div>
-                </div>
+                  </CardContent>
+                </Card>
 
-                {/* Message Field */}
-                <div className="mb-4">
-                  <Label htmlFor="message" className="fw-bold">
-                    Su Consulta Popular *
-                  </Label>
+                {/* SECCIÓN 4: CONSULTA POPULAR */}
+                <Card className="form-section-card">
+                  <CardHeader className="form-section-header">
+                    <h3 className="form-section-title">4. Su Consulta Popular</h3>
+                    <p className="form-section-description">Exprese su consulta, sugerencia o preocupación</p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-4">
+                      <Label htmlFor="message" className="fw-bold">
+                        Mensaje *
+                      </Label>
                   <Textarea
                     id="message"
                     rows={5}
@@ -664,6 +682,8 @@ export function ConsultationForm() {
                     )}
                   </Button>
                 </div>
+                  </CardContent>
+                </Card>
               </form>
             </CardContent>
           </Card>
