@@ -1229,47 +1229,6 @@ export function Dashboard() {
               </div>
             </div>
 
-            {/* Acceso Rápido */}
-            <div className="border-t pt-4">
-              <h4 className="font-semibold mb-3 flex items-center">
-                <Zap className="w-4 h-4 mr-2" style={{ color: '#1bd1e8' }} />
-                Acciones Rápidas
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {user?.role === 'super_admin' && (
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => {
-                      setShowProfile(false);
-                      navigate('/admin/users');
-                    }}
-                  >
-                    <Users className="w-4 h-4 mr-1" />
-                    Gestionar Usuarios
-                  </Button>
-                )}
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => {
-                    setShowProfile(false);
-                    handleFilterClear();
-                  }}
-                >
-                  <Filter className="w-4 h-4 mr-1" />
-                  Limpiar Filtros
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => handleExportCSV()}
-                >
-                  <Download className="w-4 h-4 mr-1" />
-                  Exportar Datos
-                </Button>
-              </div>
-            </div>
           </div>
           
           <DialogFooter>
