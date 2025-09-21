@@ -416,22 +416,7 @@ export function Dashboard() {
 
           {/* Charts Row */}
           <div className="row mb-4">
-            <div className="col-md-8">
-              <Card className="border-0 shadow-sm">
-                <CardHeader className="bg-white">
-                  <CardTitle className="mb-0">
-                    <BarChart3 className="w-5 h-5 me-2" />
-                    Evolución de Consultas por Fecha
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="chart-container" style={{ position: 'relative', height: '300px' }}>
-                    <canvas id="consultationsChart"></canvas>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            <div className="col-md-4">
+            <div className="col-md-6">
               <Card className="border-0 shadow-sm">
                 <CardHeader className="bg-white">
                   <CardTitle className="mb-0">
