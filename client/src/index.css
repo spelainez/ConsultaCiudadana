@@ -439,6 +439,130 @@
   .form-section-card .CardContent {
     padding: 20px;
   }
+
+  /* Mapa responsivo para móvil */
+  .location-map-container {
+    margin-top: 12px;
+  }
+  
+  .location-map-container > div {
+    border-radius: 8px;
+  }
+  
+  .location-map-container .text-xs {
+    font-size: 0.75rem;
+  }
+
+  /* Mejorar los popovers para táctil */
+  .location-select {
+    min-height: 48px;
+    font-size: 16px; /* Prevenir zoom en iOS */
+  }
+  
+  /* Ajustar spacing entre elementos del formulario */
+  .location-step {
+    margin-bottom: 20px;
+  }
+  
+  /* Mejorar las tarjetas de tipo de persona */
+  .person-type-card {
+    min-height: 60px;
+    margin-bottom: 12px;
+  }
+  
+  .person-type-content {
+    padding: 16px 12px;
+  }
+}
+
+/* Optimizaciones para tabletas */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .form-section-card {
+    margin-bottom: 24px;
+  }
+  
+  .location-select {
+    min-height: 44px;
+  }
+  
+  .person-type-card {
+    min-height: 80px;
+  }
+  
+  /* Altura del mapa en tabletas */
+  .location-map-wrapper {
+    height: 300px;
+  }
+}
+
+/* Pantallas muy pequeñas (móviles en horizontal o muy pequeños) */
+@media (max-width: 480px) {
+  .consultation-container .container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  
+  .form-section-card {
+    margin: 0 -8px 16px -8px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+  
+  .person-type-card {
+    min-height: 56px;
+    border-radius: 6px;
+  }
+  
+  .creative-title {
+    font-size: 1.1rem;
+    line-height: 1.3;
+  }
+  
+  /* Altura del mapa en pantallas muy pequeñas */
+  .location-map-wrapper {
+    height: 200px;
+  }
+  
+  /* Mejorar popovers en móvil */
+  .location-select {
+    font-size: 16px; /* Prevenir zoom iOS */
+    padding: 12px 16px;
+  }
+  
+  /* Mejor spacing para sectores */
+  .sectors-container {
+    max-height: 180px;
+    overflow-y: auto;
+  }
+}
+
+/* Altura base del mapa */
+.location-map-wrapper {
+  height: 250px;
+}
+
+/* Mejoras para dispositivos táctiles */
+@media (hover: none) and (pointer: coarse) {
+  .person-type-card:hover {
+    transform: none; /* Deshabilitar hover animations en táctil */
+  }
+  
+  .location-select:hover {
+    background-color: inherit;
+  }
+  
+  /* Hacer botones más grandes para táctil */
+  .btn {
+    min-height: 44px;
+    padding: 12px 20px;
+  }
+  
+  /* Mejorar área táctil de los botones del Command */
+  [data-radix-collection-item] {
+    min-height: 44px;
+    padding: 8px 12px;
+  }
 }
 
 .accessibility-simple-mode .form-text,

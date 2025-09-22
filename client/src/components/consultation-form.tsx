@@ -127,6 +127,7 @@ export function ConsultationForm() {
   }, [personType, form]);
 
   return (
+    <div className="consultation-container">
     <div className="container mt-4">
       <div className="row justify-content-center">
         <div className="col-12 col-lg-10">
@@ -571,7 +572,7 @@ export function ConsultationForm() {
                   </div>
 
                   {/* Location Map */}
-                  <div className="mt-4">
+                  <div className="mt-4 location-map-container">
                     <LocationMap
                       latitude={(() => {
                         const selectedLocality = localities.find(l => l.id === form.watch("localityId"));
@@ -734,6 +735,7 @@ export function ConsultationForm() {
           </Card>
         </div>
       </div>
+    </div>
     </div>
   );
 }

@@ -172,7 +172,7 @@ export default function LocationMap({
     return (
       <div className="rounded-xl border p-3 bg-gray-50" data-testid="map-placeholder">
         <h4 className="font-semibold mb-2 text-sm text-gray-600">Ubicación en el Mapa</h4>
-        <div className="h-40 flex items-center justify-center text-gray-500 text-sm">
+        <div className="location-map-wrapper flex items-center justify-center text-gray-500 text-sm">
           Complete la selección de ubicación para ver el mapa
         </div>
       </div>
@@ -182,7 +182,7 @@ export default function LocationMap({
   return (
     <div className="rounded-xl border p-3" data-testid="location-map-container">
       <h4 className="font-semibold mb-2 text-sm">Ubicación en el Mapa</h4>
-      <div style={{ height: 200, width: "100%" }}>
+      <div className="location-map-wrapper" style={{ width: "100%" }}>
         <MapContainer
           center={[position.lat, position.lng]}
           zoom={position.zoom}
