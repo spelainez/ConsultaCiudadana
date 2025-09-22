@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -17,6 +17,23 @@ const DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
+// Component to handle dynamic recentering
+interface RecenterMapProps {
+  lat: number;
+  lng: number;
+  zoom: number;
+}
+
+function RecenterMap({ lat, lng, zoom }: RecenterMapProps) {
+  const map = useMap();
+  
+  useEffect(() => {
+    map.setView([lat, lng], zoom);
+  }, [lat, lng, zoom, map]);
+  
+  return null;
+}
+
 interface LocationMapProps {
   latitude?: string;
   longitude?: string;
@@ -30,14 +47,14 @@ export default function LocationMap({
   locationName, 
   geocode 
 }: LocationMapProps) {
-  const [position, setPosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [position, setPosition] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
 
   useEffect(() => {
     if (latitude && longitude) {
       const lat = parseFloat(latitude);
       const lng = parseFloat(longitude);
       if (!isNaN(lat) && !isNaN(lng)) {
-        setPosition({ lat, lng });
+        setPosition({ lat, lng, zoom: 14 }); // Zoom específico para localidad
       }
     } else if (geocode) {
       // Coordenadas aproximadas por departamento como fallback
@@ -49,9 +66,9 @@ export default function LocationMap({
   }, [latitude, longitude, geocode]);
 
   // Función para obtener coordenadas aproximadas basadas en el geocódigo
-  function getApproximateCoordinates(geocode: string): { lat: number; lng: number } | null {
+  function getApproximateCoordinates(geocode: string): { lat: number; lng: number; zoom: number } | null {
     const parts = geocode.split('-');
-    if (parts.length < 2) return null;
+    if (!geocode) return null;
     
     const departmentCode = parts[0];
     const municipalityCode = parts[1];
@@ -129,23 +146,31 @@ export default function LocationMap({
       '18-04': { lat: 15.4000, lng: -87.8167 }, // El Progreso
     };
     
-    // Buscar por código específico de municipio primero, luego por departamento
-    const specificKey = `${departmentCode}-${municipalityCode}`;
-    if (coordinates[specificKey]) {
-      return coordinates[specificKey];
-    }
-    
-    if (coordinates[departmentCode]) {
-      return coordinates[departmentCode];
+    if (parts.length >= 2) {
+      // Buscar por código específico de municipio primero
+      const specificKey = `${departmentCode}-${municipalityCode}`;
+      if (coordinates[specificKey]) {
+        return { ...coordinates[specificKey], zoom: 11 }; // Zoom municipio
+      }
+      
+      // Si no hay coordenadas específicas del municipio, usar departamento con zoom de municipio
+      if (coordinates[departmentCode]) {
+        return { ...coordinates[departmentCode], zoom: 11 }; // Zoom municipio (usando coordenadas de departamento)
+      }
+    } else if (parts.length === 1) {
+      // Solo departamento seleccionado
+      if (coordinates[departmentCode]) {
+        return { ...coordinates[departmentCode], zoom: 8 }; // Zoom departamento
+      }
     }
     
     // Fallback a Tegucigalpa si no encuentra coordenadas
-    return { lat: 14.0723, lng: -87.1921 };
+    return { lat: 14.0723, lng: -87.1921, zoom: 8 };
   }
 
   if (!position) {
     return (
-      <div className="rounded-xl border p-3 bg-gray-50">
+      <div className="rounded-xl border p-3 bg-gray-50" data-testid="map-placeholder">
         <h4 className="font-semibold mb-2 text-sm text-gray-600">Ubicación en el Mapa</h4>
         <div className="h-40 flex items-center justify-center text-gray-500 text-sm">
           Complete la selección de ubicación para ver el mapa
@@ -155,25 +180,33 @@ export default function LocationMap({
   }
 
   return (
-    <div className="rounded-xl border p-3">
+    <div className="rounded-xl border p-3" data-testid="location-map-container">
       <h4 className="font-semibold mb-2 text-sm">Ubicación en el Mapa</h4>
       <div style={{ height: 200, width: "100%" }}>
         <MapContainer
-          center={position}
-          zoom={13}
+          center={[position.lat, position.lng]}
+          zoom={position.zoom}
           style={{ height: "100%", width: "100%", borderRadius: "8px" }}
+          key={`${position.lat}-${position.lng}-${position.zoom}`} // Force remount on position change
+          data-testid="leaflet-map"
         >
+          <RecenterMap lat={position.lat} lng={position.lng} zoom={position.zoom} />
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           />
-          <Marker position={position} />
+          <Marker position={[position.lat, position.lng]}>
+            <Popup>
+              {locationName || 'Ubicación seleccionada'}
+              {geocode && <><br /><small>Geocódigo: {geocode}</small></>}
+            </Popup>
+          </Marker>
         </MapContainer>
       </div>
       {locationName && (
-        <p className="mt-2 text-xs text-gray-600">
+        <p className="mt-2 text-xs text-gray-600" data-testid="text-location-name">
           📍 <strong>{locationName}</strong>
-          {geocode && <span className="ml-2 text-gray-500">({geocode})</span>}
+          {geocode && <span className="ml-2 text-gray-500" data-testid="text-map-geocode">({geocode})</span>}
         </p>
       )}
     </div>
