@@ -1,8 +1,12 @@
+
+"use client";
+
 import { useState } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
+// Fix de iconos de Leaflet
 import iconUrl from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
@@ -23,13 +27,13 @@ export default function MapPicker() {
         setPos(e.latlng);
       },
     });
-    return pos ? <Marker position={pos} /> : null;
+    return pos === null ? null : <Marker position={pos}></Marker>;
   }
 
   return (
-    <div className="rounded-xl border p-4 space-y-2">
-
-      <div style={{ height: 100, width: "120%" }}>
+    <div className="rounded-xl border p-3">
+      <h3 className="font-bold mb-2">Seleccione su ubicación en el mapa</h3>
+      <div style={{ height: 300, width: "100%" }}>
         <MapContainer
           center={{ lat: 14.0723, lng: -87.1921 }} //Tegucigalpa
           zoom={12}
@@ -37,24 +41,19 @@ export default function MapPicker() {
         >
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='<img src=""   width="20"/> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           />
           <LocationMarker />
         </MapContainer>
-
       </div>
 
       {pos && (
-        <>
-          <p className="text-sm">
-            Punto seleccionado: <b>{pos.lat.toFixed(6)}, {pos.lng.toFixed(6)}</b>
-          </p>
-          {
-            /* Inputs ocultos para enviar coordenadas al backend */
-          }
-          <input type="hidden" name="lat" value={pos.lat} />
-          <input type="hidden" name="lng" value={pos.lng} />
-        </>
+        <p className="mt-2 text-sm">
+          Punto seleccionado:{" "}
+          <b>
+            {pos.lat.toFixed(6)}, {pos.lng.toFixed(6)}
+          </b>
+        </p>
       )}
     </div>
   );
