@@ -23,6 +23,7 @@ import { eq, and, gte, lte, like, sql, desc } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
+import bcrypt from "bcrypt";
 
 const PostgresSessionStore = connectPg(session);
 
@@ -92,9 +93,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    // Hash password before storing
+    const hashedPassword = await bcrypt.hash(insertUser.password, 12);
+    
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values({
+        ...insertUser,
+        password: hashedPassword
+      })
       .returning();
     return user;
   }
@@ -115,9 +122,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserPassword(id: string, newPassword: string): Promise<boolean> {
+    // Hash password before updating
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    
     const [updated] = await db
       .update(users)
-      .set({ password: newPassword })
+      .set({ password: hashedPassword })
       .where(eq(users.id, id))
       .returning();
     return !!updated;
@@ -174,8 +184,43 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createConsultation(insertConsultation: InsertConsultation): Promise<Consultation> {
-    // Generate geocode from location hierarchy
-    const geocode = `${insertConsultation.departmentId}-${insertConsultation.municipalityId}-${insertConsultation.localityId}`;
+    // Fetch and validate location hierarchy with relational integrity
+    const [department] = await db
+      .select({ geocode: departments.geocode })
+      .from(departments)
+      .where(eq(departments.id, insertConsultation.departmentId));
+    
+    const [municipality] = await db
+      .select({ 
+        geocode: municipalities.geocode,
+        departmentId: municipalities.departmentId 
+      })
+      .from(municipalities)
+      .where(eq(municipalities.id, insertConsultation.municipalityId));
+    
+    const [locality] = await db
+      .select({ 
+        geocode: localities.geocode,
+        municipalityId: localities.municipalityId
+      })
+      .from(localities)
+      .where(eq(localities.id, insertConsultation.localityId));
+    
+    if (!department || !municipality || !locality) {
+      throw new Error('Invalid location IDs provided');
+    }
+    
+    // Enforce relational integrity
+    if (municipality.departmentId !== insertConsultation.departmentId) {
+      throw new Error('Municipality does not belong to the selected department');
+    }
+    
+    if (locality.municipalityId !== insertConsultation.municipalityId) {
+      throw new Error('Locality does not belong to the selected municipality');
+    }
+    
+    // Generate geocode from the actual geocode values in the database
+    const geocode = `${department.geocode}-${municipality.geocode}-${locality.geocode}`;
     
     const [consultation] = await db
       .insert(consultations)
