@@ -546,8 +546,8 @@ export function ConsultationForm() {
                         } />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="urbano">Urbano - Colonias y Barrios</SelectItem>
-                        <SelectItem value="rural">Rural - Aldeas y Caseríos</SelectItem>
+                        <SelectItem value="urbano">Urbano</SelectItem>
+                        <SelectItem value="rural">Rural</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
