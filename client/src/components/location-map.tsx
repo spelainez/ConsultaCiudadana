@@ -5,17 +5,47 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
-// Fix de iconos de Leaflet
-import iconUrl from "leaflet/dist/images/marker-icon.png";
-import iconShadow from "leaflet/dist/images/marker-shadow.png";
-
-const DefaultIcon = L.icon({
-  iconUrl,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
+// Icono personalizado con bandera de Honduras
+const HondurasIcon = L.divIcon({
+  html: `
+    <div style="
+      background: linear-gradient(to bottom, #0066CC 0%, #0066CC 33%, #FFFFFF 33%, #FFFFFF 66%, #0066CC 66%, #0066CC 100%);
+      width: 30px;
+      height: 20px;
+      border: 2px solid #333;
+      border-radius: 3px;
+      position: relative;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    ">
+      <div style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #0066CC;
+        font-size: 8px;
+        font-weight: bold;
+        text-shadow: 0 0 2px white;
+      ">★</div>
+    </div>
+    <div style="
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 8px solid #333;
+      position: absolute;
+      left: 10px;
+      top: 20px;
+    "></div>
+  `,
+  className: 'custom-div-icon',
+  iconSize: [30, 28],
+  iconAnchor: [15, 28],
+  popupAnchor: [0, -28],
 });
-L.Marker.prototype.options.icon = DefaultIcon;
+
+L.Marker.prototype.options.icon = HondurasIcon;
 
 // Component to handle dynamic recentering
 interface RecenterMapProps {
