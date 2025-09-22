@@ -629,7 +629,7 @@ export function ConsultationForm() {
                   {/* Geocode Display */}
                   <div className="geocode-display">
                     <div className="geocode-container">
-                      <Label className="geocode-label">Geocódigo Generado</Label>
+                      <Label className="geocode-label">Geocódigo</Label>
                       <div className={`geocode-value ${!(form.watch("departmentId") && form.watch("municipalityId")) ? 'opacity-50' : ''}`} data-testid="text-geocode">
                         {(() => {
                           const selectedDept = departments.find(d => d.id === form.watch("departmentId"));
