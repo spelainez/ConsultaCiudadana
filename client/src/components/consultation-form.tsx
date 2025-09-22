@@ -17,6 +17,7 @@ import { Loader2, X, Plus, Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import LocationMap from "@/components/location-map";
 
 const consultationFormSchema = insertConsultationSchema;
 
@@ -567,6 +568,40 @@ export function ConsultationForm() {
                         Este código identifica únicamente su ubicación
                       </small>
                     </div>
+                  </div>
+
+                  {/* Location Map */}
+                  <div className="mt-4">
+                    <LocationMap
+                      latitude={(() => {
+                        const selectedLocality = localities.find(l => l.id === form.watch("localityId"));
+                        return selectedLocality?.latitude;
+                      })()}
+                      longitude={(() => {
+                        const selectedLocality = localities.find(l => l.id === form.watch("localityId"));
+                        return selectedLocality?.longitude;
+                      })()}
+                      locationName={(() => {
+                        const selectedDept = departments.find(d => d.id === form.watch("departmentId"));
+                        const selectedMuni = municipalities.find(m => m.id === form.watch("municipalityId"));
+                        const selectedLocality = localities.find(l => l.id === form.watch("localityId"));
+                        
+                        if (selectedDept && selectedMuni && selectedLocality) {
+                          return `${selectedLocality.name}, ${selectedMuni.name}, ${selectedDept.name}`;
+                        }
+                        return undefined;
+                      })()}
+                      geocode={(() => {
+                        const selectedDept = departments.find(d => d.id === form.watch("departmentId"));
+                        const selectedMuni = municipalities.find(m => m.id === form.watch("municipalityId"));
+                        const selectedLocality = localities.find(l => l.id === form.watch("localityId"));
+                        
+                        if (selectedDept && selectedMuni && selectedLocality) {
+                          return `${selectedDept.geocode}-${selectedMuni.geocode}-${selectedLocality.geocode}`;
+                        }
+                        return undefined;
+                      })()}
+                    />
                   </div>
                   </CardContent>
                 </Card>

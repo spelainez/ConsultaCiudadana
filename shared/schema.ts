@@ -32,6 +32,8 @@ export const localities = pgTable("localities", {
   municipalityId: varchar("municipality_id").notNull(),
   area: text("area").notNull(), // rural, urbano
   geocode: text("geocode").notNull(),
+  latitude: text("latitude"),
+  longitude: text("longitude"),
 });
 
 export const sectors = pgTable("sectors", {
