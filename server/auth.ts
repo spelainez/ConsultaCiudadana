@@ -31,7 +31,7 @@ const JWT_SECRET = (() => {
   }
   return secret;
 })();
-const JWT_EXPIRES_IN = "24h";
+const JWT_EXPIRES_IN = "7d"; // Extended to 7 days for better UX
 
 // JWT payload type
 interface JwtPayload {
@@ -158,7 +158,7 @@ export function setupAuth(app: Express) {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'none',
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days to match JWT expiration
       });
 
       // Return user data (without password)
