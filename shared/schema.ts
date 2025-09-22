@@ -72,6 +72,7 @@ export const consultations = pgTable("consultations", {
   
   // Message and sectors
   message: text("message").notNull(),
+  images: text("images").array().default([]), // Array of image URLs (max 3)
   selectedSectors: text("selected_sectors").array().notNull(),
   
   // Status and timestamps

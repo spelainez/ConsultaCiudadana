@@ -5,10 +5,40 @@ import { setupAuth, requireAuth, requireRole, hashPassword, comparePasswords } f
 import { storage } from "./storage";
 import { insertConsultationSchema, insertSectorSchema, insertUserSchema } from "@shared/schema";
 import * as XLSX from 'xlsx';
+import multer from "multer";
+import fs from "fs";
+import path from "path";
+import { fileTypeFromBuffer } from "file-type";
+import sharp from "sharp";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
+
+  // Rate limiting for image uploads
+  const imageUploadLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // 10 uploads per 15 minutes
+    message: "Demasiadas subidas de imágenes. Inténtalo más tarde.",
+  });
+
+  // Configure multer for secure file uploads
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB per file (safe limit)
+      files: 3 // Maximum 3 files
+    },
+    fileFilter: (req, file, cb) => {
+      // Only accept common safe image formats
+      const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (allowedMimes.includes(file.mimetype.toLowerCase())) {
+        cb(null, true);
+      } else {
+        cb(new Error('Solo se permiten imágenes JPEG, PNG o WebP'));
+      }
+    }
+  });
 
   // Rate limiting for user creation
   const userCreationLimiter = rateLimit({
@@ -75,6 +105,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error searching sectors:", error);
       res.status(500).json({ error: "Failed to search sectors" });
+    }
+  });
+
+  // Image upload endpoint (authenticated and rate limited)
+  app.post("/api/upload-images", imageUploadLimiter, requireAuth, upload.array('images', 3), async (req, res) => {
+    try {
+      if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+        return res.status(400).json({ error: "No se proporcionaron imágenes" });
+      }
+
+      const imageUrls: string[] = [];
+      const timestamp = Date.now();
+
+      for (const file of req.files) {
+        // Robust file type validation using magic numbers
+        const fileType = await fileTypeFromBuffer(file.buffer);
+        const allowedTypes = ['jpg', 'jpeg', 'png', 'webp'];
+        
+        if (!fileType || !allowedTypes.includes(fileType.ext)) {
+          return res.status(400).json({ error: "Tipo de archivo inválido. Solo JPEG, PNG y WebP permitidos." });
+        }
+        
+        // Additional validation with sharp (tries to decode the image)
+        try {
+          await sharp(file.buffer).metadata();
+        } catch (error) {
+          return res.status(400).json({ error: "Archivo de imagen corrupto o inválido." });
+        }
+        
+        // Generate secure filename server-side (always JPEG for consistency)
+        const uniqueFilename = `consultation-${timestamp}-${Math.random().toString(36).substring(7)}.jpg`;
+        
+        // Use environment variables for object storage
+        const privateDir = process.env.PRIVATE_OBJECT_DIR;
+        if (!privateDir) {
+          console.error("PRIVATE_OBJECT_DIR not configured");
+          return res.status(500).json({ error: "Configuración de almacenamiento no disponible" });
+        }
+        
+        const filePath = path.join(privateDir, 'images', uniqueFilename);
+        
+        // Ensure directory exists
+        const dirPath = path.dirname(filePath);
+        await fs.promises.mkdir(dirPath, { recursive: true }).catch(() => {});
+        
+        // Write optimized image to object storage
+        const optimizedBuffer = await sharp(file.buffer)
+          .resize(1920, 1080, { 
+            fit: 'inside',
+            withoutEnlargement: true
+          })
+          .jpeg({ quality: 85 })
+          .toBuffer();
+        
+        await fs.promises.writeFile(filePath, optimizedBuffer);
+        
+        // Generate accessible URL
+        const imageUrl = `/api/images/${uniqueFilename}`;
+        imageUrls.push(imageUrl);
+      }
+
+      res.status(201).json({ 
+        success: true, 
+        imageUrls 
+      });
+    } catch (error) {
+      console.error("Error uploading images:", error);
+      res.status(500).json({ error: "Error al subir las imágenes" });
+    }
+  });
+
+  // Endpoint to serve uploaded images (secured)
+  app.get("/api/images/:filename", async (req, res) => {
+    try {
+      const filename = req.params.filename;
+      
+      // Strict filename validation (prevent path traversal)
+      const filenamePattern = /^consultation-\d+-[a-z0-9]+\.(jpg|jpeg|png|webp)$/i;
+      if (!filenamePattern.test(filename)) {
+        return res.status(400).json({ error: "Nombre de archivo inválido" });
+      }
+      
+      const privateDir = process.env.PRIVATE_OBJECT_DIR;
+      if (!privateDir) {
+        return res.status(500).json({ error: "Configuración de almacenamiento no disponible" });
+      }
+      
+      const filePath = path.join(privateDir, 'images', filename);
+      
+      // Check if file exists and is within allowed directory
+      if (!fs.existsSync(filePath) || !path.resolve(filePath).startsWith(path.resolve(privateDir))) {
+        return res.status(404).json({ error: "Imagen no encontrada" });
+      }
+      
+      // Set security headers
+      res.set({
+        'Content-Type': 'image/jpeg',
+        'X-Content-Type-Options': 'nosniff',
+        'Cache-Control': 'public, max-age=31536000' // 1 year cache
+      });
+      
+      // Serve the image
+      res.sendFile(path.resolve(filePath));
+    } catch (error) {
+      console.error("Error serving image:", error);
+      res.status(500).json({ error: "Error al servir la imagen" });
     }
   });
 

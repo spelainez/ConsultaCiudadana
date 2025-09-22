@@ -1170,3 +1170,39 @@
 ::-webkit-scrollbar-thumb:hover {
   background: var(--honduras-primary-dark);
 }
+
+/* Photo upload section styles */
+.photo-upload-section {
+  padding: 0.5rem 0;
+}
+
+.photo-upload-button {
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  padding: 1rem;
+}
+
+.photo-upload-button:hover {
+  border-color: #1bd1e8;
+  background-color: #f8fafc;
+}
+
+.selected-photos-grid .photo-preview-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+.selected-photos-grid .photo-preview-card:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+  transition: all 0.2s ease;
+}
+
+.photo-info {
+  padding: 0.5rem;
+  background: #f1f5f9;
+  font-size: 0.8rem;
+}

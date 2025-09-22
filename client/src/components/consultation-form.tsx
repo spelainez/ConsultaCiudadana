@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, X, Plus, Check, ChevronsUpDown } from "lucide-react";
+import { Loader2, X, Plus, Check, ChevronsUpDown, Upload, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -32,6 +32,7 @@ export function ConsultationForm() {
   const [selectedZone, setSelectedZone] = useState<string>("");
   const [localitySearchOpen, setLocalitySearchOpen] = useState(false);
   const [localitySearchValue, setLocalitySearchValue] = useState("");
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [openDepartment, setOpenDepartment] = useState(false);
   const [openMunicipality, setOpenMunicipality] = useState(false);
 
@@ -82,6 +83,7 @@ export function ConsultationForm() {
       form.reset();
       setSelectedSectors([]);
       setPersonType("natural");
+      setSelectedImages([]);
       queryClient.invalidateQueries({ queryKey: ["/api/consultations"] });
     },
     onError: (error) => {
@@ -93,10 +95,43 @@ export function ConsultationForm() {
     },
   });
 
-  const onSubmit = (data: ConsultationFormData) => {
+  const onSubmit = async (data: ConsultationFormData) => {
+    let imageUrls: string[] = [];
+    
+    // Upload images first if any are selected
+    if (selectedImages.length > 0) {
+      const formData = new FormData();
+      selectedImages.forEach((file) => {
+        formData.append('images', file);
+      });
+      
+      try {
+        const uploadRes = await fetch('/api/upload-images', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!uploadRes.ok) {
+          throw new Error('Error al subir imágenes');
+        }
+        
+        const uploadData = await uploadRes.json();
+        imageUrls = uploadData.imageUrls;
+      } catch (error) {
+        toast({
+          title: "Error al subir imágenes",
+          description: "No se pudieron subir las imágenes. Envía la consulta sin ellas o inténtalo de nuevo.",
+          variant: "destructive",
+        });
+        return; // Stop form submission on image upload error
+      }
+    }
+    
+    // Submit consultation with image URLs
     createConsultationMutation.mutate({
       ...data,
       selectedSectors,
+      images: imageUrls,
     });
   };
 
@@ -742,6 +777,82 @@ export function ConsultationForm() {
                   )}
                 </div>
 
+                {/* Photo Upload Section */}
+                <div className="mb-4">
+                  <Label className="mb-3 d-block">
+                    Fotografías (Opcional)
+                  </Label>
+                  <div className="photo-upload-section">
+                    {selectedImages.length < 3 && (
+                      <div className="photo-upload-button mb-3">
+                        <input
+                          type="file"
+                          id="photo-input"
+                          accept="image/*"
+                          multiple
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files || []);
+                            const remainingSlots = 3 - selectedImages.length;
+                            const filesToAdd = files.slice(0, remainingSlots);
+                            setSelectedImages(prev => [...prev, ...filesToAdd]);
+                            e.target.value = ''; // Reset input
+                          }}
+                          data-testid="input-photos"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-100 d-flex align-items-center justify-content-center gap-2 py-3"
+                          onClick={() => document.getElementById('photo-input')?.click()}
+                          data-testid="button-uploadPhotos"
+                        >
+                          <Upload className="w-5 h-5" />
+                          Subir fotografías ({selectedImages.length}/3)
+                        </Button>
+                        <div className="form-text mt-1">
+                          Máximo 3 fotografías. Todos los formatos de imagen son permitidos.
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Preview Selected Images */}
+                    {selectedImages.length > 0 && (
+                      <div className="selected-photos-grid row g-3">
+                        {selectedImages.map((file, index) => (
+                          <div key={index} className="col-md-4">
+                            <div className="photo-preview-card position-relative">
+                              <img
+                                src={URL.createObjectURL(file)}
+                                alt={`Fotografía ${index + 1}`}
+                                className="img-fluid rounded"
+                                style={{ width: '100%', height: '150px', objectFit: 'cover' }}
+                              />
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                className="position-absolute top-0 end-0 m-1"
+                                onClick={() => {
+                                  setSelectedImages(prev => prev.filter((_, i) => i !== index));
+                                }}
+                                data-testid={`button-removePhoto-${index}`}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                              <div className="photo-info mt-1">
+                                <small className="text-muted">
+                                  {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                                </small>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {/* Submit Button */}
                 <div className="form-buttons-container">
                   <Button
@@ -753,6 +864,7 @@ export function ConsultationForm() {
                       setSelectedSectors([]);
                       setPersonType("natural");
                       setSelectedZone("");
+                      setSelectedImages([]);
                     }}
                     data-testid="button-reset"
                   >
