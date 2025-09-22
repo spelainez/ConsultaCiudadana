@@ -66,7 +66,7 @@ export function ConsultationForm() {
 
   const { data: sectorSuggestions = [] } = useQuery<any[]>({
     queryKey: [`/api/sectors/search?q=${sectorSearch}`],
-    enabled: sectorSearch.length > 2,
+    enabled: sectorSearch.length > 0,
   });
 
   // Mutation
@@ -694,7 +694,7 @@ export function ConsultationForm() {
                       value={sectorSearch}
                       onChange={(e) => {
                         setSectorSearch(e.target.value);
-                        setShowSuggestions(e.target.value.length > 2);
+                        setShowSuggestions(e.target.value.length > 0);
                       }}
                       placeholder="Ingrese el sector que busca"
                       data-testid="input-sectorSearch"
