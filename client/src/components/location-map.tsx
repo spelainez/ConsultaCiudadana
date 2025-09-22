@@ -47,7 +47,10 @@ export default function LocationMap({
   locationName, 
   geocode 
 }: LocationMapProps) {
-  const [position, setPosition] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
+  // Coordenadas centrales de Honduras como vista inicial
+  const [position, setPosition] = useState<{ lat: number; lng: number; zoom: number }>({ 
+    lat: 14.5, lng: -87.0, zoom: 7 // Vista general de Honduras
+  });
 
   useEffect(() => {
     if (latitude && longitude) {
@@ -62,16 +65,19 @@ export default function LocationMap({
       if (coordinates) {
         setPosition(coordinates);
       }
+    } else {
+      // Reset a vista general de Honduras cuando no hay selecciones
+      setPosition({ lat: 14.5, lng: -87.0, zoom: 7 });
     }
   }, [latitude, longitude, geocode]);
 
   // Función para obtener coordenadas aproximadas basadas en el geocódigo
   function getApproximateCoordinates(geocode: string): { lat: number; lng: number; zoom: number } | null {
-    const parts = geocode.split('-');
     if (!geocode) return null;
     
-    const departmentCode = parts[0];
-    const municipalityCode = parts[1];
+    // Nuevo formato sin guiones: departamento (2 dígitos) + municipio (2 dígitos) = 4 dígitos
+    const departmentCode = geocode.substring(0, 2);
+    const municipalityCode = geocode.length >= 4 ? geocode.substring(2, 4) : null;
     
     // Coordenadas de las capitales departamentales y municipios principales
     const coordinates: Record<string, { lat: number; lng: number }> = {
@@ -146,7 +152,7 @@ export default function LocationMap({
       '18-04': { lat: 15.4000, lng: -87.8167 }, // El Progreso
     };
     
-    if (parts.length >= 2) {
+    if (municipalityCode) {
       // Buscar por código específico de municipio primero
       const specificKey = `${departmentCode}-${municipalityCode}`;
       if (coordinates[specificKey]) {
@@ -157,32 +163,23 @@ export default function LocationMap({
       if (coordinates[departmentCode]) {
         return { ...coordinates[departmentCode], zoom: 11 }; // Zoom municipio (usando coordenadas de departamento)
       }
-    } else if (parts.length === 1) {
+    } else if (geocode.length >= 2) {
       // Solo departamento seleccionado
       if (coordinates[departmentCode]) {
         return { ...coordinates[departmentCode], zoom: 8 }; // Zoom departamento
       }
     }
     
-    // Fallback a Tegucigalpa si no encuentra coordenadas
-    return { lat: 14.0723, lng: -87.1921, zoom: 8 };
+    // Fallback a vista general de Honduras si no encuentra coordenadas
+    return { lat: 14.5, lng: -87.0, zoom: 7 };
   }
 
-  if (!position) {
-    return (
-      <div className="rounded-xl border p-3 bg-gray-50" data-testid="map-placeholder">
-        <h4 className="font-semibold mb-2 text-sm text-gray-600">Ubicación en el Mapa</h4>
-        <div className="location-map-wrapper flex items-center justify-center text-gray-500 text-sm">
-          Complete la selección de ubicación para ver el mapa
-        </div>
-      </div>
-    );
-  }
+  // El mapa siempre se muestra, sin condición
 
   return (
     <div className="rounded-xl border p-3" data-testid="location-map-container">
       <h4 className="font-semibold mb-2 text-sm">Ubicación en el Mapa</h4>
-      <div className="location-map-wrapper" style={{ width: "100%" }}>
+      <div className="location-map-wrapper" style={{ width: "100%", height: "320px" }}>
         <MapContainer
           center={[position.lat, position.lng]}
           zoom={position.zoom}
@@ -195,12 +192,15 @@ export default function LocationMap({
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           />
-          <Marker position={[position.lat, position.lng]}>
-            <Popup>
-              {locationName || 'Ubicación seleccionada'}
-              {geocode && <><br /><small>Geocódigo: {geocode}</small></>}
-            </Popup>
-          </Marker>
+          {/* Solo mostrar marcador cuando hay una selección real */}
+          {(geocode || (latitude && longitude)) && (
+            <Marker position={[position.lat, position.lng]}>
+              <Popup>
+                {locationName || 'Ubicación seleccionada'}
+                {geocode && <><br /><small>Geocódigo: {geocode}</small></>}
+              </Popup>
+            </Marker>
+          )}
         </MapContainer>
       </div>
       {locationName && (
