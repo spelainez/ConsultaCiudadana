@@ -630,14 +630,13 @@ export function ConsultationForm() {
                   <div className="geocode-display">
                     <div className="geocode-container">
                       <Label className="geocode-label">Geocódigo Generado</Label>
-                      <div className={`geocode-value ${!form.watch("localityId") ? 'opacity-50' : ''}`} data-testid="text-geocode">
+                      <div className={`geocode-value ${!(form.watch("departmentId") && form.watch("municipalityId")) ? 'opacity-50' : ''}`} data-testid="text-geocode">
                         {(() => {
                           const selectedDept = departments.find(d => d.id === form.watch("departmentId"));
                           const selectedMuni = municipalities.find(m => m.id === form.watch("municipalityId"));
-                          const selectedLocality = localities.find(l => l.id === form.watch("localityId"));
                           
-                          if (selectedDept && selectedMuni && selectedLocality) {
-                            return `${selectedDept.geocode}-${selectedMuni.geocode}-${selectedLocality.geocode}`;
+                          if (selectedDept && selectedMuni) {
+                            return `${selectedDept.geocode}${selectedMuni.geocode}`;
                           }
                           return "Se generará automáticamente cuando complete la ubicación";
                         })()}
@@ -672,10 +671,9 @@ export function ConsultationForm() {
                       geocode={(() => {
                         const selectedDept = departments.find(d => d.id === form.watch("departmentId"));
                         const selectedMuni = municipalities.find(m => m.id === form.watch("municipalityId"));
-                        const selectedLocality = localities.find(l => l.id === form.watch("localityId"));
                         
-                        if (selectedDept && selectedMuni && selectedLocality) {
-                          return `${selectedDept.geocode}-${selectedMuni.geocode}-${selectedLocality.geocode}`;
+                        if (selectedDept && selectedMuni) {
+                          return `${selectedDept.geocode}${selectedMuni.geocode}`;
                         }
                         return undefined;
                       })()}
