@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, X, Plus, Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import LocationMap from "@/components/location-map";
 
@@ -30,6 +30,8 @@ export function ConsultationForm() {
   const [sectorSearch, setSectorSearch] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedZone, setSelectedZone] = useState<string>("");
+  const [localitySearchOpen, setLocalitySearchOpen] = useState(false);
+  const [localitySearchValue, setLocalitySearchValue] = useState("");
   const [openDepartment, setOpenDepartment] = useState(false);
   const [openMunicipality, setOpenMunicipality] = useState(false);
 
@@ -515,35 +517,74 @@ export function ConsultationForm() {
                     </Select>
                   </div>
 
-                  {/* Locality Selection */}
+                  {/* Locality Selection with Search */}
                   <div className="location-step mb-3">
                     <Label className="location-label">
                       4. {selectedZone === "urbano" ? "Colonia o Barrio" : selectedZone === "rural" ? "Aldea o Caserío" : "Localidad"} *
                     </Label>
-                    <Select
-                      onValueChange={(value) => form.setValue("localityId", value)}
-                      key={selectedZone} // Force re-render when zone changes
-                      disabled={!selectedZone}
-                    >
-                      <SelectTrigger className="location-select" data-testid="select-locality">
-                        <SelectValue placeholder={
-                          !selectedZone 
-                            ? "Primero seleccione un tipo de zona..."
-                            : selectedZone === "urbano" 
-                              ? "Seleccione su colonia o barrio..." 
-                              : "Seleccione su aldea o caserío..."
-                        } />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {selectedZone && localities
-                          .filter(locality => locality.area === selectedZone)
-                          .map((locality) => (
-                            <SelectItem key={locality.id} value={locality.id}>
-                              {locality.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={localitySearchOpen} onOpenChange={setLocalitySearchOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={localitySearchOpen}
+                          className="w-full justify-between location-select"
+                          data-testid="select-locality"
+                          disabled={!selectedZone}
+                        >
+                          {form.watch("localityId")
+                            ? localities.find((locality) => locality.id === form.watch("localityId"))?.name
+                            : !selectedZone 
+                              ? "Primero seleccione un tipo de zona..."
+                              : selectedZone === "urbano" 
+                                ? "Busque su colonia o barrio..." 
+                                : "Busque su aldea o caserío..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0" align="start">
+                        <Command>
+                          <CommandInput 
+                            placeholder={
+                              selectedZone === "urbano" 
+                                ? "Buscar colonia o barrio..." 
+                                : "Buscar aldea o caserío..."
+                            }
+                            value={localitySearchValue}
+                            onValueChange={setLocalitySearchValue}
+                          />
+                          <CommandList>
+                            <CommandEmpty>No se encontraron localidades.</CommandEmpty>
+                            <CommandGroup>
+                              {selectedZone && localities
+                                .filter(locality => locality.area === selectedZone)
+                                .filter(locality => 
+                                  locality.name.toLowerCase().includes(localitySearchValue.toLowerCase())
+                                )
+                                .map((locality) => (
+                                  <CommandItem
+                                    key={locality.id}
+                                    value={locality.name}
+                                    onSelect={() => {
+                                      form.setValue("localityId", locality.id);
+                                      setLocalitySearchOpen(false);
+                                      setLocalitySearchValue("");
+                                    }}
+                                  >
+                                    <Check
+                                      className={`mr-2 h-4 w-4 ${
+                                        locality.id === form.watch("localityId") ? "opacity-100" : "opacity-0"
+                                      }`}
+                                    />
+                                    {locality.name}
+                                  </CommandItem>
+                                ))
+                              }
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     {form.formState.errors.localityId && (
                       <div className="text-danger small mt-1">{form.formState.errors.localityId.message}</div>
                     )}
