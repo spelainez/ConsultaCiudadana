@@ -557,6 +557,7 @@ export function ConsultationForm() {
                             <CommandEmpty>No se encontraron localidades.</CommandEmpty>
                             <CommandGroup>
                               {selectedZone && localities
+                                .filter(locality => locality.municipalityId === form.watch("municipalityId"))
                                 .filter(locality => locality.area === selectedZone)
                                 .filter(locality => 
                                   locality.name.toLowerCase().includes(localitySearchValue.toLowerCase())
