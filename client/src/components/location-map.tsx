@@ -24,11 +24,11 @@ const CitizenIcon = L.divIcon({
       display: flex; align-items: center; justify-content: center;
       position: relative;
     ">
-      <div style="
-        color: white; font-size: 18px; font-weight: bold; 
-        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-        transform: translateY(-1px);
-      ">👤</div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="white" style="
+        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+      ">
+        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+      </svg>
     </div>
     <div style="
       width: 0; height: 0; 
