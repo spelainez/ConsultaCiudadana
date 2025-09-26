@@ -13,29 +13,35 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
 /* ========================
-   Icono tipo bandera 🇭🇳
+   Marcador ciudadano atractivo 🇭🇳
 ======================== */
-const HondurasIcon = L.divIcon({
+const CitizenIcon = L.divIcon({
   html: `
     <div style="
-      background: linear-gradient(to bottom,#0066CC 0%,#0066CC 33%,#FFFFFF 33%,#FFFFFF 66%,#0066CC 66%,#0066CC 100%);
-      width: 30px;height: 20px;border: 2px solid #333;border-radius: 3px;
-      position: relative;box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      background: linear-gradient(135deg, #ea4640 0%, #ff6b66 100%);
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 3px solid white; box-shadow: 0 4px 12px rgba(234, 70, 64, 0.4);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
     ">
       <div style="
-        position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-        color:#0066CC;font-size:8px;font-weight:bold;text-shadow:0 0 2px white;
-      ">★</div>
+        color: white; font-size: 18px; font-weight: bold; 
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        transform: translateY(-1px);
+      ">👤</div>
     </div>
     <div style="
-      width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;
-      border-top:8px solid #333;position:absolute;left:10px;top:20px;
+      width: 0; height: 0; 
+      border-left: 6px solid transparent; border-right: 6px solid transparent;
+      border-top: 10px solid #ea4640;
+      position: absolute; left: 12px; top: 32px;
+      filter: drop-shadow(0 2px 3px rgba(234, 70, 64, 0.3));
     "></div>
   `,
-  className: "custom-div-icon",
-  iconSize: [30, 28],
-  iconAnchor: [15, 28],
-  popupAnchor: [0, -28],
+  className: "citizen-marker-icon",
+  iconSize: [36, 42],
+  iconAnchor: [18, 42],
+  popupAnchor: [0, -42],
 });
 
 /* ========================
@@ -195,7 +201,7 @@ export default function LocationMap({
           <ClickCatcher onPick={handlePick} />
 
           {showMarker && (
-            <Marker position={[pos.lat, pos.lng]} icon={HondurasIcon}>
+            <Marker position={[pos.lat, pos.lng]} icon={CitizenIcon}>
               <Popup>
                 {locationName || "Ubicación seleccionada"}
                 {geocode && (
