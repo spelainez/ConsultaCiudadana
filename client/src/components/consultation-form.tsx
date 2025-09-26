@@ -62,8 +62,6 @@ function ConsultationForm() {
   const { toast } = useToast();
   const [personType, setPersonType] = useState<string>("natural");
   const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
-  const [sectorSearch, setSectorSearch] = useState("");
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedZone, setSelectedZone] = useState<string>("");
   const [localitySearchOpen, setLocalitySearchOpen] = useState(false);
   const [localitySearchValue, setLocalitySearchValue] = useState("");
@@ -104,9 +102,9 @@ function ConsultationForm() {
     queryKey: ["/api/sectors"],
   });
 
-  const { data: sectorSuggestions = [] } = useQuery<any[]>({
-    queryKey: sectorSearch.length > 0 ? [`/api/sectors/search?q=${sectorSearch}`] : [],
-    enabled: sectorSearch.length > 0,
+  // Cargar todos los sectores para mostrarlos como botones
+  const { data: allSectors = [] } = useQuery<any[]>({
+    queryKey: ["/api/sectors"],
   });
 
   // === Mutación para crear consulta ===
@@ -175,8 +173,6 @@ function ConsultationForm() {
     if (!selectedSectors.includes(sectorName)) {
       setSelectedSectors((prev) => [...prev, sectorName]);
     }
-    setSectorSearch("");
-    setShowSuggestions(false);
   };
 
   const handleSectorRemove = (sectorName: string) => {
@@ -670,34 +666,38 @@ function ConsultationForm() {
                       <p className="form-section-description">Seleccione los sectores sobre los que desea consultar</p>
                     </CardHeader>
                     <CardContent>
-                      <div className="position-relative">
-                        <Input
-                          value={sectorSearch}
-                          onChange={(e) => {
-                            setSectorSearch(e.target.value);
-                            setShowSuggestions(e.target.value.length > 0);
-                          }}
-                          placeholder="Ingrese el sector que busca"
-                          data-testid="input-sectorSearch"
-                        />
-                        {showSuggestions && sectorSuggestions.length > 0 && (
-                          <div className="dropdown-menu show w-100 mt-1" style={{ position: "absolute", zIndex: 1000 }}>
-                            {sectorSuggestions
-                              .filter((s) => !selectedSectors.includes(s.name))
-                              .map((sector) => (
-                                <button
-                                  key={sector.id}
+                      {/* Botones de sectores para seleccionar */}
+                      <div className="sectors-grid">
+                        <p className="text-muted small mb-3">Haga clic en los sectores que le interesen:</p>
+                        <div className="row g-2">
+                          {allSectors.map((sector) => {
+                            const isSelected = selectedSectors.includes(sector.name);
+                            return (
+                              <div key={sector.id} className="col-md-6 col-lg-4">
+                                <Button
                                   type="button"
-                                  className="dropdown-item"
-                                  onClick={() => handleSectorAdd(sector.name)}
-                                  data-testid={`button-addSector-${sector.name}`}
+                                  variant={isSelected ? "default" : "outline"}
+                                  className={`w-100 text-start ${isSelected ? 'bg-primary text-white' : 'bg-light'}`}
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      handleSectorRemove(sector.name);
+                                    } else {
+                                      handleSectorAdd(sector.name);
+                                    }
+                                  }}
+                                  data-testid={`button-sector-${sector.name}`}
                                 >
-                                  <Plus className="w-4 h-4 me-2" />
+                                  {isSelected ? (
+                                    <Check className="w-4 h-4 me-2" />
+                                  ) : (
+                                    <Plus className="w-4 h-4 me-2" />
+                                  )}
                                   {sector.name}
-                                </button>
-                              ))}
-                          </div>
-                        )}
+                                </Button>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
 
                       {/* Seleccionados */}
