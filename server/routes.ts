@@ -1,10 +1,20 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import rateLimit from "express-rate-limit";
-import { setupAuth, requireAuth, requireRole, hashPassword, comparePasswords } from "./auth";
+import {
+  setupAuth,
+  requireAuth,
+  requireRole,
+  hashPassword,
+  comparePasswords,
+} from "./auth";
 import { storage } from "./storage";
-import { insertConsultationSchema, insertSectorSchema, insertUserSchema } from "@shared/schema";
-import * as XLSX from 'xlsx';
+import {
+  insertConsultationSchema,
+  insertSectorSchema,
+  insertUserSchema,
+} from "@shared/schema";
+import * as XLSX from "xlsx";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
@@ -12,48 +22,47 @@ import { fileTypeFromBuffer } from "file-type";
 import sharp from "sharp";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup authentication
+  // Autenticación base (para endpoints protegidos)
   setupAuth(app);
 
-  // Rate limiting for image uploads
+  // Rate limiting general para subida de imágenes
   const imageUploadLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 10, // 10 uploads per 15 minutes
+    windowMs: 15 * 60 * 1000,
+    max: 10,
     message: "Demasiadas subidas de imágenes. Inténtalo más tarde.",
   });
 
-  // Configure multer for secure file uploads
+  // Multer en memoria + validaciones
   const upload = multer({
     storage: multer.memoryStorage(),
     limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB per file (safe limit)
-      files: 3 // Maximum 3 files
+      fileSize: 15 * 1024 * 1024, // 15MB por archivo
+      files: 3, // máximo 3 archivos
     },
     fileFilter: (req, file, cb) => {
-      // Only accept common safe image formats
-      const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      const allowedMimes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
       if (allowedMimes.includes(file.mimetype.toLowerCase())) {
         cb(null, true);
       } else {
-        cb(new Error('Solo se permiten imágenes JPEG, PNG o WebP'));
+        cb(new Error("Solo se permiten imágenes JPEG, PNG o WebP"));
       }
-    }
+    },
   });
 
-  // Rate limiting for user creation
+  // Rate limit para creación de usuarios
   const userCreationLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 3, // 3 user creation attempts per window
+    windowMs: 15 * 60 * 1000,
+    max: 3,
     message: {
-      error: "Demasiados intentos de creación de usuarios. Intente nuevamente en 15 minutos."
+      error: "Demasiados intentos de creación de usuarios. Intente nuevamente en 15 minutos.",
     },
     standardHeaders: true,
     legacyHeaders: false,
     skipSuccessfulRequests: true,
   });
 
-  // Location endpoints
-  app.get("/api/departments", async (req, res) => {
+  // ===================== Ubicación =====================
+  app.get("/api/departments", async (_req, res) => {
     try {
       const departments = await storage.getDepartments();
       res.json(departments);
@@ -65,7 +74,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/municipalities/:departmentId", async (req, res) => {
     try {
-      const municipalities = await storage.getMunicipalitiesByDepartment(req.params.departmentId);
+      const municipalities = await storage.getMunicipalitiesByDepartment(
+        req.params.departmentId
+      );
       res.json(municipalities);
     } catch (error) {
       console.error("Error fetching municipalities:", error);
@@ -75,7 +86,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/localities/:municipalityId", async (req, res) => {
     try {
-      const localities = await storage.getLocalitiesByMunicipality(req.params.municipalityId);
+      const localities = await storage.getLocalitiesByMunicipality(
+        req.params.municipalityId
+      );
       res.json(localities);
     } catch (error) {
       console.error("Error fetching localities:", error);
@@ -83,8 +96,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Sector endpoints
-  app.get("/api/sectors", async (req, res) => {
+  // ===================== Sectores =====================
+  app.get("/api/sectors", async (_req, res) => {
     try {
       const sectors = await storage.getSectors();
       res.json(sectors);
@@ -97,9 +110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/sectors/search", async (req, res) => {
     try {
       const query = req.query.q as string;
-      if (!query) {
-        return res.json([]);
-      }
+      if (!query) return res.json([]);
       const sectors = await storage.searchSectors(query);
       res.json(sectors);
     } catch (error) {
@@ -108,105 +119,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Image upload endpoint (authenticated and rate limited)
-  app.post("/api/upload-images", imageUploadLimiter, requireAuth, upload.array('images', 3), async (req, res) => {
-    try {
-      if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
-        return res.status(400).json({ error: "No se proporcionaron imágenes" });
-      }
-
-      const imageUrls: string[] = [];
-      const timestamp = Date.now();
-
-      for (const file of req.files) {
-        // Robust file type validation using magic numbers
-        const fileType = await fileTypeFromBuffer(file.buffer);
-        const allowedTypes = ['jpg', 'jpeg', 'png', 'webp'];
-        
-        if (!fileType || !allowedTypes.includes(fileType.ext)) {
-          return res.status(400).json({ error: "Tipo de archivo inválido. Solo JPEG, PNG y WebP permitidos." });
+  // ===================== Subida de imágenes (PÚBLICO) =====================
+  app.post(
+    "/api/upload-images",
+    imageUploadLimiter,
+    // handler de errores de multer para devolver 4xx legible
+    (req, res, next) => {
+      upload.array("images", 3)(req, res, (err: any) => {
+        if (err) {
+          if (err.code === "LIMIT_FILE_SIZE") {
+            return res.status(400).json({ error: "El archivo excede el límite de 15 MB" });
+          }
+          if (err.code === "LIMIT_UNEXPECTED_FILE") {
+            return res.status(400).json({ error: "Se excedió el máximo de 3 imágenes" });
+          }
+          return res.status(400).json({ error: err.message || "Archivo inválido" });
         }
-        
-        // Additional validation with sharp (tries to decode the image)
-        try {
-          await sharp(file.buffer).metadata();
-        } catch (error) {
-          return res.status(400).json({ error: "Archivo de imagen corrupto o inválido." });
+        next();
+      });
+    },
+    async (req, res) => {
+      try {
+        if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+          return res.status(400).json({ error: "No se proporcionaron imágenes" });
         }
-        
-        // Generate secure filename server-side (always JPEG for consistency)
-        const uniqueFilename = `consultation-${timestamp}-${Math.random().toString(36).substring(7)}.jpg`;
-        
-        // Use environment variables for object storage
+
         const privateDir = process.env.PRIVATE_OBJECT_DIR;
         if (!privateDir) {
-          console.error("PRIVATE_OBJECT_DIR not configured");
-          return res.status(500).json({ error: "Configuración de almacenamiento no disponible" });
+          return res
+            .status(500)
+            .json({ error: "Configuración de almacenamiento no disponible" });
         }
-        
-        const filePath = path.join(privateDir, 'images', uniqueFilename);
-        
-        // Ensure directory exists
-        const dirPath = path.dirname(filePath);
-        await fs.promises.mkdir(dirPath, { recursive: true }).catch(() => {});
-        
-        // Write optimized image to object storage
-        const optimizedBuffer = await sharp(file.buffer)
-          .resize(1920, 1080, { 
-            fit: 'inside',
-            withoutEnlargement: true
-          })
-          .jpeg({ quality: 85 })
-          .toBuffer();
-        
-        await fs.promises.writeFile(filePath, optimizedBuffer);
-        
-        // Generate accessible URL
-        const imageUrl = `/api/images/${uniqueFilename}`;
-        imageUrls.push(imageUrl);
+
+        const imageUrls: string[] = [];
+        const timestamp = Date.now();
+
+        for (const file of req.files as Express.Multer.File[]) {
+          const fileType = await fileTypeFromBuffer(file.buffer);
+          const allowedTypes = ["jpg", "jpeg", "png", "webp"];
+          if (!fileType || !allowedTypes.includes(fileType.ext)) {
+            return res
+              .status(400)
+              .json({ error: "Tipo de archivo inválido. Solo JPEG, PNG o WebP permitidos." });
+          }
+
+          // Validar que realmente se puede decodificar
+          await sharp(file.buffer).metadata();
+
+          // Guardamos SIEMPRE como JPG optimizado
+          const uniqueFilename = `consultation-${timestamp}-${Math.random()
+            .toString(36)
+            .slice(2)}.jpg`;
+          const filePath = path.join(privateDir, "images", uniqueFilename);
+          await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+
+          const optimizedBuffer = await sharp(file.buffer)
+            .resize(1920, 1080, { fit: "inside", withoutEnlargement: true })
+            .jpeg({ quality: 85 })
+            .toBuffer();
+
+          await fs.promises.writeFile(filePath, optimizedBuffer);
+          imageUrls.push(`/api/images/${uniqueFilename}`);
+        }
+
+        res.status(201).json({ success: true, imageUrls });
+      } catch (error) {
+        console.error("Error uploading images:", error);
+        res.status(500).json({ error: "Error al subir las imágenes" });
       }
-
-      res.status(201).json({ 
-        success: true, 
-        imageUrls 
-      });
-    } catch (error) {
-      console.error("Error uploading images:", error);
-      res.status(500).json({ error: "Error al subir las imágenes" });
     }
-  });
+  );
 
-  // Endpoint to serve uploaded images (secured)
+  // Servir imágenes guardadas
   app.get("/api/images/:filename", async (req, res) => {
     try {
       const filename = req.params.filename;
-      
-      // Strict filename validation (prevent path traversal)
-      const filenamePattern = /^consultation-\d+-[a-z0-9]+\.(jpg|jpeg|png|webp)$/i;
+      // solo .jpg porque guardamos en .jpg
+      const filenamePattern = /^consultation-\d+-[a-z0-9]+\.jpg$/i;
       if (!filenamePattern.test(filename)) {
         return res.status(400).json({ error: "Nombre de archivo inválido" });
       }
-      
+
       const privateDir = process.env.PRIVATE_OBJECT_DIR;
       if (!privateDir) {
-        return res.status(500).json({ error: "Configuración de almacenamiento no disponible" });
+        return res
+          .status(500)
+          .json({ error: "Configuración de almacenamiento no disponible" });
       }
-      
-      const filePath = path.join(privateDir, 'images', filename);
-      
-      // Check if file exists and is within allowed directory
-      if (!fs.existsSync(filePath) || !path.resolve(filePath).startsWith(path.resolve(privateDir))) {
+
+      const filePath = path.join(privateDir, "images", filename);
+      if (!fs.existsSync(filePath)) {
         return res.status(404).json({ error: "Imagen no encontrada" });
       }
-      
-      // Set security headers
+
       res.set({
-        'Content-Type': 'image/jpeg',
-        'X-Content-Type-Options': 'nosniff',
-        'Cache-Control': 'public, max-age=31536000' // 1 year cache
+        "Content-Type": "image/jpeg",
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "public, max-age=31536000",
       });
-      
-      // Serve the image
       res.sendFile(path.resolve(filePath));
     } catch (error) {
       console.error("Error serving image:", error);
@@ -214,7 +224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Consultation endpoints
+  // ===================== Consultas =====================
   app.post("/api/consultations", async (req, res) => {
     try {
       const validatedData = insertConsultationSchema.parse(req.body);
@@ -226,336 +236,343 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/consultations", requireAuth, requireRole(["admin", "super_admin"]), async (req, res) => {
-    try {
-      const filters = {
-        dateFrom: req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined,
-        dateTo: req.query.dateTo ? new Date(req.query.dateTo as string) : undefined,
-        departmentId: req.query.departmentId as string,
-        sector: req.query.sector as string,
-        offset: req.query.offset ? parseInt(req.query.offset as string) : 0,
-        limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
-      };
+  app.get(
+    "/api/consultations",
+    requireAuth,
+    requireRole(["admin", "super_admin"]),
+    async (req, res) => {
+      try {
+        const filters = {
+          dateFrom: req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined,
+          dateTo: req.query.dateTo ? new Date(req.query.dateTo as string) : undefined,
+          departmentId: req.query.departmentId as string,
+          sector: req.query.sector as string,
+          offset: req.query.offset ? parseInt(req.query.offset as string) : 0,
+          limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
+        };
 
-      const result = await storage.getConsultations(filters);
-      res.json(result);
-    } catch (error) {
-      console.error("Error fetching consultations:", error);
-      res.status(500).json({ error: "Failed to fetch consultations" });
-    }
-  });
-
-  app.get("/api/consultations/:id", requireAuth, requireRole(["admin", "super_admin"]), async (req, res) => {
-    try {
-      const consultation = await storage.getConsultationById(req.params.id);
-      if (!consultation) {
-        return res.status(404).json({ error: "Consultation not found" });
+        const result = await storage.getConsultations(filters);
+        res.json(result);
+      } catch (error) {
+        console.error("Error fetching consultations:", error);
+        res.status(500).json({ error: "Failed to fetch consultations" });
       }
-      res.json(consultation);
-    } catch (error) {
-      console.error("Error fetching consultation:", error);
-      res.status(500).json({ error: "Failed to fetch consultation" });
     }
-  });
+  );
 
-  // Dashboard endpoints
-  app.get("/api/dashboard/stats", requireAuth, requireRole(["admin", "super_admin"]), async (req, res) => {
-    try {
-      const stats = await storage.getConsultationStats();
-      res.json(stats);
-    } catch (error) {
-      console.error("Error fetching dashboard stats:", error);
-      res.status(500).json({ error: "Failed to fetch dashboard stats" });
-    }
-  });
-
-  app.get("/api/dashboard/consultations-by-date", requireAuth, requireRole(["admin", "super_admin"]), async (req, res) => {
-    try {
-      const days = parseInt(req.query.days as string) || 30;
-      const data = await storage.getConsultationsByDate(days);
-      res.json(data);
-    } catch (error) {
-      console.error("Error fetching consultations by date:", error);
-      res.status(500).json({ error: "Failed to fetch consultations by date" });
-    }
-  });
-
-  app.get("/api/dashboard/consultations-by-sector", requireAuth, requireRole(["admin", "super_admin"]), async (req, res) => {
-    try {
-      const data = await storage.getConsultationsBySector();
-      res.json(data);
-    } catch (error) {
-      console.error("Error fetching consultations by sector:", error);
-      res.status(500).json({ error: "Failed to fetch consultations by sector" });
-    }
-  });
-
-  // Export endpoints
-  app.get("/api/export/consultations/csv", requireAuth, requireRole(["admin", "super_admin"]), async (req, res) => {
-    try {
-      const filters = {
-        dateFrom: req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined,
-        dateTo: req.query.dateTo ? new Date(req.query.dateTo as string) : undefined,
-        departmentId: req.query.departmentId as string,
-        sector: req.query.sector as string,
-      };
-
-      const result = await storage.getConsultations({ ...filters, limit: 10000 }); // Get all for export
-      const consultations = result.consultations;
-
-      // Helper function to sanitize CSV fields and prevent injection
-      const sanitizeCSVField = (field: string | undefined | null): string => {
-        if (!field) return '';
-        
-        let sanitized = String(field);
-        
-        // Prevent CSV injection by sanitizing dangerous characters at start
-        if (/^[=+\-@]/.test(sanitized)) {
-          sanitized = "'" + sanitized; // Prefix with single quote to neutralize
+  app.get(
+    "/api/consultations/:id",
+    requireAuth,
+    requireRole(["admin", "super_admin"]),
+    async (req, res) => {
+      try {
+        const consultation = await storage.getConsultationById(req.params.id);
+        if (!consultation) {
+          return res.status(404).json({ error: "Consultation not found" });
         }
-        
-        // Replace newlines with spaces
-        sanitized = sanitized.replace(/[\r\n]/g, ' ');
-        
-        // Escape quotes and wrap in quotes
-        sanitized = '"' + sanitized.replace(/"/g, '""') + '"';
-        
-        return sanitized;
-      };
-
-      // Generate CSV content with proper escaping
-      const csvHeaders = [
-        'ID',
-        'Fecha',
-        'Tipo de Persona',
-        'Nombre/Empresa',
-        'Departamento',
-        'Municipio',
-        'Colonia/Aldea',
-        'Geocódigo',
-        'Sectores',
-        'Mensaje',
-        'Estado'
-      ].map(h => sanitizeCSVField(h)).join(',');
-
-      const csvRows = consultations.map(consultation => [
-        sanitizeCSVField(consultation.id),
-        sanitizeCSVField(new Date(consultation.createdAt).toLocaleDateString('es-HN')),
-        sanitizeCSVField(consultation.personType === 'natural' ? 'Natural' : 
-          consultation.personType === 'juridica' ? 'Jurídica' : 'Anónimo'),
-        sanitizeCSVField(consultation.firstName ? `${consultation.firstName} ${consultation.lastName}` : 
-          consultation.companyName || 'Anónimo'),
-        sanitizeCSVField(consultation.departmentId),
-        sanitizeCSVField(consultation.municipalityId),
-        sanitizeCSVField(consultation.localityId),
-        sanitizeCSVField(consultation.geocode),
-        sanitizeCSVField(consultation.selectedSectors.join('; ')),
-        sanitizeCSVField(consultation.message),
-        sanitizeCSVField(consultation.status === 'active' ? 'Activa' : 'Archivada')
-      ].join(','));
-
-      const csvContent = [csvHeaders, ...csvRows].join('\n');
-
-      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-      res.setHeader('Content-Disposition', `attachment; filename="consultas_${new Date().toISOString().split('T')[0]}.csv"`);
-      res.send('\uFEFF' + csvContent); // Add BOM for proper UTF-8 encoding
-    } catch (error) {
-      console.error("Error exporting CSV:", error);
-      res.status(500).json({ error: "Failed to export CSV" });
+        res.json(consultation);
+      } catch (error) {
+        console.error("Error fetching consultation:", error);
+        res.status(500).json({ error: "Failed to fetch consultation" });
+      }
     }
-  });
+  );
 
-  app.get("/api/export/consultations/excel", requireAuth, requireRole(["admin", "super_admin"]), async (req, res) => {
-    try {
-      const filters = {
-        dateFrom: req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined,
-        dateTo: req.query.dateTo ? new Date(req.query.dateTo as string) : undefined,
-        departmentId: req.query.departmentId as string,
-        sector: req.query.sector as string,
-      };
-
-      const result = await storage.getConsultations({ ...filters, limit: 10000 });
-      const consultations = result.consultations;
-
-      // Helper function to sanitize Excel fields and prevent injection
-      const sanitizeExcelField = (field: string | undefined | null): string => {
-        if (!field) return '';
-        
-        let sanitized = String(field);
-        
-        // Prevent Excel formula injection by sanitizing dangerous characters at start
-        if (/^[=+\-@]/.test(sanitized)) {
-          sanitized = "'" + sanitized; // Prefix with single quote to neutralize
-        }
-        
-        // Replace newlines with spaces
-        sanitized = sanitized.replace(/[\r\n]/g, ' ');
-        
-        return sanitized;
-      };
-
-      // Create workbook and worksheet
-      const workbook = XLSX.utils.book_new();
-      
-      const worksheetData = [
-        ['ID', 'Fecha', 'Tipo de Persona', 'Nombre/Empresa', 'Departamento', 'Municipio', 'Colonia/Aldea', 'Geocódigo', 'Sectores', 'Mensaje', 'Estado'],
-        ...consultations.map(consultation => [
-          sanitizeExcelField(consultation.id),
-          sanitizeExcelField(new Date(consultation.createdAt).toLocaleDateString('es-HN')),
-          sanitizeExcelField(consultation.personType === 'natural' ? 'Natural' : 
-            consultation.personType === 'juridica' ? 'Jurídica' : 'Anónimo'),
-          sanitizeExcelField(consultation.firstName ? `${consultation.firstName} ${consultation.lastName}` : 
-            consultation.companyName || 'Anónimo'),
-          sanitizeExcelField(consultation.departmentId),
-          sanitizeExcelField(consultation.municipalityId),
-          sanitizeExcelField(consultation.localityId),
-          sanitizeExcelField(consultation.geocode),
-          sanitizeExcelField(consultation.selectedSectors.join(', ')),
-          sanitizeExcelField(consultation.message),
-          sanitizeExcelField(consultation.status === 'active' ? 'Activa' : 'Archivada')
-        ])
-      ];
-
-      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-      
-      // Set column widths
-      worksheet['!cols'] = [
-        { width: 10 }, // ID
-        { width: 12 }, // Fecha
-        { width: 15 }, // Tipo
-        { width: 20 }, // Nombre
-        { width: 15 }, // Departamento
-        { width: 15 }, // Municipio
-        { width: 15 }, // Colonia
-        { width: 15 }, // Geocódigo
-        { width: 25 }, // Sectores
-        { width: 50 }, // Mensaje
-        { width: 10 }, // Estado
-      ];
-
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Consultas');
-
-      // Generate Excel buffer
-      const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Disposition', `attachment; filename="consultas_${new Date().toISOString().split('T')[0]}.xlsx"`);
-      res.send(excelBuffer);
-    } catch (error) {
-      console.error("Error exporting Excel:", error);
-      res.status(500).json({ error: "Failed to export Excel" });
+  // ===================== Dashboard =====================
+  app.get(
+    "/api/dashboard/stats",
+    requireAuth,
+    requireRole(["admin", "super_admin"]),
+    async (_req, res) => {
+      try {
+        const stats = await storage.getConsultationStats();
+        res.json(stats);
+      } catch (error) {
+        console.error("Error fetching dashboard stats:", error);
+        res.status(500).json({ error: "Failed to fetch dashboard stats" });
+      }
     }
-  });
+  );
 
-  app.get("/api/export/consultations/pdf", requireAuth, requireRole(["admin", "super_admin"]), async (req, res) => {
-    try {
-      const filters = {
-        dateFrom: req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined,
-        dateTo: req.query.dateTo ? new Date(req.query.dateTo as string) : undefined,
-        departmentId: req.query.departmentId as string,
-        sector: req.query.sector as string,
-      };
+  app.get(
+    "/api/dashboard/consultations-by-date",
+    requireAuth,
+    requireRole(["admin", "super_admin"]),
+    async (req, res) => {
+      try {
+        const days = parseInt(req.query.days as string) || 30;
+        const data = await storage.getConsultationsByDate(days);
+        res.json(data);
+      } catch (error) {
+        console.error("Error fetching consultations by date:", error);
+        res.status(500).json({ error: "Failed to fetch consultations by date" });
+      }
+    }
+  );
 
-      const result = await storage.getConsultations({ ...filters, limit: 10000 });
-      const consultations = result.consultations;
+  app.get(
+    "/api/dashboard/consultations-by-sector",
+    requireAuth,
+    requireRole(["admin", "super_admin"]),
+    async (_req, res) => {
+      try {
+        const data = await storage.getConsultationsBySector();
+        res.json(data);
+      } catch (error) {
+        console.error("Error fetching consultations by sector:", error);
+        res.status(500).json({ error: "Failed to fetch consultations by sector" });
+      }
+    }
+  );
 
-      // Import jsPDF and autoTable properly for ESM
-      const { jsPDF } = await import('jspdf');
-      const { default: autoTable } = await import('jspdf-autotable');
+  // ===================== Exportaciones =====================
+  app.get(
+    "/api/export/consultations/csv",
+    requireAuth,
+    requireRole(["admin", "super_admin"]),
+    async (req, res) => {
+      try {
+        const filters = {
+          dateFrom: req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined,
+          dateTo: req.query.dateTo ? new Date(req.query.dateTo as string) : undefined,
+          departmentId: req.query.departmentId as string,
+          sector: req.query.sector as string,
+        };
 
-      const doc = new jsPDF();
-      
-      // Add title
-      doc.setFontSize(16);
-      doc.text('Reporte de Consultas Ciudadanas', 14, 22);
-      
-      // Add subtitle with date range
-      doc.setFontSize(10);
-      const dateRange = filters.dateFrom && filters.dateTo 
-        ? `${filters.dateFrom.toLocaleDateString('es-HN')} - ${filters.dateTo.toLocaleDateString('es-HN')}`
-        : 'Todas las fechas';
-      doc.text(`Período: ${dateRange}`, 14, 30);
-      doc.text(`Total de consultas: ${consultations.length}`, 14, 36);
-      
-      // Prepare table data
-      const tableColumns = [
-        'Fecha',
-        'Tipo',
-        'Nombre/Empresa',
-        'Ubicación',
-        'Sectores',
-        'Estado'
-      ];
+        const result = await storage.getConsultations({ ...filters, limit: 10000 });
+        const consultations = result.consultations;
 
-      const tableRows = consultations.map(consultation => [
-        new Date(consultation.createdAt).toLocaleDateString('es-HN'),
-        consultation.personType === 'natural' ? 'Natural' : 
-        consultation.personType === 'juridica' ? 'Jurídica' : 'Anónimo',
-        consultation.firstName ? `${consultation.firstName} ${consultation.lastName}` : 
-        consultation.companyName || 'Anónimo',
-        `${consultation.departmentId}-${consultation.municipalityId}`,
-        consultation.selectedSectors.slice(0, 2).join(', ') + 
-        (consultation.selectedSectors.length > 2 ? '...' : ''),
-        consultation.status === 'active' ? 'Activa' : 'Archivada'
-      ]);
+        const sanitizeCSVField = (field: string | undefined | null): string => {
+          if (!field) return "";
+          let sanitized = String(field);
+          if (/^[=+\-@]/.test(sanitized)) sanitized = "'" + sanitized;
+          sanitized = sanitized.replace(/[\r\n]/g, " ");
+          sanitized = '"' + sanitized.replace(/"/g, '""') + '"';
+          return sanitized;
+        };
 
-      // Add table using autoTable
-      autoTable(doc, {
-        head: [tableColumns],
-        body: tableRows,
-        startY: 45,
-        styles: {
-          fontSize: 8,
-          cellPadding: 2,
-        },
-        headStyles: {
-          fillColor: [27, 209, 232], // Honduras theme color
-          textColor: [255, 255, 255],
-          fontStyle: 'bold'
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245]
-        },
-        margin: { top: 45, left: 14, right: 14 },
-        columnStyles: {
-          0: { cellWidth: 25 }, // Fecha
-          1: { cellWidth: 20 }, // Tipo
-          2: { cellWidth: 35 }, // Nombre
-          3: { cellWidth: 25 }, // Ubicación
-          4: { cellWidth: 35 }, // Sectores
-          5: { cellWidth: 20 }, // Estado
-        }
-      });
+        const csvHeaders = [
+          "ID",
+          "Fecha",
+          "Tipo de Persona",
+          "Nombre/Empresa",
+          "Departamento",
+          "Municipio",
+          "Colonia/Aldea",
+          "Geocódigo",
+          "Sectores",
+          "Mensaje",
+          "Estado",
+        ]
+          .map((h) => sanitizeCSVField(h))
+          .join(",");
 
-      // Add footer
-      const pageCount = doc.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.text(
-          `Página ${i} de ${pageCount} - Generado el ${new Date().toLocaleDateString('es-HN')}`,
-          14,
-          doc.internal.pageSize.height - 10
+        const csvRows = consultations.map((c) =>
+          [
+            sanitizeCSVField(c.id),
+            sanitizeCSVField(new Date(c.createdAt).toLocaleDateString("es-HN")),
+            sanitizeCSVField(c.personType === "natural" ? "Natural" : c.personType === "juridica" ? "Jurídica" : "Anónimo"),
+            sanitizeCSVField(c.firstName ? `${c.firstName} ${c.lastName}` : c.companyName || "Anónimo"),
+            sanitizeCSVField(c.departmentId),
+            sanitizeCSVField(c.municipalityId),
+            sanitizeCSVField(c.localityId),
+            sanitizeCSVField(c.geocode),
+            sanitizeCSVField(c.selectedSectors.join("; ")),
+            sanitizeCSVField(c.message),
+            sanitizeCSVField(c.status === "active" ? "Activa" : "Archivada"),
+          ].join(",")
         );
+
+        const csvContent = [csvHeaders, ...csvRows].join("\n");
+        res.setHeader("Content-Type", "text/csv; charset=utf-8");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="consultas_${new Date().toISOString().split("T")[0]}.csv"`
+        );
+        res.send("\uFEFF" + csvContent);
+      } catch (error) {
+        console.error("Error exporting CSV:", error);
+        res.status(500).json({ error: "Failed to export CSV" });
       }
-
-      const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
-
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="consultas_${new Date().toISOString().split('T')[0]}.pdf"`);
-      res.send(pdfBuffer);
-    } catch (error) {
-      console.error("Error exporting PDF:", error);
-      res.status(500).json({ error: "Failed to export PDF" });
     }
-  });
+  );
 
-  // User management endpoints (super_admin only)
-  app.get("/api/users", requireAuth, requireRole(["super_admin"]), async (req, res) => {
+  app.get(
+    "/api/export/consultations/excel",
+    requireAuth,
+    requireRole(["admin", "super_admin"]),
+    async (req, res) => {
+      try {
+        const filters = {
+          dateFrom: req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined,
+          dateTo: req.query.dateTo ? new Date(req.query.dateTo as string) : undefined,
+          departmentId: req.query.departmentId as string,
+          sector: req.query.sector as string,
+        };
+
+        const result = await storage.getConsultations({ ...filters, limit: 10000 });
+        const consultations = result.consultations;
+
+        const sanitizeExcelField = (field: string | undefined | null): string => {
+          if (!field) return "";
+          let sanitized = String(field);
+          if (/^[=+\-@]/.test(sanitized)) sanitized = "'" + sanitized;
+          sanitized = sanitized.replace(/[\r\n]/g, " ");
+          return sanitized;
+        };
+
+        const workbook = XLSX.utils.book_new();
+        const worksheetData = [
+          [
+            "ID",
+            "Fecha",
+            "Tipo de Persona",
+            "Nombre/Empresa",
+            "Departamento",
+            "Municipio",
+            "Colonia/Aldea",
+            "Geocódigo",
+            "Sectores",
+            "Mensaje",
+            "Estado",
+          ],
+          ...consultations.map((c) => [
+            sanitizeExcelField(c.id),
+            sanitizeExcelField(new Date(c.createdAt).toLocaleDateString("es-HN")),
+            sanitizeExcelField(c.personType === "natural" ? "Natural" : c.personType === "juridica" ? "Jurídica" : "Anónimo"),
+            sanitizeExcelField(c.firstName ? `${c.firstName} ${c.lastName}` : c.companyName || "Anónimo"),
+            sanitizeExcelField(c.departmentId),
+            sanitizeExcelField(c.municipalityId),
+            sanitizeExcelField(c.localityId),
+            sanitizeExcelField(c.geocode),
+            sanitizeExcelField(c.selectedSectors.join(", ")),
+            sanitizeExcelField(c.message),
+            sanitizeExcelField(c.status === "active" ? "Activa" : "Archivada"),
+          ]),
+        ];
+
+        const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+        worksheet["!cols"] = [
+          { width: 10 },
+          { width: 12 },
+          { width: 15 },
+          { width: 20 },
+          { width: 15 },
+          { width: 15 },
+          { width: 15 },
+          { width: 15 },
+          { width: 25 },
+          { width: 50 },
+          { width: 10 },
+        ];
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Consultas");
+
+        const excelBuffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+        res.setHeader(
+          "Content-Type",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="consultas_${new Date().toISOString().split("T")[0]}.xlsx"`
+        );
+        res.send(excelBuffer);
+      } catch (error) {
+        console.error("Error exporting Excel:", error);
+        res.status(500).json({ error: "Failed to export Excel" });
+      }
+    }
+  );
+
+  app.get(
+    "/api/export/consultations/pdf",
+    requireAuth,
+    requireRole(["admin", "super_admin"]),
+    async (req, res) => {
+      try {
+        const filters = {
+          dateFrom: req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined,
+          dateTo: req.query.dateTo ? new Date(req.query.dateTo as string) : undefined,
+          departmentId: req.query.departmentId as string,
+          sector: req.query.sector as string,
+        };
+
+        const result = await storage.getConsultations({ ...filters, limit: 10000 });
+        const consultations = result.consultations;
+
+        const { jsPDF } = await import("jspdf");
+        const { default: autoTable } = await import("jspdf-autotable");
+
+        const doc = new jsPDF();
+        doc.setFontSize(16);
+        doc.text("Reporte de Consultas Ciudadanas", 14, 22);
+
+        doc.setFontSize(10);
+        const dateRange =
+          filters.dateFrom && filters.dateTo
+            ? `${filters.dateFrom.toLocaleDateString("es-HN")} - ${filters.dateTo.toLocaleDateString("es-HN")}`
+            : "Todas las fechas";
+        doc.text(`Período: ${dateRange}`, 14, 30);
+        doc.text(`Total de consultas: ${consultations.length}`, 14, 36);
+
+        const tableColumns = ["Fecha", "Tipo", "Nombre/Empresa", "Ubicación", "Sectores", "Estado"];
+        const tableRows = consultations.map((c) => [
+          new Date(c.createdAt).toLocaleDateString("es-HN"),
+          c.personType === "natural" ? "Natural" : c.personType === "juridica" ? "Jurídica" : "Anónimo",
+          c.firstName ? `${c.firstName} ${c.lastName}` : c.companyName || "Anónimo",
+          `${c.departmentId}-${c.municipalityId}`,
+          c.selectedSectors.slice(0, 2).join(", ") + (c.selectedSectors.length > 2 ? "..." : ""),
+          c.status === "active" ? "Activa" : "Archivada",
+        ]);
+
+        autoTable(doc, {
+          head: [tableColumns],
+          body: tableRows,
+          startY: 45,
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [27, 209, 232], textColor: [255, 255, 255], fontStyle: "bold" },
+          alternateRowStyles: { fillColor: [245, 245, 245] },
+          margin: { top: 45, left: 14, right: 14 },
+          columnStyles: {
+            0: { cellWidth: 25 },
+            1: { cellWidth: 20 },
+            2: { cellWidth: 35 },
+            3: { cellWidth: 25 },
+            4: { cellWidth: 35 },
+            5: { cellWidth: 20 },
+          },
+        });
+
+        const pageCount = doc.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.text(
+            `Página ${i} de ${pageCount} - Generado el ${new Date().toLocaleDateString("es-HN")}`,
+            14,
+            doc.internal.pageSize.height - 10
+          );
+        }
+
+        const pdfBuffer = Buffer.from(doc.output("arraybuffer"));
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="consultas_${new Date().toISOString().split("T")[0]}.pdf"`
+        );
+        res.send(pdfBuffer);
+      } catch (error) {
+        console.error("Error exporting PDF:", error);
+        res.status(500).json({ error: "Failed to export PDF" });
+      }
+    }
+  );
+
+  // ===================== Usuarios (solo super_admin) =====================
+  app.get("/api/users", requireAuth, requireRole(["super_admin"]), async (_req, res) => {
     try {
       const users = await storage.getUsers();
-      // Remove password hashes from response for security
-      const sanitizedUsers = users.map(({ password, ...userWithoutPassword }) => userWithoutPassword);
+      const sanitizedUsers = users.map(({ password, ...u }) => u);
       res.json(sanitizedUsers);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -563,57 +580,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/users", requireAuth, requireRole(["super_admin"]), userCreationLimiter, async (req, res) => {
-    try {
-      const validatedData = insertUserSchema.parse(req.body);
-      
-      // Hash password before storing
-      const hashedPassword = await hashPassword(validatedData.password);
-      const userData = {
-        ...validatedData,
-        password: hashedPassword
-      };
-      
-      const user = await storage.createUser(userData);
-      
-      // Return user without password
-      const { password, ...userWithoutPassword } = user;
-      res.status(201).json(userWithoutPassword);
-    } catch (error) {
-      console.error("Error creating user:", error);
-      if (error instanceof Error && error.message.includes('duplicate key')) {
-        res.status(400).json({ error: "El nombre de usuario ya existe" });
-      } else {
-        res.status(400).json({ error: "Datos de usuario inválidos" });
+  app.post(
+    "/api/users",
+    requireAuth,
+    requireRole(["super_admin"]),
+    userCreationLimiter,
+    async (req, res) => {
+      try {
+        const validatedData = insertUserSchema.parse(req.body);
+        const hashedPassword = await hashPassword(validatedData.password);
+        const userData = { ...validatedData, password: hashedPassword };
+        const user = await storage.createUser(userData);
+        const { password, ...userWithoutPassword } = user;
+        res.status(201).json(userWithoutPassword);
+      } catch (error) {
+        console.error("Error creating user:", error);
+        if (error instanceof Error && error.message.includes("duplicate key")) {
+          res.status(400).json({ error: "El nombre de usuario ya existe" });
+        } else {
+          res.status(400).json({ error: "Datos de usuario inválidos" });
+        }
       }
     }
-  });
+  );
 
   app.delete("/api/users/:id", requireAuth, requireRole(["super_admin"]), async (req, res) => {
     try {
       const { id } = req.params;
-      
-      // Prevent deleting own account
+
       if (req.user?.id === id) {
         return res.status(400).json({ error: "No puede eliminar su propia cuenta" });
       }
-      
-      // Get user data to check username before deletion
+
       const userToDelete = await storage.getUser(id);
-      if (!userToDelete) {
-        return res.status(404).json({ error: "Usuario no encontrado" });
-      }
-      
-      // Prevent deleting the protected SPE account
+      if (!userToDelete) return res.status(404).json({ error: "Usuario no encontrado" });
       if (userToDelete.username === "SPE") {
         return res.status(403).json({ error: "La cuenta SPE está protegida y no puede ser eliminada" });
       }
-      
+
       const deleted = await storage.deleteUser(id);
-      if (!deleted) {
-        return res.status(404).json({ error: "Usuario no encontrado" });
-      }
-      
+      if (!deleted) return res.status(404).json({ error: "Usuario no encontrado" });
+
       res.json({ message: "Usuario eliminado exitosamente" });
     } catch (error) {
       console.error("Error deleting user:", error);
@@ -621,35 +628,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Change user password
   app.put("/api/users/:id/password", requireAuth, requireRole(["super_admin"]), async (req, res) => {
     try {
       const { id } = req.params;
       const { password } = req.body;
-      
+
       if (!password || password.length < 6) {
         return res.status(400).json({ error: "La contraseña debe tener al menos 6 caracteres" });
       }
-      
-      // Get user data to check if user exists
+
       const userToUpdate = await storage.getUser(id);
-      if (!userToUpdate) {
-        return res.status(404).json({ error: "Usuario no encontrado" });
-      }
-      
-      // Prevent changing password of the protected SPE account
+      if (!userToUpdate) return res.status(404).json({ error: "Usuario no encontrado" });
       if (userToUpdate.username === "SPE") {
         return res.status(403).json({ error: "La cuenta SPE está protegida y no puede ser modificada" });
       }
-      
-      // Hash the new password
+
       const hashedPassword = await hashPassword(password);
       const updated = await storage.updateUserPassword(id, hashedPassword);
-      
-      if (!updated) {
-        return res.status(404).json({ error: "Usuario no encontrado" });
-      }
-      
+      if (!updated) return res.status(404).json({ error: "Usuario no encontrado" });
+
       res.json({ message: "Contraseña actualizada exitosamente" });
     } catch (error) {
       console.error("Error updating user password:", error);
@@ -657,91 +654,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Change user status (active/inactive)
   app.put("/api/users/:id/status", requireAuth, requireRole(["super_admin"]), async (req, res) => {
     try {
       const { id } = req.params;
       const { active } = req.body;
-      
-      if (typeof active !== 'boolean') {
+
+      if (typeof active !== "boolean") {
         return res.status(400).json({ error: "El estado debe ser true o false" });
       }
-      
-      // Get user data to check username before status change
+
       const userToUpdate = await storage.getUser(id);
-      if (!userToUpdate) {
-        return res.status(404).json({ error: "Usuario no encontrado" });
-      }
-      
-      // Prevent changing status of the protected SPE account
+      if (!userToUpdate) return res.status(404).json({ error: "Usuario no encontrado" });
       if (userToUpdate.username === "SPE") {
         return res.status(403).json({ error: "La cuenta SPE está protegida y no puede ser modificada" });
       }
-      
-      // Prevent changing own status
       if (req.user?.id === id) {
         return res.status(400).json({ error: "No puede cambiar su propio estado" });
       }
-      
+
       const updated = await storage.updateUserStatus(id, active);
-      
-      if (!updated) {
-        return res.status(404).json({ error: "Usuario no encontrado" });
-      }
-      
-      res.json({ 
-        message: `Usuario ${active ? 'activado' : 'suspendido'} exitosamente`,
-        active
-      });
+      if (!updated) return res.status(404).json({ error: "Usuario no encontrado" });
+
+      res.json({ message: `Usuario ${active ? "activado" : "suspendido"} exitosamente`, active });
     } catch (error) {
       console.error("Error updating user status:", error);
       res.status(500).json({ error: "Error al actualizar el estado del usuario" });
     }
   });
 
-  // Change own password (for any authenticated user)
+  // Cambiar la propia contraseña
   app.put("/api/profile/password", requireAuth, async (req, res) => {
     try {
       const { currentPassword, newPassword } = req.body;
-      
+
       if (!currentPassword || !newPassword) {
         return res.status(400).json({ error: "Se requiere contraseña actual y nueva contraseña" });
       }
-      
       if (newPassword.length < 6) {
-        return res.status(400).json({ error: "La nueva contraseña debe tener al menos 6 caracteres" });
+        return res
+          .status(400)
+          .json({ error: "La nueva contraseña debe tener al menos 6 caracteres" });
       }
-      
-      // Get current user data
+
       const currentUser = await storage.getUser(req.user!.id);
-      if (!currentUser) {
-        return res.status(404).json({ error: "Usuario no encontrado" });
-      }
-      
-      // Verify current password
-      const isValidCurrentPassword = await comparePasswords(currentPassword, currentUser.password);
+      if (!currentUser) return res.status(404).json({ error: "Usuario no encontrado" });
+
+      const isValidCurrentPassword = await comparePasswords(
+        currentPassword,
+        currentUser.password
+      );
       if (!isValidCurrentPassword) {
         return res.status(401).json({ error: "La contraseña actual es incorrecta" });
       }
-      
-      // Hash the new password
+
       const hashedNewPassword = await hashPassword(newPassword);
       const updated = await storage.updateUserPassword(req.user!.id, hashedNewPassword);
-      
-      if (!updated) {
-        return res.status(500).json({ error: "Error al actualizar la contraseña" });
-      }
-      
-      // Invalidate current session for security - user will need to re-login
+      if (!updated) return res.status(500).json({ error: "Error al actualizar la contraseña" });
+
       req.session.destroy((err) => {
         if (err) {
           console.error("Error destroying session after password change:", err);
           return res.status(500).json({ error: "Contraseña actualizada pero error en sesión" });
         }
-        res.json({ 
-          message: "Contraseña actualizada exitosamente",
-          requiresReauth: true 
-        });
+        res.json({ message: "Contraseña actualizada exitosamente", requiresReauth: true });
       });
     } catch (error) {
       console.error("Error updating own password:", error);
@@ -749,11 +724,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin-only endpoints
+  // Admin-only (placeholder)
   app.post("/api/sectors", requireAuth, requireRole(["super_admin"]), async (req, res) => {
     try {
       const validatedData = insertSectorSchema.parse(req.body);
-      // Note: Would need to add createSector method to storage
       res.status(501).json({ error: "Not implemented yet" });
     } catch (error) {
       console.error("Error creating sector:", error);
