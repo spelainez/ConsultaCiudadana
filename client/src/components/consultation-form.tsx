@@ -89,9 +89,14 @@ function ConsultationForm() {
   const getRuralAldeas = (municipalityGeocode: string) => {
     if (!municipalityGeocode || selectedZone !== "rural") return [];
     
-    const aldeasForMunicipality = aldeasData[municipalityGeocode as keyof typeof aldeasData];
-    if (!aldeasForMunicipality) return [];
+    // Normalizar geocode removiendo ceros a la izquierda para mapear al JSON
+    // DB: "0101" -> JSON: "101"
+    const normalizedGeocode = municipalityGeocode.replace(/^0+/, '') || '0';
     
+    const aldeasForMunicipality = aldeasData[normalizedGeocode as keyof typeof aldeasData];
+    if (!aldeasForMunicipality) {
+      return [];
+    }
     return aldeasForMunicipality.aldeas.map(aldea => ({
       id: aldea.name, // Usar el nombre como ID para las aldeas
       name: aldea.name,
@@ -105,13 +110,23 @@ function ConsultationForm() {
   // Combinar localidades urbanas con aldeas rurales
   const getAllLocalitiesForZone = () => {
     if (selectedZone === "rural") {
-      // Obtener el geocode del municipio seleccionado
+      // Construir el geocode completo: departamento + municipio
+      const selectedDepartment = departments.find(d => d.id === departmentId);
       const selectedMunicipality = municipalities.find(m => m.id === municipalityId);
-      const municipalityGeocode = selectedMunicipality?.geocode;
       
-      if (!municipalityGeocode) return [];
+      if (!selectedDepartment || !selectedMunicipality) return [];
       
-      const ruralAldeas = getRuralAldeas(municipalityGeocode);
+      // Geocode completo = departmentGeocode + municipalityGeocode
+      // Ej: ATLÁNTIDA("01") + LA CEIBA("01") = "0101"
+      const fullMunicipalityGeocode = selectedDepartment.geocode + selectedMunicipality.geocode;
+      
+      console.log('🏗️ Building full geocode:', { 
+        dept: selectedDepartment.geocode, 
+        muni: selectedMunicipality.geocode, 
+        full: fullMunicipalityGeocode 
+      });
+      
+      const ruralAldeas = getRuralAldeas(fullMunicipalityGeocode);
       // Agregar opción "Otro" al final
       ruralAldeas.push({
         id: "otro",
@@ -459,7 +474,7 @@ function ConsultationForm() {
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-full p-0">
+                          <PopoverContent className="w-full p-0 consultation-dropdown" side="bottom" align="start" sideOffset={4} collisionPadding={16}>
                             <Command>
                               <CommandInput placeholder="Buscar departamento..." />
                               <CommandEmpty>No se encontró el departamento.</CommandEmpty>
@@ -517,7 +532,7 @@ function ConsultationForm() {
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-full p-0">
+                          <PopoverContent className="w-full p-0 consultation-dropdown" side="bottom" align="start" sideOffset={4} collisionPadding={16}>
                             <Command>
                               <CommandInput placeholder="Buscar municipio..." />
                               <CommandEmpty>No se encontró el municipio.</CommandEmpty>
@@ -576,7 +591,7 @@ function ConsultationForm() {
                               }
                             />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="consultation-dropdown" position="popper" side="bottom" align="start" sideOffset={4} collisionPadding={16}>
                             <SelectItem value="urbano">Urbano</SelectItem>
                             <SelectItem value="rural">Rural</SelectItem>
                           </SelectContent>
@@ -619,7 +634,7 @@ function ConsultationForm() {
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-full p-0" align="start">
+                          <PopoverContent className="w-full p-0 consultation-dropdown" side="bottom" align="start" sideOffset={4} collisionPadding={16}>
                             <Command>
                               <CommandInput
                                 placeholder={selectedZone === "urbano" ? "Buscar colonia o barrio..." : "Buscar aldea o caserío..."}

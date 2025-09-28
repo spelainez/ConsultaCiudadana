@@ -147,6 +147,36 @@
   box-shadow: 0 4px 8px rgba(27, 209, 232, 0.3) !important;
 }
 
+/* Dropdown and Popover Positioning Fixes - Targeted for Consultation Form Dropdowns */
+.consultation-dropdown {
+  z-index: 80;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+}
+
+.consultation-dropdown[data-radix-select-content] {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Ensure dropdowns don't get clipped by parent containers in consultation form */
+.consultation-container .form-section-card,
+.consultation-container .location-step,
+.consultation-container .conditional-fields {
+  overflow: visible;
+}
+
+/* Additional positioning for Combobox (Command) dropdowns */
+.consultation-dropdown [cmdk-root] {
+  max-height: 300px;
+  overflow: hidden;
+}
+
+.consultation-dropdown [cmdk-list] {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
 /* Password Toggle Styles */
 .password-input-container {
   position: relative;
