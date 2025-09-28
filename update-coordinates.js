@@ -222,13 +222,16 @@ async function updateMunicipalityCoordinates() {
   
   for (const [muniCode, coords] of Object.entries(MUNICIPALITY_COORDINATES)) {
     try {
-      // El geocode del municipio debe coincidir con muniCode
-      await db.update(municipalities)
+      // Convertir "01-08" a departamento "01" y municipio "08"
+      const [deptId, muniId] = muniCode.split('-');
+      
+      // Actualizar usando el ID completo del municipio "01-08"
+      const updateResult = await db.update(municipalities)
         .set({
           latitude: coords.lat,
           longitude: coords.lng
         })
-        .where(eq(municipalities.geocode, muniCode));
+        .where(eq(municipalities.id, muniCode));
       
       console.log(`✅ Municipio ${muniCode}: ${coords.name} (${coords.lat}, ${coords.lng})`);
     } catch (error) {
