@@ -1,8 +1,8 @@
-import fs from 'fs';
-import { drizzle } from 'drizzle-orm/postgres-js';
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
 import { eq } from 'drizzle-orm';
 import { departments, municipalities } from './shared/schema.ts';
-import postgres from 'postgres';
+import ws from "ws";
 
 // Coordenadas exactas de departamentos (cabeceras departamentales)
 const DEPARTMENT_COORDINATES = {
@@ -185,9 +185,14 @@ const MUNICIPALITY_COORDINATES = {
 };
 
 // Database connection
-const connectionString = process.env.DATABASE_URL;
-const sql = postgres(connectionString);
-const db = drizzle(sql);
+neonConfig.webSocketConstructor = ws;
+
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL must be set. Did you forget to provision a database?");
+}
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const db = drizzle({ client: pool });
 
 console.log('🗺️  Actualizando coordenadas de departamentos y municipios...\n');
 
@@ -246,7 +251,7 @@ async function main() {
   } catch (error) {
     console.error('❌ Error durante la actualización:', error);
   } finally {
-    await sql.end();
+    await pool.end();
   }
 }
 
