@@ -117,7 +117,8 @@ function ConsultationForm() {
       }
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      console.log("✅ Consulta exitosa:", result);
       toast({
         title: "¡Consulta enviada exitosamente!",
         description: "Tu consulta ha sido registrada. Gracias por tu participación.",
@@ -126,6 +127,7 @@ function ConsultationForm() {
       setSelectedSectors([]);
       setPersonType("natural");
       setSelectedImages([]);
+      setSelectedZone("urbano");
       queryClient.invalidateQueries({ queryKey: ["/api/consultations"] });
     },
     onError: () => {
