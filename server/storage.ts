@@ -198,8 +198,16 @@ export class DatabaseStorage implements IStorage {
       .from(municipalities)
       .where(eq(municipalities.id, insertConsultation.municipalityId));
     
-    if (!department || !municipality) {
-      throw new Error('Invalid department or municipality ID provided');
+    const [locality] = await db
+      .select({ 
+        geocode: localities.geocode,
+        municipalityId: localities.municipalityId
+      })
+      .from(localities)
+      .where(eq(localities.id, insertConsultation.localityId));
+    
+    if (!department || !municipality || !locality) {
+      throw new Error('Invalid location IDs provided');
     }
     
     // Enforce relational integrity
@@ -207,31 +215,12 @@ export class DatabaseStorage implements IStorage {
       throw new Error('Municipality does not belong to the selected department');
     }
     
-    let localityGeocodeComponent = "999"; // Código genérico para "Otro"
-    
-    // Si hay localityId, validar que existe y pertenece al municipio
-    if (insertConsultation.localityId) {
-      const [locality] = await db
-        .select({ 
-          geocode: localities.geocode,
-          municipalityId: localities.municipalityId
-        })
-        .from(localities)
-        .where(eq(localities.id, insertConsultation.localityId));
-      
-      if (!locality) {
-        throw new Error('Invalid locality ID provided');
-      }
-      
-      if (locality.municipalityId !== insertConsultation.municipalityId) {
-        throw new Error('Locality does not belong to the selected municipality');
-      }
-      
-      localityGeocodeComponent = locality.geocode;
+    if (locality.municipalityId !== insertConsultation.municipalityId) {
+      throw new Error('Locality does not belong to the selected municipality');
     }
     
-    // Generar geocódigo completo: Departamento + Municipio + Localidad
-    const geocode = `${department.geocode}${municipality.geocode}${localityGeocodeComponent}`;
+    // Generate geocode from the actual geocode values in the database
+    const geocode = `${department.geocode}-${municipality.geocode}-${locality.geocode}`;
     
     const [consultation] = await db
       .insert(consultations)

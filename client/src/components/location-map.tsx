@@ -204,6 +204,12 @@ export default function LocationMap({
             <Marker position={[pos.lat, pos.lng]} icon={CitizenIcon}>
               <Popup>
                 {locationName || "Ubicación seleccionada"}
+                {geocode && (
+                  <>
+                    <br />
+                    <small>Geocódigo: {geocode}</small>
+                  </>
+                )}
                 <br />
                 <small>
                   {pos.lat.toFixed(6)}, {pos.lng.toFixed(6)}
@@ -219,6 +225,7 @@ export default function LocationMap({
         <span className="text-gray-500">
           ({pos.lat.toFixed(6)}, {pos.lng.toFixed(6)})
         </span>
+        {geocode && <span className="ml-2 text-gray-500">• Geocódigo: {geocode}</span>}
       </p>
 
       {/* Inputs ocultos para formularios HTML */}

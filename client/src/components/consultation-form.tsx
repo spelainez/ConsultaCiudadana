@@ -62,13 +62,12 @@ function ConsultationForm() {
   const { toast } = useToast();
   const [personType, setPersonType] = useState<string>("natural");
   const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
-  const [selectedZone, setSelectedZone] = useState<string>("urbano");
+  const [selectedZone, setSelectedZone] = useState<string>("");
   const [localitySearchOpen, setLocalitySearchOpen] = useState(false);
   const [localitySearchValue, setLocalitySearchValue] = useState("");
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [openDepartment, setOpenDepartment] = useState(false);
   const [openMunicipality, setOpenMunicipality] = useState(false);
-  const [showCustomLocality, setShowCustomLocality] = useState(false);
 
   const form = useForm<ConsultationFormData>({
     resolver: zodResolver(consultationFormSchema),
@@ -76,7 +75,6 @@ function ConsultationForm() {
       personType: "natural",
       selectedSectors: [],
       status: "active",
-      zone: "urbano",
       // lat/lng se setean al hacer clic en el mapa
     },
   });
@@ -509,10 +507,7 @@ function ConsultationForm() {
                         <Select
                           onValueChange={(value) => {
                             setSelectedZone(value);
-                            form.setValue("zone", value);
                             form.setValue("localityId", "");
-                            form.setValue("customLocalityName", "");
-                            setShowCustomLocality(false);
                           }}
                           value={selectedZone}
                           disabled={!municipalityId}
@@ -552,15 +547,13 @@ function ConsultationForm() {
                               data-testid="select-locality"
                               disabled={!selectedZone}
                             >
-                              {showCustomLocality
-                                ? "🏠 Otro (nombre personalizado)"
-                                : form.watch("localityId")
-                                  ? localities.find((l) => l.id === form.watch("localityId"))?.name
-                                  : !selectedZone
-                                    ? "Primero seleccione un tipo de zona..."
-                                    : selectedZone === "urbano"
-                                      ? "Busque su colonia o barrio..."
-                                      : "Busque su aldea o caserío..."}
+                              {form.watch("localityId")
+                                ? localities.find((l) => l.id === form.watch("localityId"))?.name
+                                : !selectedZone
+                                  ? "Primero seleccione un tipo de zona..."
+                                  : selectedZone === "urbano"
+                                    ? "Busque su colonia o barrio..."
+                                    : "Busque su aldea o caserío..."}
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
@@ -585,35 +578,16 @@ function ConsultationForm() {
                                           value={locality.name}
                                           onSelect={() => {
                                             form.setValue("localityId", locality.id);
-                                            form.setValue("customLocalityName", "");
-                                            setShowCustomLocality(false);
                                             setLocalitySearchOpen(false);
                                             setLocalitySearchValue("");
                                           }}
                                         >
                                           <Check
-                                            className={`mr-2 h-4 w-4 ${locality.id === form.watch("localityId") && !showCustomLocality ? "opacity-100" : "opacity-0"}`}
+                                            className={`mr-2 h-4 w-4 ${locality.id === form.watch("localityId") ? "opacity-100" : "opacity-0"}`}
                                           />
                                           {locality.name}
                                         </CommandItem>
                                       ))}
-                                  {selectedZone && (
-                                    <CommandItem
-                                      key="otro"
-                                      value="otro"
-                                      onSelect={() => {
-                                        form.setValue("localityId", "");
-                                        setShowCustomLocality(true);
-                                        setLocalitySearchOpen(false);
-                                        setLocalitySearchValue("");
-                                      }}
-                                    >
-                                      <Check
-                                        className={`mr-2 h-4 w-4 ${showCustomLocality ? "opacity-100" : "opacity-0"}`}
-                                      />
-                                      🏠 Otro (nombre personalizado)
-                                    </CommandItem>
-                                  )}
                                 </CommandGroup>
                               </CommandList>
                             </Command>
@@ -624,25 +598,28 @@ function ConsultationForm() {
                         )}
                       </div>
 
-                      {/* Campo personalizado cuando se selecciona "Otro" */}
-                      {showCustomLocality && (
-                        <div className="location-step mb-3">
-                          <Label className="location-label">
-                            Escriba el nombre de su {selectedZone === "urbano" ? "colonia o barrio" : "aldea o caserío"} *
-                          </Label>
-                          <Input
-                            placeholder={selectedZone === "urbano" ? "Ej: Colonia Las Flores" : "Ej: Aldea San José"}
-                            value={form.watch("customLocalityName") || ""}
-                            onChange={(e) => form.setValue("customLocalityName", e.target.value)}
-                            className="location-select"
-                            data-testid="input-custom-locality"
-                          />
-                          {form.formState.errors.customLocalityName && (
-                            <div className="text-danger small mt-1">{form.formState.errors.customLocalityName.message}</div>
-                          )}
+                      {/* Geocódigo */}
+                      <div className="geocode-display">
+                        <div className="geocode-container">
+                          <Label className="geocode-label">Geocódigo Generado</Label>
+                          <div
+                            className={`geocode-value ${!(departmentId && municipalityId) ? "opacity-50" : ""}`}
+                            data-testid="text-geocode"
+                          >
+                            {(() => {
+                              const selectedDept = departments.find((d) => d.id === departmentId);
+                              const selectedMuni = municipalities.find((m) => m.id === municipalityId);
+                              if (selectedDept && selectedMuni) {
+                                return `${selectedDept.geocode}${selectedMuni.geocode}`;
+                              }
+                              return "Se generará automáticamente cuando complete la ubicación";
+                            })()}
+                          </div>
+                          <small className="geocode-subtitle">
+                            Este código identifica únicamente su ubicación
+                          </small>
                         </div>
-                      )}
-
+                      </div>
 
                       {/* ====== MAPA e inputs ocultos ====== */}
                       <div className="mt-4 location-map-container">
