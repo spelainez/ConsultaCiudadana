@@ -719,12 +719,30 @@ function ConsultationForm() {
                       <div className="mt-4 location-map-container">
                         <LocationMap
                           latitude={(() => {
+                            // Prioridad: localidad > municipio > departamento
                             const selectedLocality = localities.find((l) => l.id === form.watch("localityId"));
-                            return selectedLocality?.latitude ?? undefined;
+                            if (selectedLocality?.latitude) return selectedLocality.latitude;
+                            
+                            const selectedMuni = municipalities.find((m) => m.id === municipalityId);
+                            if (selectedMuni && (selectedMuni as any).latitude) return (selectedMuni as any).latitude;
+                            
+                            const selectedDept = departments.find((d) => d.id === departmentId);
+                            if (selectedDept && (selectedDept as any).latitude) return (selectedDept as any).latitude;
+                            
+                            return undefined;
                           })()}
                           longitude={(() => {
+                            // Prioridad: localidad > municipio > departamento
                             const selectedLocality = localities.find((l) => l.id === form.watch("localityId"));
-                            return selectedLocality?.longitude ?? undefined;
+                            if (selectedLocality?.longitude) return selectedLocality.longitude;
+                            
+                            const selectedMuni = municipalities.find((m) => m.id === municipalityId);
+                            if (selectedMuni && (selectedMuni as any).longitude) return (selectedMuni as any).longitude;
+                            
+                            const selectedDept = departments.find((d) => d.id === departmentId);
+                            if (selectedDept && (selectedDept as any).longitude) return (selectedDept as any).longitude;
+                            
+                            return undefined;
                           })()}
                           locationName={(() => {
                             const selectedDept = departments.find((d) => d.id === departmentId);
