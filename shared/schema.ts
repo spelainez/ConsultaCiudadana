@@ -67,7 +67,9 @@ export const consultations = pgTable("consultations", {
   // Location
   departmentId: varchar("department_id", { length: 2 }).notNull(),
   municipalityId: varchar("municipality_id").notNull(),
-  localityId: varchar("locality_id").notNull(),
+  zone: text("zone").notNull(), // rural, urbano
+  localityId: varchar("locality_id"),
+  customLocalityName: text("custom_locality_name"), // Para "Otro"
   geocode: text("geocode").notNull(),
   
   // Message and sectors
