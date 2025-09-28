@@ -17,6 +17,8 @@ export const departments = pgTable("departments", {
   id: varchar("id", { length: 2 }).primaryKey(),
   name: text("name").notNull(),
   geocode: text("geocode").notNull(),
+  latitude: text("latitude"),
+  longitude: text("longitude"),
 });
 
 export const municipalities = pgTable("municipalities", {
@@ -24,6 +26,8 @@ export const municipalities = pgTable("municipalities", {
   name: text("name").notNull(),
   departmentId: varchar("department_id", { length: 2 }).notNull(),
   geocode: text("geocode").notNull(),
+  latitude: text("latitude"),
+  longitude: text("longitude"),
 });
 
 export const localities = pgTable("localities", {
