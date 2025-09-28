@@ -69,7 +69,6 @@ function ConsultationForm() {
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [openDepartment, setOpenDepartment] = useState(false);
   const [openMunicipality, setOpenMunicipality] = useState(false);
-  const [customLocalityValue, setCustomLocalityValue] = useState("");
   const [showCustomLocality, setShowCustomLocality] = useState(false);
 
   const form = useForm<ConsultationFormData>({
@@ -86,11 +85,11 @@ function ConsultationForm() {
   const municipalityId = form.watch("municipalityId");
   const localityId = form.watch("localityId");
 
-  // Función para obtener aldeas rurales del JSON por municipio
-  const getRuralAldeas = (municipalityId: string) => {
-    if (!municipalityId || selectedZone !== "rural") return [];
+  // Función para obtener aldeas rurales del JSON por municipio usando geocode
+  const getRuralAldeas = (municipalityGeocode: string) => {
+    if (!municipalityGeocode || selectedZone !== "rural") return [];
     
-    const aldeasForMunicipality = aldeasData[municipalityId as keyof typeof aldeasData];
+    const aldeasForMunicipality = aldeasData[municipalityGeocode as keyof typeof aldeasData];
     if (!aldeasForMunicipality) return [];
     
     return aldeasForMunicipality.aldeas.map(aldea => ({
@@ -106,7 +105,13 @@ function ConsultationForm() {
   // Combinar localidades urbanas con aldeas rurales
   const getAllLocalitiesForZone = () => {
     if (selectedZone === "rural") {
-      const ruralAldeas = getRuralAldeas(municipalityId);
+      // Obtener el geocode del municipio seleccionado
+      const selectedMunicipality = municipalities.find(m => m.id === municipalityId);
+      const municipalityGeocode = selectedMunicipality?.geocode;
+      
+      if (!municipalityGeocode) return [];
+      
+      const ruralAldeas = getRuralAldeas(municipalityGeocode);
       // Agregar opción "Otro" al final
       ruralAldeas.push({
         id: "otro",
@@ -470,7 +475,6 @@ function ConsultationForm() {
                                       form.setValue("customLocalityName", "");
                                       setSelectedZone("");
                                       setShowCustomLocality(false);
-                                      setCustomLocalityValue("");
                                       setOpenDepartment(false);
                                     }}
                                   >
@@ -528,7 +532,6 @@ function ConsultationForm() {
                                       form.setValue("customLocalityName", "");
                                       setSelectedZone("");
                                       setShowCustomLocality(false);
-                                      setCustomLocalityValue("");
                                       setOpenMunicipality(false);
                                     }}
                                   >
@@ -560,7 +563,6 @@ function ConsultationForm() {
                             form.setValue("localityId", "");
                             form.setValue("customLocalityName", "");
                             setShowCustomLocality(false);
-                            setCustomLocalityValue("");
                           }}
                           value={selectedZone}
                           disabled={!municipalityId}
@@ -600,13 +602,20 @@ function ConsultationForm() {
                               data-testid="select-locality"
                               disabled={!selectedZone}
                             >
-                              {form.watch("localityId")
-                                ? getAllLocalitiesForZone().find((l) => l.id === form.watch("localityId"))?.name
-                                : !selectedZone
-                                  ? "Primero seleccione un tipo de zona..."
-                                  : selectedZone === "urbano"
-                                    ? "Busque su colonia o barrio..."
-                                    : "Busque su aldea o caserío..."}
+                              {(() => {
+                                if (!selectedZone) return "Primero seleccione un tipo de zona...";
+                                if (selectedZone === "rural") {
+                                  const customName = form.watch("customLocalityName");
+                                  if (customName) return customName;
+                                  return "Busque su aldea o caserío...";
+                                } else {
+                                  const localityId = form.watch("localityId");
+                                  if (localityId) {
+                                    return getAllLocalitiesForZone().find((l) => l.id === localityId)?.name;
+                                  }
+                                  return "Busque su colonia o barrio...";
+                                }
+                              })()}
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
@@ -638,20 +647,24 @@ function ConsultationForm() {
                                               form.setValue("localityId", "");
                                               form.setValue("customLocalityName", locality.name);
                                               setShowCustomLocality(false);
-                                              setCustomLocalityValue("");
                                             } else {
                                               // Localidad urbana real de DB - usar ID real
                                               form.setValue("localityId", locality.id);
                                               form.setValue("customLocalityName", "");
                                               setShowCustomLocality(false);
-                                              setCustomLocalityValue("");
                                             }
                                             setLocalitySearchOpen(false);
                                             setLocalitySearchValue("");
                                           }}
                                         >
                                           <Check
-                                            className={`mr-2 h-4 w-4 ${locality.id === form.watch("localityId") ? "opacity-100" : "opacity-0"}`}
+                                            className={`mr-2 h-4 w-4 ${
+                                              selectedZone === "rural" 
+                                                ? (locality.id === "otro" && showCustomLocality) || 
+                                                  (locality.id !== "otro" && form.watch("customLocalityName") === locality.name)
+                                                  ? "opacity-100" : "opacity-0"
+                                                : locality.id === form.watch("localityId") ? "opacity-100" : "opacity-0"
+                                            }`}
                                           />
                                           {locality.name}
                                         </CommandItem>
