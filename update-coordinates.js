@@ -70,6 +70,8 @@ const MUNICIPALITY_COORDINATES = {
   '03-15': { lat: '14.6167', lng: '-87.7000', name: 'San José del Potrero' },
   '03-16': { lat: '14.5167', lng: '-87.5167', name: 'San Luis' },
   '03-19': { lat: '14.2833', lng: '-87.6167', name: 'Taulabé' },
+  '03-20': { lat: '14.7333', lng: '-87.3833', name: 'Las Lajas' },
+  '03-21': { lat: '14.2833', lng: '-87.6167', name: 'Taulabé' },
 
   // Copán (04)
   '04-01': { lat: '14.7679', lng: '-89.1552', name: 'Santa Rosa de Copán' },
