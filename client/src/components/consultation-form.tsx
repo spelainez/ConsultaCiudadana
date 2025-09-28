@@ -43,6 +43,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 import LocationMap from "@/components/location-map";
+import aldeasData from "@shared/aldeas-honduras.json";
 
 type Department = { id: string; name: string; geocode: string };
 type Municipality = { id: string; name: string; geocode: string; departmentId: string };
@@ -68,6 +69,8 @@ function ConsultationForm() {
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [openDepartment, setOpenDepartment] = useState(false);
   const [openMunicipality, setOpenMunicipality] = useState(false);
+  const [customLocalityValue, setCustomLocalityValue] = useState("");
+  const [showCustomLocality, setShowCustomLocality] = useState(false);
 
   const form = useForm<ConsultationFormData>({
     resolver: zodResolver(consultationFormSchema),
@@ -81,6 +84,44 @@ function ConsultationForm() {
 
   const departmentId = form.watch("departmentId");
   const municipalityId = form.watch("municipalityId");
+  const localityId = form.watch("localityId");
+
+  // Función para obtener aldeas rurales del JSON por municipio
+  const getRuralAldeas = (municipalityId: string) => {
+    if (!municipalityId || selectedZone !== "rural") return [];
+    
+    const aldeasForMunicipality = aldeasData[municipalityId as keyof typeof aldeasData];
+    if (!aldeasForMunicipality) return [];
+    
+    return aldeasForMunicipality.aldeas.map(aldea => ({
+      id: aldea.name, // Usar el nombre como ID para las aldeas
+      name: aldea.name,
+      area: "rural" as const,
+      municipalityId: municipalityId,
+      latitude: null,
+      longitude: null
+    }));
+  };
+
+  // Combinar localidades urbanas con aldeas rurales
+  const getAllLocalitiesForZone = () => {
+    if (selectedZone === "rural") {
+      const ruralAldeas = getRuralAldeas(municipalityId);
+      // Agregar opción "Otro" al final
+      ruralAldeas.push({
+        id: "otro",
+        name: "Otro (escribir manualmente)",
+        area: "rural" as const,
+        municipalityId: municipalityId,
+        latitude: null,
+        longitude: null
+      });
+      return ruralAldeas;
+    } else if (selectedZone === "urbano") {
+      return localities.filter(l => l.area === "urbano" && l.municipalityId === municipalityId);
+    }
+    return [];
+  };
 
   // === Data queries ===
   const { data: departments = [] } = useQuery<Department[]>({
@@ -426,7 +467,10 @@ function ConsultationForm() {
                                       form.setValue("departmentId", dept.id);
                                       form.setValue("municipalityId", "");
                                       form.setValue("localityId", "");
+                                      form.setValue("customLocalityName", "");
                                       setSelectedZone("");
+                                      setShowCustomLocality(false);
+                                      setCustomLocalityValue("");
                                       setOpenDepartment(false);
                                     }}
                                   >
@@ -481,7 +525,10 @@ function ConsultationForm() {
                                     onSelect={() => {
                                       form.setValue("municipalityId", muni.id);
                                       form.setValue("localityId", "");
+                                      form.setValue("customLocalityName", "");
                                       setSelectedZone("");
+                                      setShowCustomLocality(false);
+                                      setCustomLocalityValue("");
                                       setOpenMunicipality(false);
                                     }}
                                   >
@@ -510,6 +557,9 @@ function ConsultationForm() {
                           onValueChange={(value) => {
                             setSelectedZone(value);
                             form.setValue("localityId", "");
+                            form.setValue("customLocalityName", "");
+                            setShowCustomLocality(false);
+                            setCustomLocalityValue("");
                           }}
                           value={selectedZone}
                           disabled={!municipalityId}
@@ -550,7 +600,7 @@ function ConsultationForm() {
                               disabled={!selectedZone}
                             >
                               {form.watch("localityId")
-                                ? localities.find((l) => l.id === form.watch("localityId"))?.name
+                                ? getAllLocalitiesForZone().find((l) => l.id === form.watch("localityId"))?.name
                                 : !selectedZone
                                   ? "Primero seleccione un tipo de zona..."
                                   : selectedZone === "urbano"
@@ -570,16 +620,30 @@ function ConsultationForm() {
                                 <CommandEmpty>No se encontraron localidades.</CommandEmpty>
                                 <CommandGroup>
                                   {selectedZone &&
-                                    localities
-                                      .filter((l) => l.municipalityId === municipalityId)
-                                      .filter((l) => l.area === selectedZone)
+                                    getAllLocalitiesForZone()
                                       .filter((l) => l.name.toLowerCase().includes(localitySearchValue.toLowerCase()))
                                       .map((locality) => (
                                         <CommandItem
                                           key={locality.id}
                                           value={locality.name}
                                           onSelect={() => {
-                                            form.setValue("localityId", locality.id);
+                                            // Lógica corregida para manejar IDs fabricados vs reales
+                                            if (locality.id === "otro") {
+                                              // Opción "Otro" - permitir nombre personalizado
+                                              form.setValue("localityId", "");
+                                              form.setValue("customLocalityName", "");
+                                              setShowCustomLocality(true);
+                                            } else if (locality.id.startsWith("rural-")) {
+                                              // Localidad rural de JSON - usar nombre, no ID fabricado
+                                              form.setValue("localityId", "");
+                                              form.setValue("customLocalityName", locality.name);
+                                              setShowCustomLocality(false);
+                                            } else {
+                                              // Localidad urbana real de DB - usar ID real
+                                              form.setValue("localityId", locality.id);
+                                              form.setValue("customLocalityName", "");
+                                              setShowCustomLocality(false);
+                                            }
                                             setLocalitySearchOpen(false);
                                             setLocalitySearchValue("");
                                           }}
@@ -600,28 +664,26 @@ function ConsultationForm() {
                         )}
                       </div>
 
-                      {/* Geocódigo */}
-                      <div className="geocode-display">
-                        <div className="geocode-container">
-                          <Label className="geocode-label">Geocódigo Generado</Label>
-                          <div
-                            className={`geocode-value ${!(departmentId && municipalityId) ? "opacity-50" : ""}`}
-                            data-testid="text-geocode"
-                          >
-                            {(() => {
-                              const selectedDept = departments.find((d) => d.id === departmentId);
-                              const selectedMuni = municipalities.find((m) => m.id === municipalityId);
-                              if (selectedDept && selectedMuni) {
-                                return `${selectedDept.geocode}${selectedMuni.geocode}`;
-                              }
-                              return "Se generará automáticamente cuando complete la ubicación";
-                            })()}
-                          </div>
-                          <small className="geocode-subtitle">
-                            Este código identifica únicamente su ubicación
-                          </small>
+                      {/* Campo manual para "Otro" cuando es zona rural */}
+                      {showCustomLocality && (
+                        <div className="location-step mb-3">
+                          <Label htmlFor="customLocality">Escriba el nombre de su aldea o caserío *</Label>
+                          <Input
+                            id="customLocality"
+                            placeholder="Ingrese el nombre de su aldea o caserío..."
+                            value={form.watch("customLocalityName") || ""}
+                            onChange={(e) => {
+                              form.setValue("customLocalityName", e.target.value);
+                            }}
+                            data-testid="input-custom-locality"
+                            className="location-select"
+                          />
+                          {form.formState.errors.customLocalityName && (
+                            <div className="text-danger small mt-1">{form.formState.errors.customLocalityName.message}</div>
+                          )}
                         </div>
-                      </div>
+                      )}
+
 
                       {/* ====== MAPA e inputs ocultos ====== */}
                       <div className="mt-4 location-map-container">

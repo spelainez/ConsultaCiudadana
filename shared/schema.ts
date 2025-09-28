@@ -67,7 +67,9 @@ export const consultations = pgTable("consultations", {
   // Location
   departmentId: varchar("department_id", { length: 2 }).notNull(),
   municipalityId: varchar("municipality_id").notNull(),
-  localityId: varchar("locality_id").notNull(),
+  zone: text("zone").notNull(), // urbano, rural
+  localityId: varchar("locality_id"), // Nullable - required when selecting predefined locality
+  customLocalityName: text("custom_locality_name"), // Para "Otro" - nombres personalizados
   geocode: text("geocode").notNull(),
   
   // Message and sectors
@@ -128,6 +130,18 @@ export const insertConsultationSchema = createInsertSchema(consultations).omit({
   createdAt: true,
   updatedAt: true,
   geocode: true,
+}).refine((data) => {
+  // Validación condicional para zona urbana
+  if (data.zone === "urbano") {
+    return !!data.localityId;
+  }
+  // Validación condicional para zona rural
+  if (data.zone === "rural") {
+    return !!data.localityId || !!data.customLocalityName;
+  }
+  return true;
+}, {
+  message: "Para zona urbana seleccione una localidad. Para zona rural seleccione una aldea o escriba el nombre manualmente.",
 });
 
 export const insertDepartmentSchema = createInsertSchema(departments);
