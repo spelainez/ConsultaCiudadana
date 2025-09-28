@@ -669,9 +669,9 @@ function ConsultationForm() {
                       {/* Campo manual para "Otro" cuando es zona rural */}
                       {showCustomLocality && (
                         <div className="location-step mb-3">
-                          <Label htmlFor="customLocality">Escriba el nombre de su aldea o caserío *</Label>
+                          <Label htmlFor="customLocalityName">Escriba el nombre de su aldea o caserío *</Label>
                           <Input
-                            id="customLocality"
+                            id="customLocalityName"
                             placeholder="Ingrese el nombre de su aldea o caserío..."
                             value={form.watch("customLocalityName") || ""}
                             onChange={(e) => {
