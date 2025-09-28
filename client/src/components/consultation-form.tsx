@@ -556,6 +556,7 @@ function ConsultationForm() {
                         <Select
                           onValueChange={(value) => {
                             setSelectedZone(value);
+                            form.setValue("zone", value); // Setear el campo zone
                             form.setValue("localityId", "");
                             form.setValue("customLocalityName", "");
                             setShowCustomLocality(false);
@@ -627,22 +628,23 @@ function ConsultationForm() {
                                           key={locality.id}
                                           value={locality.name}
                                           onSelect={() => {
-                                            // Lógica corregida para manejar IDs fabricados vs reales
                                             if (locality.id === "otro") {
                                               // Opción "Otro" - permitir nombre personalizado
                                               form.setValue("localityId", "");
                                               form.setValue("customLocalityName", "");
                                               setShowCustomLocality(true);
-                                            } else if (locality.id.startsWith("rural-")) {
-                                              // Localidad rural de JSON - usar nombre, no ID fabricado
+                                            } else if (selectedZone === "rural") {
+                                              // Aldea rural - usar nombre en customLocalityName
                                               form.setValue("localityId", "");
                                               form.setValue("customLocalityName", locality.name);
                                               setShowCustomLocality(false);
+                                              setCustomLocalityValue("");
                                             } else {
                                               // Localidad urbana real de DB - usar ID real
                                               form.setValue("localityId", locality.id);
                                               form.setValue("customLocalityName", "");
                                               setShowCustomLocality(false);
+                                              setCustomLocalityValue("");
                                             }
                                             setLocalitySearchOpen(false);
                                             setLocalitySearchValue("");
