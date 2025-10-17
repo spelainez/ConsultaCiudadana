@@ -1,104 +1,185 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { 
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { 
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { 
-  Calendar, 
-  Filter, 
-  Download, 
-  RefreshCw, 
-  Eye, 
-  ChevronDown, 
-  BarChart3, 
-  PieChart, 
-  MapPin, 
-  MessageSquare, 
-  User, 
-  UserPlus, 
-  LogOut, 
-  Edit, 
-  Trash2, 
-  ArrowUpDown,
-  Settings,
-  X,
-  Shield,
-  Key,
-  Zap,
-  Users
+
+import {
+  Filter, Download, RefreshCw, Eye, ChevronDown, BarChart3, PieChart as PieIcon,
+  MessageSquare, User, UserPlus, LogOut, Edit, Trash2, ArrowUpDown, Settings,
+  Images as ImagesIcon, ExternalLink, ChevronLeft, ChevronRight
 } from "lucide-react";
-import { UserManagementSPE } from "./user-management-spe";
 
-// Schema de validación para cambio de contraseña
-const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, "La contraseña actual es requerida"),
-  newPassword: z.string().min(6, "La nueva contraseña debe tener al menos 6 caracteres"),
-  confirmPassword: z.string().min(6, "Confirme la nueva contraseña")
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Las contraseñas no coinciden",
-  path: ["confirmPassword"]
-}).refine((data) => data.newPassword !== data.currentPassword, {
-  message: "La nueva contraseña debe ser diferente a la actual",
-  path: ["newPassword"]
+import {
+  ResponsiveContainer,
+  LineChart, Line,
+  BarChart, Bar,
+  PieChart as RPieChart, Pie, Cell,
+  CartesianGrid, XAxis, YAxis, Tooltip, Legend,
+} from "recharts";
+
+/* ======== Schemas ======== */
+const consultationSchema = z.object({
+  personType: z.enum(["natural", "juridica", "anonimo"]),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  identity: z.string().optional(),
+  companyName: z.string().optional(),
+  rtn: z.string().optional(),
+  legalRepresentative: z.string().optional(),
+  companyContact: z.string().optional(),
+  email: z.string().email("Email inválido").or(z.literal("")).optional(),
+  mobile: z.string().optional(),
+  departmentId: z.string().optional(),
+  municipalityId: z.string().optional(),
+  localityId: z.string().optional(),
+  selectedSectors: z.array(z.string()).optional(),
+  message: z.string().min(1, "El mensaje es requerido"),
+  status: z.enum(["active", "archived"]),
+}).superRefine((data, ctx) => {
+  if (data.personType === "natural") {
+    if (!data.firstName && !data.lastName && !data.identity) {
+      ctx.addIssue({ code: "custom", path: ["firstName"], message: "Nombre/Apellido o Identidad requerido" });
+    }
+  }
+  if (data.personType === "juridica") {
+    if (!data.companyName && !data.rtn) {
+      ctx.addIssue({ code: "custom", path: ["companyName"], message: "Empresa o RTN requerido" });
+    }
+  }
 });
+type ConsultationFormData = z.infer<typeof consultationSchema>;
 
-type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
+/* ======== Utils ======== */
+function asStringId(row: any) {
+  try {
+    const id = row?.id ?? row?._id ?? row?.Id ?? row?.ID;
+    if (id == null) return "";
+    return String(id);
+  } catch {
+    return "";
+  }
+}
+function asArray<T = string>(v: any): T[] {
+  if (Array.isArray(v)) return v as T[];
+  if (v == null) return [];
+  return [v] as T[];
+}
+function safeLower(v: unknown) { return typeof v === "string" ? v.toLowerCase() : v; }
+const fmtDateHN = (s: string) => new Date(s).toLocaleDateString("es-HN");
+const today = () => new Date().toISOString().split("T")[0];
 
-export function Dashboard() {
+const badgeVariantPerson = (type: string) =>
+  type === "juridica" ? "secondary" : type === "anonimo" ? "outline" : "default";
+const labelPerson = (type: string) =>
+  type === "juridica" ? "Jurídica" : type === "anonimo" ? "Anónimo" : "Natural";
+const badgeVariantStatus = (status: string) => (status === "archived" ? "secondary" : "default");
+
+const CHART_COLORS = ["#1bd1e8", "#7dd3fc", "#34d399", "#fbbf24", "#f87171", "#a78bfa"];
+
+/* ======== API helpers ======== */
+async function getJson<T = any>(url: string, params?: Record<string, string>) {
+  const qs = params && Object.keys(params).length ? `?${new URLSearchParams(params)}` : "";
+  const res = await apiRequest("GET", `${url}${qs}`);
+  if (!res.ok) throw new Error(`${res.status}`);
+  return res.json() as Promise<T>;
+}
+async function deleteConsultation(id: string) {
+  const res = await apiRequest("DELETE", `/api/consultations/${id}`);
+  return await res.json().catch(() => ({}));
+}
+async function patchStatus(id: string, status: "active" | "archived") {
+  const res = await apiRequest("PATCH", `/api/consultations/${id}/status`, { status });
+  return await res.json().catch(() => ({}));
+}
+async function putConsultation(id: string, data: ConsultationFormData) {
+  const res = await apiRequest("PUT", `/api/consultations/${id}`, data);
+  return await res.json().catch(() => ({}));
+}
+
+function resolveImageUrl(x: string) {
+  const s = String(x || "").trim();
+  if (!s) return "";
+  if (/^https?:\/\//i.test(s)) return s;
+  if (s.startsWith("/uploadps/") || s.startsWith("/api/")) return s;
+  return `/uploadps/${s.replace(/^\/+/, "")}`;
+}
+
+function downloadUrl(url: string, filename?: string) {
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename || url.split("/").pop() || "imagen";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+async function downloadAll(urls: string[]) {
+  for (const u of urls) {
+    await new Promise(r => setTimeout(r, 200));
+    downloadUrl(resolveImageUrl(u));
+  }
+}
+
+/* ========================== Componente ========================== */
+export default function Dashboard() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user, logoutMutation } = useAuth();
+
+  // Dialogs/estados generales
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [showCreatePlanificador, setShowCreatePlanificador] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-  const [showChangePassword, setShowChangePassword] = useState(false);
-  const [showSecurityInfo, setShowSecurityInfo] = useState(false);
   const [showConsultationDetail, setShowConsultationDetail] = useState(false);
   const [selectedConsultation, setSelectedConsultation] = useState<any>(null);
-  const [sortConfig, setSortConfig] = useState<{key: string, direction: 'asc' | 'desc'} | null>(null);
+const [openDepartment, setOpenDepartment] = useState(false);
+const [openMunicipality, setOpenMunicipality] = useState(false);
+const [openLocality, setOpenLocality] = useState(false);
+const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
+
+  // Galería
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+  function openGallery(imgs: string[], index = 0) {
+    setGalleryImages(imgs);
+    setGalleryIndex(index);
+    setGalleryOpen(true);
+  }
+  function closeGallery() { setGalleryOpen(false); }
+  function prevImg() { setGalleryIndex(i => (i - 1 + galleryImages.length) % galleryImages.length); }
+  function nextImg() { setGalleryIndex(i => (i + 1) % galleryImages.length); }
+
+  // Editar / Eliminar
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingConsultation, setEditingConsultation] = useState<any | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // Orden y filtros
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
+
   const [filters, setFilters] = useState({
     dateFrom: "",
     dateTo: "",
     departmentId: "",
+    municipalityId: "",
+    localityId: "",
     sector: "",
     personType: "",
     status: "",
@@ -106,104 +187,181 @@ export function Dashboard() {
     limit: 10,
   });
 
-  // Chart dependencies - Chart.js
-  useEffect(() => {
-    const loadChartJS = async () => {
-      if (typeof window !== 'undefined' && !(window as any).Chart) {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
-        script.onload = () => {
-          setTimeout(initializeCharts, 100);
-        };
-        document.head.appendChild(script);
-      } else if ((window as any).Chart) {
-        initializeCharts();
-      }
+  const [filtersApplied, setFiltersApplied] = useState(false);
+  function getCurrentFilters() {
+    if (!filtersApplied) return {};
+    const f = filters;
+    return {
+      ...(f.dateFrom ? { dateFrom: f.dateFrom } : {}),
+      ...(f.dateTo ? { dateTo: f.dateTo } : {}),
+      ...(f.departmentId && f.departmentId !== "all" ? { departmentId: f.departmentId } : {}),
+      ...(f.municipalityId && f.municipalityId !== "all" ? { municipalityId: f.municipalityId } : {}),
+      ...(f.localityId && f.localityId !== "all" ? { localityId: f.localityId } : {}),
+      ...(f.sector && f.sector !== "all" ? { sector: f.sector } : {}),
+      ...(f.personType && f.personType !== "all" ? { personType: f.personType } : {}),
+      ...(f.status && f.status !== "all" ? { status: f.status } : {}),
     };
+  }
 
-    loadChartJS();
+  useEffect(() => {
+    if (!filters.dateFrom && !filters.dateTo) {
+      const end = new Date();
+      const start = new Date(); start.setDate(end.getDate() - 29);
+      const pad = (n:number)=> String(n).padStart(2,"0");
+      const ymd = (d:Date)=> `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      setFilters(f => ({ ...f, dateFrom: ymd(start), dateTo: ymd(end) }));
+    }
   }, []);
 
-  const initializeCharts = () => {
-    if (!(window as any).Chart) return;
-
-    // Sectors pie chart
-    const sectorsCtx = document.getElementById('sectorsChart') as HTMLCanvasElement;
-    if (sectorsCtx && !(sectorsCtx as any).chart) {
-      (sectorsCtx as any).chart = new (window as any).Chart(sectorsCtx, {
-        type: 'doughnut',
-        data: {
-          labels: (consultationsBySector as any)?.map((d: any) => d.sector) || ['Educación', 'Salud', 'Infraestructura', 'Seguridad', 'Otros'],
-          datasets: [{
-            data: (consultationsBySector as any)?.map((d: any) => d.count) || [25, 20, 18, 15, 22],
-            backgroundColor: ['#1bd1e8', '#17b8cd', '#198754', '#ffc107', '#6c757d']
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                usePointStyle: true,
-                padding: 15
-              }
-            }
-          }
-        }
-      });
-    }
-  };
-
-  // Data queries with hierarchical keys
+  /* ============================ Queries ============================ */
   const { data: stats } = useQuery<any>({
-    queryKey: ["/api/dashboard/stats"],
+    queryKey: ["/api/dashboard/stats", filters.dateFrom, filters.dateTo],
+    queryFn: () => getJson("/api/dashboard/stats"),
   });
 
   const { data: consultationsByDate } = useQuery<any>({
-    queryKey: ["/api/dashboard/consultations-by-date", 30],
+    queryKey: ["/api/dashboard/consultations-by-date", filters, filtersApplied],
+    queryFn: () =>
+      getJson("/api/dashboard/consultations-by-date", {
+        ...(filtersApplied && filters.dateFrom ? { dateFrom: filters.dateFrom } : {}),
+        ...(filtersApplied && filters.dateTo ? { dateTo: filters.dateTo } : {}),
+        ...(filtersApplied && filters.departmentId && filters.departmentId !== "all" ? { departmentId: filters.departmentId } : {}),
+        ...(filtersApplied && filters.sector && filters.sector !== "all" ? { sector: filters.sector } : {}),
+        ...(filtersApplied && filters.personType && filters.personType !== "all" ? { personType: filters.personType } : {}),
+        ...(filtersApplied && filters.status && filters.status !== "all" ? { status: filters.status } : {}),
+        days: "30",
+      }),
   });
 
   const { data: consultationsBySector } = useQuery<any>({
-    queryKey: ["/api/dashboard/consultations-by-sector"],
+    queryKey: ["/api/dashboard/consultations-by-sector", filters, filtersApplied],
+    queryFn: () =>
+      getJson("/api/dashboard/consultations-by-sector", {
+        ...(filtersApplied && filters.dateFrom ? { dateFrom: filters.dateFrom } : {}),
+        ...(filtersApplied && filters.dateTo ? { dateTo: filters.dateTo } : {}),
+        ...(filtersApplied && filters.departmentId && filters.departmentId !== "all" ? { departmentId: filters.departmentId } : {}),
+        ...(filtersApplied && filters.sector && filters.sector !== "all" ? { sector: filters.sector } : {}),
+        ...(filtersApplied && filters.personType && filters.personType !== "all" ? { personType: filters.personType } : {}),
+        ...(filtersApplied && filters.status && filters.status !== "all" ? { status: filters.status } : {}),
+      }),
   });
 
-  const { data: consultationsData, refetch: refetchConsultations } = useQuery<any>({
-    queryKey: ["/api/consultations", filters],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== "" && value !== null && value !== undefined) {
-          params.append(key, String(value));
-        }
-      });
-      const response = await fetch(`/api/consultations?${params.toString()}`, {
-        credentials: 'include'
-      });
-      if (!response.ok) throw new Error('Failed to fetch consultations');
-      return response.json();
-    }
+  const { data: consultationsData } = useQuery<any>({
+    queryKey: ["/api/consultations", filters, filtersApplied],
+    queryFn: () => {
+      const params = filtersApplied
+        ? Object.fromEntries(
+            Object.entries(filters)
+              .filter(([, v]) => v !== "" && v !== null && v !== undefined)
+              .map(([k, v]) => [k, String(v)])
+          )
+        : {};
+      return getJson("/api/consultations", params);
+    },
   });
 
   const { data: departments = [] } = useQuery<any[]>({
     queryKey: ["/api/departments"],
+    queryFn: () => getJson("/api/departments"),
   });
-
   const { data: sectors = [] } = useQuery<any[]>({
     queryKey: ["/api/sectors"],
+    queryFn: () => getJson("/api/sectors"),
   });
 
-  // Filter handlers
+  // === Widgets extra ===
+  const { data: byDept = [] } = useQuery<any[]>({
+    queryKey: ["/api/dashboard/by-department", filters],
+    queryFn: () =>
+      getJson("/api/dashboard/by-department", {
+        ...(filters.dateFrom ? { dateFrom: filters.dateFrom } : {}),
+        ...(filters.dateTo ? { dateTo: filters.dateTo } : {}),
+        ...(filters.sector && filters.sector !== "all" ? { sector: filters.sector } : {}),
+        ...(filters.status && filters.status !== "all" ? { status: filters.status } : {}),
+      }),
+  });
+
+  const { data: bySectorAdv = [] } = useQuery<any[]>({
+    queryKey: ["/api/dashboard/by-sector", filters],
+    queryFn: () =>
+      getJson("/api/dashboard/by-sector", {
+        ...(filters.dateFrom ? { dateFrom: filters.dateFrom } : {}),
+        ...(filters.dateTo ? { dateTo: filters.dateTo } : {}),
+        ...(filters.departmentId && filters.departmentId !== "all"
+          ? { departmentId: filters.departmentId }
+          : {}),
+        ...(filters.status && filters.status !== "all" ? { status: filters.status } : {}),
+      }),
+  });
+
+  const { data: byLocality = [] } = useQuery<any[]>({
+    queryKey: ["/api/dashboard/by-locality", filters],
+    queryFn: () =>
+      getJson("/api/dashboard/by-locality", {
+        ...(filters.dateFrom ? { dateFrom: filters.dateFrom } : {}),
+        ...(filters.dateTo ? { dateTo: filters.dateTo } : {}),
+        ...(filters.departmentId && filters.departmentId !== "all"
+          ? { departmentId: filters.departmentId }
+          : {}),
+        ...(filters.status && filters.status !== "all" ? { status: filters.status } : {}),
+      }),
+    enabled: !!(filters.departmentId && filters.departmentId !== "all"),
+  });
+
+  // --- Sectores por departamento (apilado) ---
+  const { data: sectorByDept = [] } = useQuery<any[]>({
+    queryKey: ["/api/dashboard/sector-by-department", filters],
+    queryFn: () =>
+      getJson("/api/dashboard/sector-by-department", {
+        ...(filters.dateFrom ? { dateFrom: filters.dateFrom } : {}),
+        ...(filters.dateTo ? { dateTo: filters.dateTo } : {}),
+        ...(filters.departmentId && filters.departmentId !== "all" ? { departmentId: filters.departmentId } : {}),
+        ...(filters.municipalityId && filters.municipalityId !== "all" ? { municipalityId: filters.municipalityId } : {}),
+        ...(filters.localityId && filters.localityId !== "all" ? { localityId: filters.localityId } : {}),
+        ...(filters.personType && filters.personType !== "all" ? { personType: filters.personType } : {}),
+        ...(filters.status && filters.status !== "all" ? { status: filters.status } : {}),
+        ...(filters.sector && filters.sector !== "all" ? { sector: filters.sector } : {}),
+      }),
+  });
+
+  // Agrupar: [{ department: 'Atlántida', Educacion: 5, Salud: 2, ...}, ...]
+  const stackedByDept = useMemo(() => {
+    const sectorsSet = new Set<string>();
+    const map = new Map<string, any>();
+    for (const r of sectorByDept) {
+      const sec = r.sector || "Sin sector";
+      sectorsSet.add(sec);
+      const key = r.department || "Sin departamento";
+      const row = map.get(key) || { department: key };
+      row[sec] = (row[sec] || 0) + Number(r.count || 0);
+      map.set(key, row);
+    }
+    return { data: Array.from(map.values()), sectors: Array.from(sectorsSet) };
+  }, [sectorByDept]);
+
+  /* ============================ Totales ============================ */
+  const totals = useMemo(() => {
+    const total = Number(stats?.total ?? consultationsData?.total ?? 0);
+    const active = Number(
+      consultationsData?.consultations?.filter((c: any) => c.status === "active")?.length ?? 0
+    );
+    const archived = Math.max(0, total - active);
+    return { total, active, archived };
+  }, [stats, consultationsData]);
+
+  /* ============================ Filtros ============================ */
   const handleFilterApply = () => {
-    setFilters({
-      ...filters,
-      departmentId: filters.departmentId === "all" ? "" : filters.departmentId,
-      sector: filters.sector === "all" ? "" : filters.sector,
-      personType: filters.personType === "all" ? "" : filters.personType,
-      status: filters.status === "all" ? "" : filters.status,
-      offset: 0, // Reset pagination
-    });
+    setFilters((f) => ({
+      ...f,
+      departmentId: f.departmentId === "all" ? "" : f.departmentId,
+      municipalityId: f.municipalityId === "all" ? "" : f.municipalityId,
+      localityId: f.localityId === "all" ? "" : f.localityId,
+      sector: f.sector === "all" ? "" : f.sector,
+      personType: f.personType === "all" ? "" : f.personType,
+      status: f.status === "all" ? "" : f.status,
+      offset: 0,
+    }));
+    setFiltersApplied(true);
   };
 
   const handleFilterClear = () => {
@@ -211,355 +369,273 @@ export function Dashboard() {
       dateFrom: "",
       dateTo: "",
       departmentId: "",
+      municipalityId: "",
+      localityId: "",
       sector: "",
       personType: "",
       status: "",
       offset: 0,
       limit: 10,
     });
+    setFiltersApplied(false);
   };
 
-  // Manual refresh function
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ["/api/consultations"] });
     queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
     queryClient.invalidateQueries({ queryKey: ["/api/dashboard/consultations-by-sector"] });
     queryClient.invalidateQueries({ queryKey: ["/api/dashboard/consultations-by-date"] });
-    toast({
-      title: "Datos actualizados",
-      description: "Los datos han sido actualizados exitosamente.",
-    });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/by-department"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/by-sector"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/by-locality"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/sector-by-department"] });
+    toast({ title: "Datos actualizados" });
   };
 
-  // Export functions
-  const downloadFile = async (url: string, filename: string) => {
+  /* ============================ Export helpers ============================ */
+  function saveBlob(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function toCSV(rows: Array<Record<string, any>>): string {
+    if (!rows?.length) return "";
+    const headers = Object.keys(rows[0]);
+    const esc = (v: any) => {
+      const s = v == null ? "" : String(v);
+      if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+      return s;
+    };
+    return [headers.join(","), ...rows.map(r => headers.map(h => esc(r[h])).join(","))].join("\n");
+  }
+
+  type ExportFilters = {
+    dateFrom?: string;
+    dateTo?: string;
+    departmentId?: number | string;
+    municipalityId?: number | string;
+    localityId?: number | string;
+    sector?: string;
+    personType?: string;
+    status?: string;
+  };
+
+  function buildExportUrl(fmt: "csv" | "excel" | "pdf", filters: ExportFilters = {}) {
+    const base =
+      fmt === "csv"  ? "/api/export/consultations/csv"  :
+      fmt === "excel"? "/api/export/consultations/excel":
+                       "/api/export/consultations/pdf";
+
+    const qs = new URLSearchParams();
+
+    if (filters.dateFrom) qs.set("dateFrom", String(filters.dateFrom));
+    if (filters.dateTo) qs.set("dateTo", String(filters.dateTo));
+    if (filters.departmentId && filters.departmentId !== "all") qs.set("departmentId", String(filters.departmentId));
+    if (filters.municipalityId && filters.municipalityId !== "all") qs.set("municipalityId", String(filters.municipalityId));
+    if (filters.localityId && filters.localityId !== "all") qs.set("localityId", String(filters.localityId));
+    if (filters.sector && filters.sector !== "all") qs.set("sector", String(filters.sector));
+    if (filters.personType && filters.personType !== "all") qs.set("personType", String(filters.personType));
+    if (filters.status && filters.status !== "all") qs.set("status", String(filters.status));
+
+    const query = qs.toString();
+    return query ? `${base}?${query}` : base;
+  }
+
+  const handleExportCSV = async () => {
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(downloadUrl);
-    } catch (error) {
-      console.error('Download failed:', error);
-      toast({
-        title: "Error al exportar",
-        description: "No se pudo descargar el archivo. Inténtelo de nuevo.",
-        variant: "destructive",
-      });
+      const res = await apiRequest("GET", buildExportUrl("csv", getCurrentFilters()));
+      if (!res.ok) throw new Error(String(res.status));
+      const blob = await res.blob();
+      await saveBlob(blob, `consultas_${today()}.csv`);
+    } catch {
+      const rows = (sortedConsultations || []).map((c: any) => ({
+        id: asStringId(c),
+        fecha: c.createdAt,
+        tipoPersona: c.personType,
+        datos: c.personType === "natural"
+          ? (`${c.firstName || ""} ${c.lastName || ""}`.trim() || c.identity || "")
+          : (c.personType === "juridica" ? (c.companyName || c.rtn || "") : "Anónimo"),
+        departamento: c.department?.name || "",
+        municipio: c.municipality?.name || "",
+        localidad: c.locality?.name || c.customLocalityName || "",
+        coordenadas: (c.latitude && c.longitude) ? `${c.latitude}, ${c.longitude}` : "",
+        sectores: Array.isArray(c.selectedSectors) ? c.selectedSectors.join("; ") : "",
+        mensaje: c.message,
+        estado: c.status,
+      }));
+      await saveBlob(
+        new Blob([toCSV(rows)], { type: "text/csv;charset=utf-8" }),
+        `consultas_${today()}.csv`
+      );
     }
   };
 
-  const buildExportUrl = (format: string) => {
-    const baseUrl = `/api/export/consultations/${format}`;
-    const params = new URLSearchParams();
-    if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
-    if (filters.dateTo) params.append('dateTo', filters.dateTo);
-    if (filters.departmentId && filters.departmentId !== 'all') params.append('departmentId', filters.departmentId);
-    if (filters.sector && filters.sector !== 'all') params.append('sector', filters.sector);
-    if (filters.personType && filters.personType !== 'all') params.append('personType', filters.personType);
-    if (filters.status && filters.status !== 'all') params.append('status', filters.status);
-    return `${baseUrl}?${params.toString()}`;
+  const handleExportExcel = async () => {
+    try {
+      const res = await apiRequest("GET", buildExportUrl("excel", getCurrentFilters()));
+      if (!res.ok) throw new Error(String(res.status));
+      const blob = await res.blob();
+      await saveBlob(blob, `consultas_${today()}.xlsx`);
+    } catch {
+      toast({ title: "No se pudo generar Excel. Se exporta CSV." });
+      await handleExportCSV();
+    }
   };
 
-  const handleExportCSV = () => {
-    const url = buildExportUrl('csv');
-    const filename = `consultas_${new Date().toISOString().split('T')[0]}.csv`;
-    downloadFile(url, filename);
+  const handleExportPDF = async () => {
+    try {
+      const res = await apiRequest("GET", buildExportUrl("pdf", getCurrentFilters()));
+      if (!res.ok) throw new Error(String(res.status));
+      const blob = await res.blob();
+      await saveBlob(blob, `consultas_${today()}.pdf`);
+    } catch {
+      toast({ title: "No se pudo generar PDF. Se exporta CSV." });
+      await handleExportCSV();
+    }
   };
 
-  const handleExportExcel = () => {
-    const url = buildExportUrl('excel');
-    const filename = `consultas_${new Date().toISOString().split('T')[0]}.xlsx`;
-    downloadFile(url, filename);
-  };
+  /* ===================== Mutations ===================== */
+  const deleteConsultationMutation = useMutation({
+    mutationFn: async (id: string) => deleteConsultation(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/consultations"] });
+      toast({ title: "Consulta eliminada" });
+    },
+    onError: (e:any) =>
+      toast({ title: "Error", description: e?.message || "No se pudo eliminar", variant: "destructive" }),
+  });
 
-  const handleExportPDF = () => {
-    const url = buildExportUrl('pdf');
-    const filename = `consultas_${new Date().toISOString().split('T')[0]}.pdf`;
-    downloadFile(url, filename);
-  };
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ consultationId, status }: { consultationId: string; status: "active" | "archived" }) =>
+      patchStatus(consultationId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/consultations"] });
+      toast({ title: "Estado actualizado" });
+    },
+    onError: (e:any) =>
+      toast({ title: "Error", description: e?.message || "No se pudo actualizar el estado", variant: "destructive" }),
+  });
 
-  // Navbar actions
-  const handleCreatePlanificador = () => {
-    navigate("/admin/users");
-  };
+  const updateConsultationMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: ConsultationFormData }) =>
+      putConsultation(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/consultations"] });
+      toast({ title: "Consulta actualizada", description: "Cambios guardados." });
+      setShowEditDialog(false);
+      setEditingConsultation(null);
+    },
+    onError: (e:any) =>
+      toast({ title: "Error", description: e?.message || "No se pudo actualizar", variant: "destructive" }),
+  });
 
-  const handleProfile = () => {
-    setShowProfile(true);
-  };
+  /* ====================== Form editar ====================== */
+  const editForm = useForm<ConsultationFormData>({
+    resolver: zodResolver(consultationSchema),
+    defaultValues: {
+      personType: "natural",
+      message: "",
+      status: "active",
+      selectedSectors: [],
+    },
+  });
 
-  const handleLogout = () => {
-    logoutMutation.mutate();
-  };
+  /* ============================ Helpers UI ============================ */
+  const getPersonalData = (c: any) => c.personType === 'natural'
+    ? (`${c.firstName || ''} ${c.lastName || ''}`.trim() || c.identity || 'Sin datos')
+    : c.personType === 'juridica'
+      ? (c.companyName || c.rtn || 'Sin datos')
+      : 'Anónimo';
 
-  // Sorting functions
   const handleSort = (key: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
+    let direction: "asc" | "desc" = "asc";
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") direction = "desc";
     setSortConfig({ key, direction });
   };
 
-  // Apply sorting to consultations data
-  const sortedConsultations = consultationsData?.consultations ? 
-    [...consultationsData.consultations].sort((a: any, b: any) => {
-      if (!sortConfig) return 0;
-      
-      const { key, direction } = sortConfig;
-      let aValue = a[key];
-      let bValue = b[key];
-      
-      // Handle specific field types
-      if (key === 'createdAt') {
-        aValue = new Date(aValue).getTime();
-        bValue = new Date(bValue).getTime();
-      } else if (typeof aValue === 'string') {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-      
-      if (aValue < bValue) return direction === 'asc' ? -1 : 1;
-      if (aValue > bValue) return direction === 'asc' ? 1 : -1;
-      return 0;
-    }) : [];
-
-  // View consultation detail
-  const handleViewDetail = (consultation: any) => {
-    setSelectedConsultation(consultation);
-    setShowConsultationDetail(true);
-  };
-
-  // Delete consultation mutation
-  const deleteConsultationMutation = useMutation({
-    mutationFn: async (consultationId: string) => {
-      const response = await apiRequest("DELETE", `/api/consultations/${consultationId}`);
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/consultations"] });
-      toast({
-        title: "Consulta eliminada",
-        description: "La consulta ha sido eliminada exitosamente.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Error al eliminar la consulta",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Update status mutation
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ consultationId, status }: { consultationId: string, status: string }) => {
-      const response = await apiRequest("PATCH", `/api/consultations/${consultationId}/status`, { status });
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/consultations"] });
-      toast({
-        title: "Estado actualizado",
-        description: "El estado de la consulta ha sido actualizado exitosamente.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Error al actualizar el estado",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Change password mutation
-  const changePasswordMutation = useMutation({
-    mutationFn: async (data: ChangePasswordFormData) => {
-      const response = await apiRequest("PUT", `/api/profile/password`, {
-        currentPassword: data.currentPassword,
-        newPassword: data.newPassword
-      });
-      return response;
-    },
-    onSuccess: (response: any) => {
-      toast({
-        title: "Contraseña actualizada",
-        description: "Tu contraseña ha sido actualizada exitosamente. Por seguridad, debes iniciar sesión nuevamente.",
-      });
-      // Delay closing the modal to ensure toast is visible
-      setTimeout(() => {
-        setShowChangePassword(false);
-        changePasswordForm.reset();
-        
-        // If backend requires re-authentication, redirect to login
-        if (response?.requiresReauth) {
-          setTimeout(() => {
-            window.location.href = "/login";
-          }, 2000); // Give user time to read the toast
+  const sortedConsultations = consultationsData?.consultations
+    ? [...consultationsData.consultations].sort((a: any, b: any) => {
+        if (!sortConfig) return 0;
+        const { key, direction } = sortConfig;
+        let aValue: any = a[key];
+        let bValue: any = b[key];
+        if (key === "createdAt") {
+          aValue = new Date(aValue).getTime();
+          bValue = new Date(bValue).getTime();
+        } else {
+          aValue = safeLower(aValue);
+          bValue = safeLower(bValue);
         }
-      }, 100);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Error al cambiar la contraseña",
-        variant: "destructive",
-      });
-    },
-  });
+        if (aValue < bValue) return direction === "asc" ? -1 : 1;
+        if (aValue > bValue) return direction === "asc" ? 1 : -1;
+        return 0;
+      })
+    : [];
 
-  // Form para cambio de contraseña
-  const changePasswordForm = useForm<ChangePasswordFormData>({
-    resolver: zodResolver(changePasswordSchema),
-    defaultValues: {
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    },
-  });
-
-  // Funciones de manejo
-  const handleChangePassword = () => {
-    setShowProfile(false);
-    setShowChangePassword(true);
+  const openEdit = (c: any) => {
+    setEditingConsultation(c);
+    editForm.reset({
+      personType: c.personType ?? "natural",
+      firstName: c.firstName ?? "",
+      lastName: c.lastName ?? "",
+      identity: c.identity ?? "",
+      companyName: c.companyName ?? "",
+      rtn: c.rtn ?? "",
+      legalRepresentative: c.legalRepresentative ?? "",
+      companyContact: c.companyContact ?? "",
+      email: c.email ?? "",
+      mobile: c.mobile ?? "",
+      departmentId: c.department?.id ? String(c.department.id) : "",
+      municipalityId: c.municipality?.id ? String(c.municipality.id) : "",
+      localityId: c.locality?.id ? String(c.locality.id) : "",
+      selectedSectors: Array.isArray(c.selectedSectors) ? c.selectedSectors : [],
+      message: c.message ?? "",
+      status: c.status ?? "active",
+    });
+    setShowEditDialog(true);
   };
 
-  const handleVerifySecurity = () => {
-    setShowProfile(false);
-    setShowSecurityInfo(true);
-  };
-
-  const onSubmitChangePassword = (data: ChangePasswordFormData) => {
-    changePasswordMutation.mutate(data);
-  };
-
-  // Utility functions
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-HN');
-  };
-
-  const getPersonTypeBadgeVariant = (type: string) => {
-    switch (type) {
-      case 'natural': return 'default';
-      case 'juridica': return 'secondary';
-      case 'anonimo': return 'outline';
-      default: return 'default';
-    }
-  };
-
-  const getPersonTypeLabel = (type: string) => {
-    switch (type) {
-      case 'natural': return 'Natural';
-      case 'juridica': return 'Jurídica';
-      case 'anonimo': return 'Anónimo';
-      default: return type;
-    }
-  };
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'active': return 'default';
-      case 'archived': return 'secondary';
-      default: return 'default';
-    }
-  };
-
-  const getPersonalData = (consultation: any) => {
-    if (consultation.personType === 'natural') {
-      return `${consultation.firstName || ''} ${consultation.lastName || ''}`.trim() || consultation.identity || 'Sin datos';
-    } else if (consultation.personType === 'juridica') {
-      return consultation.companyName || consultation.rtn || 'Sin datos';
-    } else {
-      return 'Anónimo';
-    }
-  };
-
-  const getLocationString = (consultation: any) => {
-    const parts = [];
-    if (consultation.department?.name) parts.push(consultation.department.name);
-    if (consultation.municipality?.name) parts.push(consultation.municipality.name);
-    if (consultation.locality?.name) parts.push(consultation.locality.name);
-    return parts.join(', ') || consultation.geocode || 'Sin ubicación';
-  };
-
+  /* ============================== Render ============================== */
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#f5f7fa' }}>
-      {/* Navbar Superior - Responsive */}
-      <div 
-        className="shadow-sm sticky top-0 border-0 z-10" 
-        style={{ backgroundColor: '#1bd1e8' }}
-      >
+      {/* Navbar */}
+      <div className="shadow-sm sticky top-0 border-0 z-10" style={{ backgroundColor: '#1bd1e8' }}>
         <div className="container mx-auto px-2 sm:px-4">
           <div className="flex justify-between items-center py-2 sm:py-3">
             <div className="flex items-center">
               <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-white mr-2 sm:mr-3" />
               <h4 className="mb-0 font-bold text-white text-sm sm:text-lg">Panel Principal</h4>
             </div>
-            
             <div className="flex items-center gap-1 sm:gap-3">
-              <Button 
-                variant="outline" 
-                className="border-white text-white hover:bg-white hover:text-slate-800 bg-transparent" 
-                size="sm" 
-                onClick={handleRefresh}
-                data-testid="button-refresh"
-              >
+              <Button variant="outline" className="border-white text-white hover:bg-white hover:text-slate-800 bg-transparent" size="sm" onClick={handleRefresh}>
                 <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline ml-1">Actualizar</span>
               </Button>
-
-              {/* User Menu */}
               <div className="flex items-center text-white">
                 <span className="font-medium mr-1 text-sm sm:text-base hidden sm:inline">{user?.username}</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-white hover:bg-white hover:bg-opacity-20 p-1"
-                      data-testid="button-user-menu"
-                    >
+                    <Button variant="ghost" size="sm" className="text-white hover:bg-white hover:bg-opacity-20 p-1">
                       <User className="w-4 h-4 sm:hidden" />
                       <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem 
-                      onClick={handleCreatePlanificador}
-                      data-testid="button-create-planificador"
-                    >
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Crear Usuario
+                    <DropdownMenuItem onClick={() => navigate("/admin/users")}>
+                      <UserPlus className="w-4 h-4 mr-2" />Crear Usuario
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={handleProfile}
-                      data-testid="button-profile"
-                    >
-                      <User className="w-4 h-4 mr-2" />
-                      Mi Perfil
+                    <DropdownMenuItem onClick={() => {/* perfil opcional */}}>
+                      <User className="w-4 h-4 mr-2" />Mi Perfil
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      onClick={handleLogout}
-                      data-testid="button-logout"
-                    >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Cerrar Sesión
+                    <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
+                      <LogOut className="w-4 h-4 mr-2" />Cerrar Sesión
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -569,34 +645,25 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Main Content - Responsive */}
+      {/* Contenido */}
       <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-4">
         <div className="grid grid-cols-1 gap-2 sm:gap-4">
+          {/* ===================== Tabla ===================== */}
           <div className="w-full">
-
-            {/* Data Table */}
             <Card className="border-0 shadow-sm rounded-lg">
               <CardHeader style={{ backgroundColor: '#fff' }} className="border-0 rounded-t-lg px-3 sm:px-6 py-3 sm:py-4">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 sm:mb-4 gap-2 sm:gap-0">
-                  <div>
-                    <CardTitle className="mb-0 flex items-center text-lg sm:text-xl">
-                      <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" style={{ color: '#1bd1e8' }} />
-                      Consultas Ciudadanas
-                    </CardTitle>
-                  </div>
+                  <CardTitle className="mb-0 flex items-center text-lg sm:text-xl">
+                    <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" style={{ color: '#1bd1e8' }} />
+                    Consultas Ciudadanas
+                  </CardTitle>
                 </div>
-                
-                {/* Action Buttons - Responsive */}
+
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
                   <div className="flex items-center gap-2 w-full sm:w-auto">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button 
-                          variant="outline"
-                          size="sm" 
-                          data-testid="button-export-table"
-                          className="border text-gray-600 hover:bg-gray-50 flex-1 sm:flex-none"
-                        >
+                        <Button variant="outline" size="sm" className="border text-gray-600 hover:bg-gray-50 flex-1 sm:flex-none">
                           <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                           <span className="hidden sm:inline">Exportar</span>
                           <span className="sm:hidden">Exp.</span>
@@ -604,38 +671,18 @@ export function Dashboard() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuItem 
-                          onClick={() => handleExportCSV()}
-                          data-testid="button-export-csv"
-                        >
-                          <Download className="w-4 h-4 mr-2" />CSV
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => handleExportExcel()}
-                          data-testid="button-export-excel"
-                        >
-                          <Download className="w-4 h-4 mr-2" />Excel
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => handleExportPDF()}
-                          data-testid="button-export-pdf"
-                        >
-                          <Download className="w-4 h-4 mr-2" />PDF
-                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportCSV}><Download className="w-4 h-4 mr-2" />CSV</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportExcel}><Download className="w-4 h-4 mr-2" />Excel</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportPDF}><Download className="w-4 h-4 mr-2" /> PDF</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  
+
+                  {/* Filtros */}
                   <div className="w-full sm:w-auto">
                     <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
                       <CollapsibleTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          data-testid="button-toggleFilters"
-                          className="border-2 w-full sm:w-auto"
-                          style={{ borderColor: '#1bd1e8', color: '#1bd1e8' }}
-                        >
+                        <Button variant="outline" size="sm" className="border-2 w-full sm:w-auto" style={{ borderColor: '#1bd1e8', color: '#1bd1e8' }}>
                           <Filter className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                           Filtros
                           <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
@@ -645,69 +692,36 @@ export function Dashboard() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
                           <div>
                             <Label className="text-sm font-medium">Fecha Desde</Label>
-                            <Input
-                              type="date"
-                              value={filters.dateFrom}
-                              onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-                              data-testid="input-dateFrom"
-                            />
+                            <Input type="date" value={filters.dateFrom} onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })} />
                           </div>
                           <div>
                             <Label className="text-sm font-medium">Fecha Hasta</Label>
-                            <Input
-                              type="date"
-                              value={filters.dateTo}
-                              onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-                              data-testid="input-dateTo"
-                            />
+                            <Input type="date" value={filters.dateTo} onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })} />
                           </div>
                           <div>
                             <Label className="text-sm font-medium">Departamento</Label>
-                            <Select
-                              value={filters.departmentId}
-                              onValueChange={(value) => setFilters({ ...filters, departmentId: value })}
-                            >
-                              <SelectTrigger data-testid="select-departmentFilter">
-                                <SelectValue placeholder="Todos" />
-                              </SelectTrigger>
+                            <Select value={filters.departmentId} onValueChange={(v) => setFilters({ ...filters, departmentId: v })}>
+                              <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">Todos</SelectItem>
-                                {departments.map((dept) => (
-                                  <SelectItem key={dept.id} value={dept.id}>
-                                    {dept.name}
-                                  </SelectItem>
-                                ))}
+                                {departments.map((d: any) => (<SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>))}
                               </SelectContent>
                             </Select>
                           </div>
                           <div>
                             <Label className="text-sm font-medium">Sector</Label>
-                            <Select
-                              value={filters.sector}
-                              onValueChange={(value) => setFilters({ ...filters, sector: value })}
-                            >
-                              <SelectTrigger data-testid="select-sectorFilter">
-                                <SelectValue placeholder="Todos" />
-                              </SelectTrigger>
+                            <Select value={filters.sector} onValueChange={(v) => setFilters({ ...filters, sector: v })}>
+                              <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">Todos</SelectItem>
-                                {sectors.map((sector) => (
-                                  <SelectItem key={sector.id} value={sector.name}>
-                                    {sector.name}
-                                  </SelectItem>
-                                ))}
+                                {sectors.map((s: any) => (<SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>))}
                               </SelectContent>
                             </Select>
                           </div>
                           <div>
                             <Label className="text-sm font-medium">Tipo Persona</Label>
-                            <Select
-                              value={filters.personType}
-                              onValueChange={(value) => setFilters({ ...filters, personType: value })}
-                            >
-                              <SelectTrigger data-testid="select-personTypeFilter">
-                                <SelectValue placeholder="Todos" />
-                              </SelectTrigger>
+                            <Select value={filters.personType} onValueChange={(v) => setFilters({ ...filters, personType: v })}>
+                              <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">Todos</SelectItem>
                                 <SelectItem value="natural">Natural</SelectItem>
@@ -718,13 +732,8 @@ export function Dashboard() {
                           </div>
                           <div>
                             <Label className="text-sm font-medium">Estado</Label>
-                            <Select
-                              value={filters.status}
-                              onValueChange={(value) => setFilters({ ...filters, status: value })}
-                            >
-                              <SelectTrigger data-testid="select-statusFilter">
-                                <SelectValue placeholder="Todos" />
-                              </SelectTrigger>
+                            <Select value={filters.status} onValueChange={(v) => setFilters({ ...filters, status: v })}>
+                              <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">Todos</SelectItem>
                                 <SelectItem value="active">Activa</SelectItem>
@@ -734,337 +743,165 @@ export function Dashboard() {
                           </div>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-2 mt-3">
-                          <Button 
-                            size="sm" 
-                            onClick={handleFilterApply}
-                            data-testid="button-applyFilters"
-                            style={{ backgroundColor: '#1bd1e8', borderColor: '#1bd1e8' }}
-                            className="w-full sm:w-auto"
-                          >
-                            <Filter className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                            <span className="hidden sm:inline">Aplicar Filtros</span>
-                            <span className="sm:hidden">Aplicar</span>
+                          <Button size="sm" onClick={handleFilterApply} style={{ backgroundColor: '#1bd1e8', borderColor: '#1bd1e8' }} className="w-full sm:w-auto">
+                            <Filter className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />Aplicar Filtros
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={handleFilterClear}
-                            data-testid="button-clearFilters"
-                            className="w-full sm:w-auto"
-                          >
-                            <span className="hidden sm:inline">Limpiar</span>
-                            <span className="sm:hidden">Limpiar</span>
-                          </Button>
+                          <Button variant="outline" size="sm" onClick={handleFilterClear} className="w-full sm:w-auto">Limpiar</Button>
                         </div>
                       </CollapsibleContent>
                     </Collapsible>
                   </div>
                 </div>
               </CardHeader>
+
               <CardContent className="p-0">
-                {/* Desktop Table */}
-                <div className="overflow-x-auto hidden lg:block">
+                <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead className="font-bold">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleSort('id')}
-                            className="p-0 h-auto font-bold"
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => handleSort("id")} className="p-0 h-auto font-bold">
                             ID <ArrowUpDown className="w-3 h-3 ml-1" />
                           </Button>
                         </TableHead>
                         <TableHead className="font-bold">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleSort('createdAt')}
-                            className="p-0 h-auto font-bold"
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => handleSort("createdAt")} className="p-0 h-auto font-bold">
                             Fecha <ArrowUpDown className="w-3 h-3 ml-1" />
                           </Button>
                         </TableHead>
                         <TableHead className="font-bold">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleSort('personType')}
-                            className="p-0 h-auto font-bold"
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => handleSort("personType")} className="p-0 h-auto font-bold">
                             Tipo Persona <ArrowUpDown className="w-3 h-3 ml-1" />
                           </Button>
                         </TableHead>
+
                         <TableHead className="font-bold">Datos Personales</TableHead>
-                        <TableHead className="font-bold">Ubicación</TableHead>
+                        <TableHead className="font-bold">Departamento</TableHead>
+                        <TableHead className="font-bold">Municipio</TableHead>
+                        <TableHead className="font-bold">Aldea/Localidad</TableHead>
+                        <TableHead className="font-bold">Latitud</TableHead>
+                        <TableHead className="font-bold">Longitud</TableHead>
                         <TableHead className="font-bold">Sectores</TableHead>
                         <TableHead className="font-bold">Mensaje</TableHead>
+                        <TableHead className="font-bold">Imagen</TableHead>
+
                         <TableHead className="font-bold">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleSort('status')}
-                            className="p-0 h-auto font-bold"
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => handleSort("status")} className="p-0 h-auto font-bold">
                             Estado <ArrowUpDown className="w-3 h-3 ml-1" />
                           </Button>
                         </TableHead>
                         <TableHead className="font-bold">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
+
                     <TableBody>
-                      {sortedConsultations.length > 0 ? sortedConsultations.map((consultation: any) => (
-                        <TableRow key={consultation.id}>
-                          <TableCell>
-                            <code className="text-sm">{consultation.id.slice(0, 8)}...</code>
-                          </TableCell>
-                          <TableCell>{formatDate(consultation.createdAt.toString())}</TableCell>
-                          <TableCell>
-                            <Badge variant={getPersonTypeBadgeVariant(consultation.personType)}>
-                              {getPersonTypeLabel(consultation.personType)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm">{getPersonalData(consultation)}</span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm">{getLocationString(consultation)}</span>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-1">
-                              {consultation.selectedSectors.slice(0, 2).map((sector: any, index: number) => (
-                                <Badge key={index} variant="secondary" className="text-xs">
-                                  {sector}
-                                </Badge>
-                              ))}
-                              {consultation.selectedSectors.length > 2 && (
-                                <Badge variant="outline" className="text-xs">
-                                  +{consultation.selectedSectors.length - 2}
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm">
-                              {consultation.message.length > 50 
-                                ? `${consultation.message.substring(0, 50)}...` 
-                                : consultation.message}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={getStatusBadgeVariant(consultation.status)}>
-                              {consultation.status === 'active' ? 'Activa' : 'Archivada'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => handleViewDetail(consultation)}
-                                data-testid={`button-view-${consultation.id}`}
-                                title="Ver detalles"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => updateStatusMutation.mutate({
-                                  consultationId: consultation.id,
-                                  status: consultation.status === 'active' ? 'archived' : 'active'
-                                })}
-                                data-testid={`button-edit-${consultation.id}`}
-                                title={consultation.status === 'active' ? 'Archivar' : 'Activar'}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => deleteConsultationMutation.mutate(consultation.id)}
-                                data-testid={`button-delete-${consultation.id}`}
-                                className="text-red-600 hover:bg-red-50 border-red-200"
-                                title="Eliminar"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )) : (
-                        <>
-                          {/* Filas vacías para mantener la estructura visible */}
-                          {[...Array(5)].map((_, index) => (
-                            <TableRow key={`empty-${index}`} className="h-16">
-                              <TableCell className="text-center text-gray-300">-</TableCell>
-                              <TableCell className="text-center text-gray-300">-</TableCell>
-                              <TableCell className="text-center text-gray-300">-</TableCell>
-                              <TableCell className="text-center text-gray-300">-</TableCell>
-                              <TableCell className="text-center text-gray-300">-</TableCell>
-                              <TableCell className="text-center text-gray-300">-</TableCell>
-                              <TableCell className="text-center text-gray-300">-</TableCell>
-                              <TableCell className="text-center text-gray-300">-</TableCell>
-                              <TableCell className="text-center text-gray-300">-</TableCell>
-                            </TableRow>
-                          ))}
-                          {/* Mensaje de no hay datos en una fila separada */}
-                          <TableRow>
-                            <TableCell colSpan={9} className="text-center text-gray-500 py-4 bg-gray-50 border-t-2 border-gray-200">
-                              <div className="flex flex-col items-center justify-center">
-                                <div className="mb-2">
-                                  <BarChart3 className="w-8 h-8 text-gray-400" />
-                                </div>
-                                <p className="font-medium text-lg mb-1">No hay consultas disponibles</p>
-                                <p className="text-sm text-gray-400">Los datos aparecerán aquí cuando estén disponibles</p>
+                      {sortedConsultations.length > 0 ? sortedConsultations.map((c: any) => {
+                        const idStr = asStringId(c);
+                        const sectorsArr = asArray<string>(c.selectedSectors);
+                        const imgs = asArray<string>(c.images);
+                        return (
+                          <TableRow key={idStr}>
+                            <TableCell><code className="text-sm">{idStr}</code></TableCell>
+                            <TableCell>{c.createdAt ? fmtDateHN(String(c.createdAt)) : "-"}</TableCell>
+                            <TableCell><Badge variant={badgeVariantPerson(c.personType)}>{labelPerson(c.personType)}</Badge></TableCell>
+
+                            <TableCell><span className="text-sm">{getPersonalData(c)}</span></TableCell>
+                            <TableCell>{c.department?.name || "-"}</TableCell>
+                            <TableCell>{c.municipality?.name || "-"}</TableCell>
+                            <TableCell>{c.locality?.name || (c.customLocalityName || "-")}</TableCell>
+                            <TableCell className="text-xs">{c.latitude || "-"}</TableCell>
+                            <TableCell className="text-xs">{c.longitude || "-"}</TableCell>
+
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                {sectorsArr.slice(0, 2).map((s, i) => (
+                                  <Badge key={`${idStr}-s-${i}`} variant="secondary" className="text-xs">{s}</Badge>
+                                ))}
+                                {sectorsArr.length > 2 && (
+                                  <Badge variant="outline" className="text-xs">+{sectorsArr.length - 2}</Badge>
+                                )}
+                              </div>
+                            </TableCell>
+
+                            <TableCell>
+                              <span className="text-sm">
+                                {typeof c.message === "string" && c.message.length > 50 ? `${c.message.substring(0, 50)}...` : c.message}
+                              </span>
+                            </TableCell>
+
+                            <TableCell className="w-[60px]">
+                              {imgs.length ? (
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  title="Ver imágenes"
+                                  onClick={() => openGallery(imgs, 0)}
+                                  className="h-8 w-8"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                              ) : "—"}
+                            </TableCell>
+
+                            <TableCell>
+                              <Badge variant={badgeVariantStatus(c.status)}>
+                                {c.status === "active" ? "Activa" : "Archivada"}
+                              </Badge>
+                            </TableCell>
+
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Button variant="outline" size="sm" onClick={() => { setSelectedConsultation(c); setShowConsultationDetail(true); }} title="Ver detalle">
+                                  <MessageSquare className="w-4 h-4" />
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => openEdit(c)} title="Editar">
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="outline" size="sm"
+                                  onClick={() => updateStatusMutation.mutate({ consultationId: idStr, status: c.status === "active" ? "archived" : "active" })}
+                                  title={c.status === "active" ? "Archivar" : "Activar"}
+                                >
+                                  {c.status === "active" ? "Archivar" : "Activar"}
+                                </Button>
+                                <Button
+                                  variant="outline" size="sm"
+                                  onClick={() => { setDeleteId(idStr); setShowDeleteConfirm(true); }}
+                                  className="text-red-600 hover:bg-red-50 border-red-200"
+                                  title="Eliminar"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
                               </div>
                             </TableCell>
                           </TableRow>
-                        </>
+                        );
+                      }) : (
+                        <TableRow><TableCell colSpan={14} className="text-center text-gray-500 py-6">No hay consultas disponibles</TableCell></TableRow>
                       )}
                     </TableBody>
                   </Table>
                 </div>
 
-                {/* Mobile Cards - Responsive */}
-                <div className="lg:hidden p-2 sm:p-3">
-                  {sortedConsultations.length > 0 ? sortedConsultations.map((consultation: any) => (
-                    <Card key={consultation.id} className="mb-2 sm:mb-3 border rounded-lg">
-                      <CardContent className="p-3 sm:p-4">
-                        <div className="flex flex-col xs:flex-row xs:justify-between xs:items-start mb-2 gap-2 xs:gap-0">
-                          <code className="text-xs sm:text-sm">{consultation.id.slice(0, 8)}...</code>
-                          <Badge variant={getStatusBadgeVariant(consultation.status)} className="self-start xs:self-auto">
-                            {consultation.status === 'active' ? 'Activa' : 'Archivada'}
-                          </Badge>
-                        </div>
-                        <div className="mb-2 text-sm">
-                          <strong className="text-xs sm:text-sm">Fecha:</strong> 
-                          <span className="text-xs sm:text-sm ml-1">{formatDate(consultation.createdAt.toString())}</span>
-                        </div>
-                        <div className="mb-2 text-sm">
-                          <strong className="text-xs sm:text-sm">Tipo:</strong> 
-                          <Badge variant={getPersonTypeBadgeVariant(consultation.personType)} className="ml-2 text-xs">
-                            {getPersonTypeLabel(consultation.personType)}
-                          </Badge>
-                        </div>
-                        <div className="mb-2 text-sm">
-                          <strong className="text-xs sm:text-sm">Datos:</strong> 
-                          <span className="text-xs sm:text-sm ml-1 break-words">{getPersonalData(consultation)}</span>
-                        </div>
-                        <div className="mb-2 text-sm">
-                          <strong className="text-xs sm:text-sm">Ubicación:</strong> 
-                          <span className="text-xs sm:text-sm ml-1 break-words">{getLocationString(consultation)}</span>
-                        </div>
-                        <div className="mb-2">
-                          <strong className="text-xs sm:text-sm">Sectores:</strong>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {consultation.selectedSectors.slice(0, 2).map((sector: any, index: number) => (
-                              <Badge key={index} variant="secondary" className="text-[10px] sm:text-xs">
-                                {sector.length > 15 ? `${sector.substring(0, 15)}...` : sector}
-                              </Badge>
-                            ))}
-                            {consultation.selectedSectors.length > 2 && (
-                              <Badge variant="outline" className="text-[10px] sm:text-xs">
-                                +{consultation.selectedSectors.length - 2}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        <div className="mb-3">
-                          <strong className="text-xs sm:text-sm">Mensaje:</strong>
-                          <p className="mb-0 text-xs sm:text-sm mt-1 break-words">
-                            {consultation.message.length > 80 
-                              ? `${consultation.message.substring(0, 80)}...` 
-                              : consultation.message}
-                          </p>
-                        </div>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => handleViewDetail(consultation)}
-                            data-testid={`button-view-mobile-${consultation.id}`}
-                            className="text-xs sm:text-sm w-full sm:w-auto"
-                          >
-                            <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />Ver
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => updateStatusMutation.mutate({
-                              consultationId: consultation.id,
-                              status: consultation.status === 'active' ? 'archived' : 'active'
-                            })}
-                            data-testid={`button-edit-mobile-${consultation.id}`}
-                            className="text-xs sm:text-sm w-full sm:w-auto"
-                          >
-                            <Edit className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                            <span className="hidden xs:inline">{consultation.status === 'active' ? 'Archivar' : 'Activar'}</span>
-                            <span className="xs:hidden">{consultation.status === 'active' ? 'Arch.' : 'Act.'}</span>
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => deleteConsultationMutation.mutate(consultation.id)}
-                            data-testid={`button-delete-mobile-${consultation.id}`}
-                            className="text-red-600 hover:bg-red-50 border-red-200 text-xs sm:text-sm w-full sm:w-auto"
-                          >
-                            <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                            <span className="hidden xs:inline">Eliminar</span>
-                            <span className="xs:hidden">Elim.</span>
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )) : (
-                    <div className="text-center text-gray-500 py-8">
-                      <div className="flex flex-col items-center justify-center">
-                        <div className="mb-2">
-                          <BarChart3 className="w-12 h-12 text-gray-400" />
-                        </div>
-                        <p className="text-base font-medium mb-1">No hay consultas disponibles</p>
-                        <p className="text-sm text-gray-400">Los datos aparecerán aquí cuando estén disponibles</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Pagination - Responsive */}
+                {/* Paginación */}
                 {consultationsData?.total > 0 && (
                   <div className="flex flex-col sm:flex-row justify-between items-center p-3 border-t gap-2 sm:gap-0">
                     <small className="text-gray-600 text-xs sm:text-sm text-center sm:text-left">
-                      <span className="hidden sm:inline">
-                        Mostrando {filters.offset + 1}-{Math.min(filters.offset + filters.limit, consultationsData.total)} de {consultationsData.total} registros
-                      </span>
-                      <span className="sm:hidden">
-                        {filters.offset + 1}-{Math.min(filters.offset + filters.limit, consultationsData.total)} de {consultationsData.total}
-                      </span>
+                      {consultationsData.total === 0
+                        ? "0"
+                        : `${filters.offset + 1}-${Math.min(filters.offset + filters.limit, consultationsData.total)}`}{" "}
+                      de {consultationsData.total}
                     </small>
                     <nav>
                       <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={filters.offset === 0}
-                          onClick={() => setFilters({ ...filters, offset: Math.max(0, filters.offset - filters.limit) })}
-                          data-testid="button-previousPage"
-                          className="text-xs sm:text-sm"
-                        >
-                          <span className="hidden sm:inline">Anterior</span>
-                          <span className="sm:hidden">Ant.</span>
+                        <Button variant="outline" size="sm" disabled={filters.offset === 0}
+                          onClick={() => setFilters({ ...filters, offset: Math.max(0, filters.offset - filters.limit) })}>
+                          Anterior
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
+                        <Button variant="outline" size="sm"
                           disabled={filters.offset + filters.limit >= consultationsData.total}
-                          onClick={() => setFilters({ ...filters, offset: filters.offset + filters.limit })}
-                          data-testid="button-nextPage"
-                          className="text-xs sm:text-sm"
-                        >
-                          <span className="hidden sm:inline">Siguiente</span>
-                          <span className="sm:hidden">Sig.</span>
+                          onClick={() => setFilters({ ...filters, offset: filters.offset + filters.limit })}>
+                          Siguiente
                         </Button>
                       </div>
                     </nav>
@@ -1072,461 +909,469 @@ export function Dashboard() {
                 )}
               </CardContent>
             </Card>
+          </div>
 
+          {/* ===================== KPIs rápidos ===================== */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
+            <Card className="border-0 shadow-sm rounded-lg">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Total de Consultas</p>
+                    <p className="text-2xl font-bold">{totals.total}</p>
+                  </div>
+                  <BarChart3 className="w-8 h-8" style={{ color: "#1bd1e8" }} />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-0 shadow-sm rounded-lg">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Activas</p>
+                    <p className="text-2xl font-bold">{totals.active}</p>
+                  </div>
+                  <PieIcon className="w-8 h-8" style={{ color: "#1bd1e8" }} />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-0 shadow-sm rounded-lg">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Archivadas</p>
+                    <p className="text-2xl font-bold">{totals.archived}</p>
+                  </div>
+                  <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
+                    <path d="M20 7H4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2Z" stroke="#1bd1e8" strokeWidth="2"/>
+                    <path d="M4 7h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" stroke="#1bd1e8" strokeWidth="2"/>
+                  </svg>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* ===================== GRÁFICAS ===================== */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 sm:gap-4">
+            {/* Línea: por día */}
+            <Card className="border-0 shadow-sm rounded-lg">
+              <CardHeader><CardTitle className="text-sm">Consultas por día (30 días)</CardTitle></CardHeader>
+              <CardContent className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={(consultationsByDate || []).map((d:any)=>({date:d.date, count:Number(d.count)}))}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tick={{fontSize:10}} />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="count" name="Consultas" stroke="#1bd1e8" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Barras: sectores */}
+            <Card className="border-0 shadow-sm rounded-lg">
+              <CardHeader><CardTitle className="text-sm">Consultas por sector</CardTitle></CardHeader>
+              <CardContent className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={(consultationsBySector || []).map((s:any)=>({sector:s.sector, count:Number(s.count)}))}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="sector" tick={{fontSize:10}} />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="count" name="Consultas" fill="#1bd1e8" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Pie: estado */}
+            <Card className="border-0 shadow-sm rounded-lg">
+              <CardHeader><CardTitle className="text-sm">Estado de consultas</CardTitle></CardHeader>
+              <CardContent className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RPieChart>
+                    <Pie
+                      data={[
+                        { name: "Activas", value: Number(totals.active || 0) },
+                        { name: "Archivadas", value: Number(totals.archived || 0) },
+                      ]}
+                      dataKey="value"
+                      nameKey="name"
+                      outerRadius={80}
+                      label
+                    >
+                      {[0,1].map((i) => (
+                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </RPieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
 
-      {/* Modal de Detalle de Consulta - Responsive */}
+      {/* ===================== NUEVAS GRÁFICAS ===================== */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 sm:gap-4 mt-2">
+        {/* Por departamento */}
+        <Card className="border-0 shadow-sm rounded-lg">
+          <CardHeader><CardTitle className="text-sm">Consultas por departamento</CardTitle></CardHeader>
+          <CardContent className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={byDept}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="department" tick={{ fontSize: 10 }} />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="count" name="Consultas" fill="#1bd1e8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Por sector */}
+        <Card className="border-0 shadow-sm rounded-lg">
+          <CardHeader>
+            <CardTitle className="text-sm">
+              Consultas por sector{filters.departmentId && filters.departmentId !== "all" ? " (Depto)" : ""}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={bySectorAdv}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="sector" tick={{ fontSize: 10 }} />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="count" name="Consultas" fill="#1bd1e8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Por localidad */}
+        <Card className="border-0 shadow-sm rounded-lg">
+          <CardHeader>
+            <CardTitle className="text-sm">
+              Consultas por aldea/localidad {filters.departmentId && filters.departmentId !== "all" ? "" : "(selecciona un departamento)"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={byLocality} layout="vertical" margin={{ left: 40 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" allowDecimals={false} />
+                <YAxis type="category" dataKey="locality" width={120} tick={{ fontSize: 10 }} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="count" name="Consultas" fill="#1bd1e8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Sectores por departamento (apilado) */}
+      
+      </div>
+
+      {}
       <Dialog open={showConsultationDetail} onOpenChange={setShowConsultationDetail}>
-        <DialogContent className="max-w-[95vw] sm:max-w-2xl lg:max-w-4xl max-h-[95vh] overflow-y-auto">
+          <DialogContent className="max-w-[95vw] sm:max-w-xl bg-white shadow-2xl">
+
           <DialogHeader>
             <DialogTitle className="flex items-center text-sm sm:text-base">
               <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 mr-2" style={{ color: '#1bd1e8' }} />
               Detalle de Consulta Ciudadana
             </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm">
-              Información completa de la consulta seleccionada
-            </DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">Información completa de la consulta seleccionada</DialogDescription>
           </DialogHeader>
+
           {selectedConsultation && (
             <div className="space-y-3 sm:space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <Label className="font-semibold">ID de Consulta</Label>
-                  <p className="text-sm"><code>{selectedConsultation.id}</code></p>
-                </div>
-                <div>
-                  <Label className="font-semibold">Fecha de Creación</Label>
-                  <p className="text-sm">{formatDate(selectedConsultation.createdAt.toString())}</p>
-                </div>
-                <div>
-                  <Label className="font-semibold">Tipo de Persona</Label>
-                  <div>
-                    <Badge variant={getPersonTypeBadgeVariant(selectedConsultation.personType)}>
-                      {getPersonTypeLabel(selectedConsultation.personType)}
-                    </Badge>
-                  </div>
-                </div>
-                <div>
-                  <Label className="font-semibold">Estado</Label>
-                  <div>
-                    <Badge variant={getStatusBadgeVariant(selectedConsultation.status)}>
-                      {selectedConsultation.status === 'active' ? 'Activa' : 'Archivada'}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-
-              {/* Datos Personales */}
-              <div>
-                <Label className="font-semibold text-sm sm:text-lg">Datos Personales</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mt-2">
-                  {selectedConsultation.personType === 'natural' && (
-                    <>
-                      <div>
-                        <Label className="text-sm">Nombre</Label>
-                        <p className="text-sm">{selectedConsultation.firstName || 'No especificado'}</p>
-                      </div>
-                      <div>
-                        <Label className="text-sm">Apellido</Label>
-                        <p className="text-sm">{selectedConsultation.lastName || 'No especificado'}</p>
-                      </div>
-                      <div>
-                        <Label className="text-sm">Identidad</Label>
-                        <p className="text-sm">{selectedConsultation.identity || 'No especificado'}</p>
-                      </div>
-                    </>
-                  )}
-                  {selectedConsultation.personType === 'juridica' && (
-                    <>
-                      <div>
-                        <Label className="text-sm">Nombre de la Empresa</Label>
-                        <p className="text-sm">{selectedConsultation.companyName || 'No especificado'}</p>
-                      </div>
-                      <div>
-                        <Label className="text-sm">RTN</Label>
-                        <p className="text-sm">{selectedConsultation.rtn || 'No especificado'}</p>
-                      </div>
-                      <div>
-                        <Label className="text-sm">Representante Legal</Label>
-                        <p className="text-sm">{selectedConsultation.legalRepresentative || 'No especificado'}</p>
-                      </div>
-                      <div>
-                        <Label className="text-sm">Contacto de la Empresa</Label>
-                        <p className="text-sm">{selectedConsultation.companyContact || 'No especificado'}</p>
-                      </div>
-                    </>
-                  )}
-                  <div>
-                    <Label className="text-sm">Email</Label>
-                    <p className="text-sm">{selectedConsultation.email || 'No especificado'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm">Teléfono Móvil</Label>
-                    <p className="text-sm">{selectedConsultation.mobile || 'No especificado'}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Ubicación */}
-              <div>
-                <Label className="font-semibold text-sm sm:text-lg">Ubicación</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mt-2">
-                  <div>
-                    <Label className="text-xs sm:text-sm">Ubicación Completa</Label>
-                    <p className="text-xs sm:text-sm break-words">{getLocationString(selectedConsultation)}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs sm:text-sm">Geocódigo</Label>
-                    <p className="text-xs sm:text-sm break-words">{selectedConsultation.geocode}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Sectores */}
-              <div>
-                <Label className="font-semibold text-sm sm:text-lg">Sectores Seleccionados</Label>
-                <div className="flex flex-wrap gap-1 sm:gap-2 mt-2">
-                  {selectedConsultation.selectedSectors.map((sector: string, index: number) => (
-                    <Badge key={index} variant="secondary" className="text-xs sm:text-sm">
-                      {sector}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              {/* Mensaje */}
-              <div>
-                <Label className="font-semibold text-sm sm:text-lg">Mensaje Ciudadano</Label>
-                <div className="border rounded p-2 sm:p-3 mt-2" style={{ backgroundColor: '#f5f7fa' }}>
-                  <p className="text-xs sm:text-sm mb-0 break-words">{selectedConsultation.message}</p>
-                </div>
-              </div>
+              {}
+              {}
             </div>
           )}
-          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowConsultationDetail(false)}
-              className="w-full sm:w-auto text-xs sm:text-sm"
-            >
-              Cerrar
-            </Button>
-          </DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setShowConsultationDetail(false)}>Cerrar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Crear Planificador - Responsive */}
-      <Dialog open={showCreatePlanificador} onOpenChange={setShowCreatePlanificador}>
-        <DialogContent className="max-w-[95vw] sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-sm sm:text-base">Crear Usuario Planificador</DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm">
-              Esta funcionalidad será implementada próximamente.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowCreatePlanificador(false)}
-              className="w-full sm:w-auto text-xs sm:text-sm"
-            >
-              Cerrar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {}
+      <Dialog
+        open={showEditDialog}
+        onOpenChange={(open) => {
+          setShowEditDialog(open);
+          if (!open) setEditingConsultation(null);
+        }}
+      >
+          <DialogContent className="max-w-[95vw] sm:max-w-xl bg-white shadow-2xl">
 
-      {/* Modal de Perfil - Responsive */}
-      <Dialog open={showProfile} onOpenChange={setShowProfile}>
-        <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center text-sm sm:text-base">
-              <User className="w-4 h-4 sm:w-6 sm:h-6 mr-2" style={{ color: '#1bd1e8' }} />
-              Mi Perfil de Usuario
-            </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm">
-              Información de tu cuenta y opciones de seguridad
-            </DialogDescription>
+            <DialogTitle>Editar consulta</DialogTitle>
+            <DialogDescription>Actualiza la información y guarda los cambios.</DialogDescription>
           </DialogHeader>
-          
-          <div className="space-y-4 sm:space-y-6">
-            {/* Avatar y Info Principal */}
-            <div className="flex items-center space-x-3 sm:space-x-4 p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border">
-              <div 
-                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-white font-bold text-lg sm:text-xl"
-                style={{ backgroundColor: '#1bd1e8' }}
+
+          {editingConsultation ? (
+            <Form {...editForm}>
+              <form
+                onSubmit={editForm.handleSubmit((data) => {
+                  const id = asStringId(editingConsultation);
+                  updateConsultationMutation.mutate({ id, data });
+                })}
+                className="space-y-4"
               >
-                {user?.username?.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-base sm:text-lg">{user?.username}</h3>
-                <Badge 
-                  variant={user?.role === 'super_admin' ? 'destructive' : 'default'}
-                  className="mt-1"
-                >
-                  {user?.role === 'super_admin' ? 'Super Administrador' : 
-                   user?.role === 'admin' ? 'Administrador' : 
-                   user?.role === 'planificador' ? 'Planificador' : 'Ciudadano'}
-                </Badge>
-                <p className="text-sm text-gray-600 mt-1">
-                  Miembro desde {user?.createdAt ? formatDate(user.createdAt.toString()) : 'Fecha no disponible'}
-                </p>
-              </div>
-            </div>
+                {}
+                <FormField
+                  control={editForm.control}
+                  name="personType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de persona</FormLabel>
+                      <FormControl>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="natural">Natural</SelectItem>
+                            <SelectItem value="juridica">Jurídica</SelectItem>
+                            <SelectItem value="anonimo">Anónimo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
+                {}
+                {editForm.watch("personType") === "natural" ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <FormField
+                      control={editForm.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nombre</FormLabel>
+                          <FormControl><Input {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Apellido</FormLabel>
+                          <FormControl><Input {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                ) : editForm.watch("personType") === "juridica" ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <FormField
+                      control={editForm.control}
+                      name="companyName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Empresa</FormLabel>
+                          <FormControl><Input {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="rtn"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>RTN</FormLabel>
+                          <FormControl><Input {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                ) : null}
 
-            {/* Seguridad */}
-            <div className="space-y-3">
-              <h4 className="font-semibold flex items-center">
-                <Shield className="w-4 h-4 mr-2" style={{ color: '#1bd1e8' }} />
-                Seguridad
-              </h4>
-              <div className="space-y-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full justify-start"
-                  onClick={handleChangePassword}
-                  data-testid="button-change-password"
-                >
-                  <Key className="w-4 h-4 mr-2" />
-                  Cambiar Contraseña
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full justify-start"
-                  onClick={handleVerifySecurity}
-                  data-testid="button-verify-security"
-                >
-                  <Shield className="w-4 h-4 mr-2" />
-                  Verificar Seguridad
-                </Button>
-              </div>
-            </div>
+                {}
+                <FormField
+                  control={editForm.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Estado</FormLabel>
+                      <FormControl>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="active">Activa</SelectItem>
+                            <SelectItem value="archived">Archivada</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-          </div>
-          
-          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowProfile(false)}
-              className="w-full sm:w-auto text-xs sm:text-sm"
-            >
-              Cerrar
-            </Button>
-            <Button 
-              onClick={() => {
-                toast({
-                  title: "¡Perfil actualizado!",
-                  description: "Tu información de perfil se mantiene sincronizada.",
-                });
-                setShowProfile(false);
-              }}
-              style={{ backgroundColor: '#1bd1e8', borderColor: '#1bd1e8' }}
-              className="w-full sm:w-auto text-xs sm:text-sm"
-            >
-              Actualizar Perfil
-            </Button>
-          </DialogFooter>
+                {}
+                <FormField
+                  control={editForm.control}
+                  name="message"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mensaje</FormLabel>
+                      <FormControl>
+                        <textarea className="w-full border rounded p-2 h-28" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowEditDialog(false);
+                      setEditingConsultation(null);
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit">Guardar cambios</Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          ) : (
+            <p className="text-sm text-gray-500">Cargando…</p>
+          )}
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Cambio de Contraseña - Responsive */}
-      <Dialog open={showChangePassword} onOpenChange={setShowChangePassword}>
-        <DialogContent className="max-w-[95vw] sm:max-w-md">
+      {}
+      <Dialog open={galleryOpen} onOpenChange={setGalleryOpen}>
+        <DialogContent className="max-w-[95vw] sm:max-w-xl bg-white shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center text-sm sm:text-base">
-              <Key className="w-4 h-4 sm:w-5 sm:h-5 mr-2" style={{ color: '#1bd1e8' }} />
-              Cambiar Contraseña
-            </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm">
-              Actualiza tu contraseña para mantener tu cuenta segura
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Form {...changePasswordForm}>
-            <form onSubmit={changePasswordForm.handleSubmit(onSubmitChangePassword)} className="space-y-4">
-              <FormField
-                control={changePasswordForm.control}
-                name="currentPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contraseña Actual</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Ingresa tu contraseña actual"
-                        data-testid="input-current-password"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={changePasswordForm.control}
-                name="newPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nueva Contraseña</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Ingresa tu nueva contraseña"
-                        data-testid="input-new-password"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={changePasswordForm.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirmar Nueva Contraseña</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Confirma tu nueva contraseña"
-                        data-testid="input-confirm-password"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setShowChangePassword(false);
-                    changePasswordForm.reset();
-                  }}
-                  data-testid="button-cancel-password"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={changePasswordMutation.isPending}
-                  style={{ backgroundColor: '#1bd1e8', borderColor: '#1bd1e8' }}
-                  data-testid="button-submit-password"
-                >
-                  {changePasswordMutation.isPending ? "Cambiando..." : "Cambiar Contraseña"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de Información de Seguridad */}
-      <Dialog open={showSecurityInfo} onOpenChange={setShowSecurityInfo}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <Shield className="w-5 h-5 mr-2" style={{ color: '#1bd1e8' }} />
-              Información de Seguridad
+            <DialogTitle className="flex items-center gap-2">
+              <ImagesIcon className="w-5 h-5" /> Galería
             </DialogTitle>
             <DialogDescription>
-              Estado actual de la seguridad de tu cuenta
+              Vista previa de las imágenes. Puedes navegar y descargar.
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="space-y-4">
-            {/* Estado de Sesión */}
-            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                <div>
-                  <h4 className="font-semibold text-green-800">Sesión Activa</h4>
-                  <p className="text-sm text-green-600">Tu sesión está protegida y encriptada</p>
-                </div>
-              </div>
-            </div>
 
-            {/* Información de Cuenta */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Usuario:</span>
-                <span className="text-sm">{user?.username}</span>
+          {galleryImages.length > 0 ? (
+            <div className="w-full">
+              <div className="relative w-full aspect-[16/9] bg-black/5 rounded flex items-center justify-center overflow-hidden">
+                <img
+                  src={resolveImageUrl(galleryImages[galleryIndex])}
+                  alt={`preview-${galleryIndex}`}
+                  className="max-h-[70vh] object-contain"
+                  style={{ width: "100%" }}
+                />
+                <button
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-white hover:bg-white rounded-full p-2"
+                  onClick={prevImg}
+                  title="Anterior"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-white hover:bg-white rounded-full p-2"
+                  onClick={nextImg}
+                  title="Siguiente"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Rol:</span>
-                <Badge variant={user?.role === 'super_admin' ? 'destructive' : 'default'} className="text-xs">
-                  {user?.role === 'super_admin' ? 'Super Admin' : 
-                   user?.role === 'admin' ? 'Admin' : 
-                   user?.role === 'planificador' ? 'Planificador' : 'Ciudadano'}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Estado de Cuenta:</span>
-                <Badge variant="default" className="text-xs">Activa</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Última Actividad:</span>
-                <span className="text-sm">Ahora mismo</span>
-              </div>
-            </div>
 
-            {/* Características de Seguridad */}
-            <div className="border-t pt-3">
-              <h4 className="font-semibold mb-2 text-sm">Características de Seguridad:</h4>
-              <div className="space-y-2">
-                <div className="flex items-center text-sm">
-                  <Shield className="w-4 h-4 mr-2 text-green-600" />
-                  <span>Contraseña encriptada con hash seguro</span>
+              <div className="mt-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => downloadUrl(resolveImageUrl(galleryImages[galleryIndex]))}
+                  >
+                    <Download className="w-4 h-4 mr-2" /> Descargar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    asChild
+                  >
+                    <a href={resolveImageUrl(galleryImages[galleryIndex])} target="_blank" rel="noreferrer">
+                      <ExternalLink className="w-4 h-4 mr-2" /> Abrir en pestaña
+                    </a>
+                  </Button>
                 </div>
-                <div className="flex items-center text-sm">
-                  <Shield className="w-4 h-4 mr-2 text-green-600" />
-                  <span>Sesión con cookies HTTP-only</span>
-                </div>
-                <div className="flex items-center text-sm">
-                  <Shield className="w-4 h-4 mr-2 text-green-600" />
-                  <span>Conexión HTTPS segura</span>
-                </div>
-                {user?.username === 'SPE' && (
-                  <div className="flex items-center text-sm">
-                    <Shield className="w-4 h-4 mr-2 text-blue-600" />
-                    <span className="text-blue-600 font-medium">Cuenta protegida del sistema</span>
-                  </div>
-                )}
+                <small className="text-gray-500">
+                  {galleryIndex + 1} / {galleryImages.length}
+                </small>
+              </div>
+
+              {}
+              <div className="mt-3 grid grid-cols-5 sm:grid-cols-8 gap-2">
+                {galleryImages.map((src, i) => {
+                  const url = resolveImageUrl(src);
+                  const active = i === galleryIndex;
+                  return (
+                    <button
+                      key={i}
+                      className={`h-16 rounded overflow-hidden border ${active ? "border-cyan-500" : "border-transparent"} hover:opacity-90`}
+                      onClick={() => setGalleryIndex(i)}
+                      title={`Ir a ${i+1}`}
+                    >
+                      <img src={url} alt={`thumb-${i}`} className="w-full h-full object-cover" />
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          </div>
-          
+          ) : (
+            <p className="text-sm text-gray-500">No hay imágenes para mostrar.</p>
+          )}
+
           <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowSecurityInfo(false)}
-              data-testid="button-close-security"
-            >
-              Cerrar
+            <Button variant="outline" onClick={() => downloadAll(galleryImages)} disabled={!galleryImages.length}>
+              <Download className="w-4 h-4 mr-2" /> Descargar todas
             </Button>
-            <Button 
+            <Button onClick={closeGallery}>Cerrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Eliminar consulta</DialogTitle>
+            <DialogDescription>Esta acción no se puede deshacer.</DialogDescription>
+          </DialogHeader>
+          <p className="text-sm">¿Seguro que quieres eliminar la consulta <code>{deleteId}</code>?</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowDeleteConfirm(false); setDeleteId(null); }}>
+              Cancelar
+            </Button>
+            <Button
+              className="bg-red-600 hover:bg-red-700"
               onClick={() => {
-                toast({
-                  title: "Seguridad verificada",
-                  description: "Tu cuenta tiene todas las medidas de seguridad activas.",
-                });
-                setShowSecurityInfo(false);
+                if (deleteId) deleteConsultationMutation.mutate(deleteId);
+                setShowDeleteConfirm(false);
+                setDeleteId(null);
               }}
-              style={{ backgroundColor: '#1bd1e8', borderColor: '#1bd1e8' }}
-              data-testid="button-confirm-security"
             >
-              Todo está seguro
+              Eliminar
             </Button>
           </DialogFooter>
         </DialogContent>

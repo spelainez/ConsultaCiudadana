@@ -12,9 +12,36 @@ import {
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
-/* ========================
-   Marcador ciudadano atractivo 🇭🇳
-======================== */
+type LatLngZoom = { lat: number; lng: number; zoom: number };
+
+interface Props {
+  /** Coordenadas que VIENEN DE LA DB (string o number). */
+  latitude?: string | number | null;
+  longitude?: string | number | null;
+
+  /** Texto opcional para el popup (por ejemplo: “Col. X, Mpio Y, Depto Z”). */
+  locationName?: string;
+
+  /** Geocódigo opcional (solo lo muestra en el popup si lo pasas). */
+  geocode?: string | null;
+
+  /** Callback cuando el usuario hace clic en el mapa. */
+  onPick?: (lat: number, lng: number) => void;
+
+  /** Prefijo para inputs ocultos del formulario. */
+  hiddenInputsNamePrefix?: string;
+
+  /** Alto del mapa en px. */
+  height?: number;
+
+  /** Desactiva la selección por clic. */
+  disablePick?: boolean;
+
+  /** Zoom a usar cuando hay coordenadas válidas. */
+  focusZoom?: number;
+}
+
+/* Marcador bonito */
 const CitizenIcon = L.divIcon({
   html: `
     <div style="
@@ -24,9 +51,7 @@ const CitizenIcon = L.divIcon({
       display: flex; align-items: center; justify-content: center;
       position: relative;
     ">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="white" style="
-        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
-      ">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="white" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
       </svg>
     </div>
@@ -44,89 +69,36 @@ const CitizenIcon = L.divIcon({
   popupAnchor: [0, -42],
 });
 
-/* ========================
-   Tipos y utilidades
-======================== */
-type LatLngZoom = { lat: number; lng: number; zoom: number };
-
-interface Props {
-  /** Coordenadas controladas (texto o número). Si existen, se priorizan sobre geocode */
-  latitude?: string | number;
-  longitude?: string | number;
-
-  /** Nombre de la ubicación (para el popup) */
-  locationName?: string;
-
-  /** Geocódigo: "DD" (depto) o "DDMM" (muni) SIN guiones */
-  geocode?: string;
-
-  /** Callback cuando el usuario hace clic en el mapa */
-  onPick?: (lat: number, lng: number) => void;
-
-  /** Prefijo para inputs ocultos del formulario (p.ej. 'consulta') */
-  hiddenInputsNamePrefix?: string;
-
- 
-  height?: number;
-}
-
-/** Centros aproximados de deptos/municipios (agrega los que necesites) */
-const COORDS: Record<string, { lat: number; lng: number }> = {
-  // Departamentos
-  "01": { lat: 15.7795, lng: -86.8458 }, // Atlántida (La Ceiba)
-  "02": { lat: 15.9167, lng: -85.9333 }, // Colón (Trujillo)
-  "03": { lat: 14.4603, lng: -87.6423 }, // Comayagua
-  "04": { lat: 14.7679, lng: -89.1552 }, // Copán
-  "05": { lat: 15.5024, lng: -88.0174 }, // Cortés (SPS)
-  "06": { lat: 13.3097, lng: -87.1914 }, // Choluteca
-  "07": { lat: 14.0311, lng: -86.5775 }, // El Paraíso (Danlí)
-  "08": { lat: 14.0723, lng: -87.1921 }, // Fco. Morazán (Tegucigalpa)
-  "09": { lat: 15.0097, lng: -84.9639 }, // Gracias a Dios
-  "10": { lat: 14.3167, lng: -88.1667 }, // Intibucá (La Esperanza)
-  "11": { lat: 16.3097, lng: -86.5419 }, // Islas de la Bahía (Roatán)
-  "12": { lat: 14.3167, lng: -87.6833 }, // La Paz
-  "13": { lat: 14.5833, lng: -88.6167 }, // Lempira (Gracias)
-  "14": { lat: 14.4333, lng: -89.1833 }, // Ocotepeque
-  "15": { lat: 14.8667, lng: -86.0833 }, // Olancho (Juticalpa)
-  "16": { lat: 14.9167, lng: -88.2167 }, // Santa Bárbara
-  "17": { lat: 13.3667, lng: -87.6167 }, // Valle (Nacaome)
-  "18": { lat: 15.1333, lng: -87.1333 }, // Yoro
-
-
-  "0101": { lat: 15.7795, lng: -86.8458 }, // La Ceiba
-  "0107": { lat: 15.7774, lng: -87.4579 }, // Tela
-  "0318": { lat: 14.5935, lng: -87.8439 }, // Siguatepeque
-  "0401": { lat: 14.7679, lng: -89.1552 }, // Santa Rosa de Copán
-  "0404": { lat: 14.8394, lng: -89.1424 }, // Copán Ruinas
-  "0501": { lat: 15.5024, lng: -88.0174 }, // San Pedro Sula
-  "0502": { lat: 15.6108, lng: -87.9539 }, // Choloma
-  "0512": { lat: 15.4308, lng: -87.9027 }, // La Lima
-  "0703": { lat: 14.0311, lng: -86.5775 }, // Danlí
-  "0801": { lat: 14.0723, lng: -87.1921 }, // Distrito Central
-  "1101": { lat: 16.3097, lng: -86.5419 }, // Roatán
-  "1804": { lat: 15.4, lng: -87.8167 },     // El Progreso
-};
-
-
 const HN_DEFAULT: LatLngZoom = { lat: 14.5, lng: -87.0, zoom: 7 };
+
 function Recenter({ lat, lng, zoom }: LatLngZoom) {
   const map = useMap();
   useEffect(() => {
-    map.setView([lat, lng], zoom);
+    map.setView([lat, lng], zoom, { animate: true });
   }, [lat, lng, zoom, map]);
   return null;
 }
 
-function ClickCatcher({ onPick }: { onPick: (lat: number, lng: number) => void }) {
+function ClickCatcher({
+  onPick,
+  disabled,
+}: {
+  onPick: (lat: number, lng: number) => void;
+  disabled?: boolean;
+}) {
   useMapEvents({
     click(e) {
-      onPick(e.latlng.lat, e.latlng.lng);
+      if (!disabled) onPick(e.latlng.lat, e.latlng.lng);
     },
   });
   return null;
 }
 
-
+/**
+ * Este mapa NO usa catálogos ni coordenadas “en duro”.
+ * Se centra con las coordenadas que reciba desde el padre (DB) y
+ * solo cae al centro de Honduras si no hay coordenadas válidas.
+ */
 export default function LocationMap({
   latitude,
   longitude,
@@ -135,52 +107,42 @@ export default function LocationMap({
   onPick,
   hiddenInputsNamePrefix = "location",
   height = 320,
+  disablePick = false,
+  focusZoom = 12,
 }: Props) {
-  
-  const [pos, setPos] = useState<LatLngZoom>(HN_DEFAULT);
-
- 
+  // Normaliza props a números (o undefined)
   const controlled = useMemo(() => {
     const latNum =
       typeof latitude === "string" ? parseFloat(latitude) : typeof latitude === "number" ? latitude : undefined;
     const lngNum =
       typeof longitude === "string" ? parseFloat(longitude) : typeof longitude === "number" ? longitude : undefined;
-    if (typeof latNum === "number" && !isNaN(latNum) && typeof lngNum === "number" && !isNaN(lngNum)) {
+
+    if (typeof latNum === "number" && Number.isFinite(latNum) &&
+        typeof lngNum === "number" && Number.isFinite(lngNum)) {
       return { lat: latNum, lng: lngNum } as const;
     }
-    return null;
+    return undefined;
   }, [latitude, longitude]);
 
+  const [pos, setPos] = useState<LatLngZoom>(HN_DEFAULT);
+
+  // Reaccionar a cambios de coordenadas provenientes del padre (DB)
   useEffect(() => {
     if (controlled) {
-      setPos({ lat: controlled.lat, lng: controlled.lng, zoom: 15 });
-      return;
+      setPos((p) => ({ ...p, lat: controlled.lat, lng: controlled.lng, zoom: focusZoom }));
+    } else {
+      setPos(HN_DEFAULT);
     }
+  }, [controlled, focusZoom]);
 
-    if (geocode && (geocode.length === 2 || geocode.length === 4)) {
-      const key = geocode;
-      const deptKey = geocode.substring(0, 2);
-      const found = COORDS[key] || COORDS[deptKey];
-      if (found) {
-        setPos({
-          lat: found.lat,
-          lng: found.lng,
-          zoom: geocode.length === 4 ? 11 : 8,
-        });
-        return;
-      }
-    }
-
-    setPos(HN_DEFAULT);
-  }, [controlled, geocode]);
-
-  // Cuando el usuario hace clic en el mapa
   const handlePick = (lat: number, lng: number) => {
-    setPos({ lat, lng, zoom: 15 });
+    setPos({ lat, lng, zoom: focusZoom });
     onPick?.(lat, lng);
   };
 
-  const showMarker = Boolean(geocode || controlled || (pos.lat !== HN_DEFAULT.lat || pos.lng !== HN_DEFAULT.lng));
+  // Mostrar marcador si tenemos coordenadas válidas o si el usuario ya hizo click
+  const showMarker =
+    !!controlled || pos.lat !== HN_DEFAULT.lat || pos.lng !== HN_DEFAULT.lng;
 
   return (
     <div className="rounded-xl border p-3">
@@ -191,14 +153,18 @@ export default function LocationMap({
           center={[pos.lat, pos.lng]}
           zoom={pos.zoom}
           style={{ width: "100%", height: "100%", borderRadius: 8 }}
-          key={`${pos.lat}-${pos.lng}-${pos.zoom}`} 
         >
           <Recenter lat={pos.lat} lng={pos.lng} zoom={pos.zoom} />
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           />
-          <ClickCatcher onPick={handlePick} />
+          
+
+
+
+
+          <ClickCatcher onPick={handlePick} disabled={disablePick} />
 
           {showMarker && (
             <Marker position={[pos.lat, pos.lng]} icon={CitizenIcon}>
@@ -221,7 +187,7 @@ export default function LocationMap({
       </div>
 
       <p className="mt-2 text-xs text-gray-600">
-        📍 <b>{(locationName ?? "Coordenadas")}</b>{" "}
+        📍 <b>{locationName ?? "Coordenadas"}</b>{" "}
         <span className="text-gray-500">
           ({pos.lat.toFixed(6)}, {pos.lng.toFixed(6)})
         </span>

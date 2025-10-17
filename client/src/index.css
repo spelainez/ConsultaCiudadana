@@ -1,9 +1,12 @@
 @import url('https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css');
 @import url('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css');
+
+/* 2) Tailwind (tus utilidades) */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* =================== THEME VARS =================== */
 :root {
   /* Honduras Colors */
   --honduras-primary: #1bd1e8;
@@ -12,18 +15,18 @@
   --honduras-bg-light: hsl(0, 0%, 96%);
   --honduras-white: hsl(0, 0%, 100%);
   --honduras-text-dark: hsl(220, 15%, 15%);
-  
-  /* Bootstrap Color Overrides */
+
+  /* Bootstrap overrides */
   --bs-primary: var(--honduras-primary);
   --bs-primary-rgb: 27, 209, 232;
   --bs-link-color: var(--honduras-primary);
   --bs-link-hover-color: var(--honduras-primary-dark);
-  
-  /* Placeholder Colors */
+
+  /* Placeholders */
   --placeholder-light: hsl(0, 0%, 75%);
   --placeholder-dark: hsl(0, 0%, 50%);
-  
-  /* Shadcn Variables */
+
+  /* Shadcn tokens */
   --background: var(--honduras-white);
   --foreground: var(--honduras-text-dark);
   --card: var(--honduras-white);
@@ -56,6 +59,7 @@
   --sidebar-accent-foreground: var(--honduras-primary);
   --sidebar-border: hsl(205, 25%, 91%);
   --sidebar-ring: var(--honduras-primary);
+
   --font-sans: 'Inter', sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: 'Fira Code', monospace;
@@ -84,43 +88,29 @@
   --ring: var(--honduras-primary);
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply font-sans antialiased bg-background text-foreground;
-  }
-
-  /* Placeholder styles */
-  input::placeholder,
-  textarea::placeholder {
-    color: var(--placeholder-light) !important;
-    opacity: 1 !important;
-  }
-
-  .dark input::placeholder,
-  .dark textarea::placeholder {
-    color: var(--placeholder-dark) !important;
-    opacity: 1 !important;
-  }
+/* =============== Placeholders =============== */
+input::placeholder,
+textarea::placeholder {
+  color: var(--placeholder-light) !important;
+  opacity: 1 !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--placeholder-dark) !important;
+  opacity: 1 !important;
 }
 
-/* Bootstrap Customizations for Honduras Theme */
+/* =============== Botones Bootstrap temáticos =============== */
 .btn-primary {
   background-color: var(--honduras-primary);
   border-color: var(--honduras-primary);
   color: var(--honduras-white);
 }
-
 .btn-primary:hover {
   background-color: var(--honduras-primary-dark);
   border-color: var(--honduras-primary-dark);
   color: var(--honduras-white);
 }
-
-/* Admin Login Button Styles */
 .btn-admin-login {
   background-color: var(--honduras-primary) !important;
   border-color: var(--honduras-primary) !important;
@@ -130,7 +120,6 @@
   font-weight: 500;
   transition: all 0.3s ease;
 }
-
 .btn-admin-login:hover {
   background-color: var(--honduras-primary-dark) !important;
   border-color: var(--honduras-primary-dark) !important;
@@ -138,7 +127,6 @@
   box-shadow: 0 4px 8px rgba(27, 209, 232, 0.3) !important;
   transform: translateY(-1px);
 }
-
 .btn-admin-login:focus,
 .btn-admin-login:active {
   background-color: var(--honduras-primary-dark) !important;
@@ -147,287 +135,59 @@
   box-shadow: 0 4px 8px rgba(27, 209, 232, 0.3) !important;
 }
 
-/* Dropdown and Popover Positioning Fixes - Targeted for Consultation Form Dropdowns */
-.consultation-dropdown {
-  z-index: 80;
-  max-width: calc(100vw - 32px);
-  max-height: calc(100vh - 32px);
-}
-
-.consultation-dropdown[data-radix-select-content] {
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-/* Ensure dropdowns don't get clipped by parent containers in consultation form */
-.consultation-container .form-section-card,
-.consultation-container .location-step,
-.consultation-container .conditional-fields {
-  overflow: visible;
-}
-
-/* Additional positioning for Combobox (Command) dropdowns */
-.consultation-dropdown [cmdk-root] {
-  max-height: 300px;
-  overflow: hidden;
-}
-
-.consultation-dropdown [cmdk-list] {
-  max-height: 250px;
-  overflow-y: auto;
-}
-
-/* Password Toggle Styles */
-.password-input-container {
-  position: relative;
-}
-
-.password-input {
-  padding-right: 45px !important;
-}
-
-.password-toggle-btn {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  padding: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-  z-index: 10;
-}
-
-.password-toggle-btn:hover {
-  background-color: rgba(27, 209, 232, 0.1);
-}
-
-.password-toggle-icon {
-  width: 18px;
-  height: 18px;
-  color: #999;
-  transition: color 0.2s ease;
-}
-
-.password-toggle-btn:hover .password-toggle-icon {
-  color: var(--honduras-primary);
-}
-
-.password-toggle-btn:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(27, 209, 232, 0.2);
-}
-
+/* =============== Layouts / helpers =============== */
 .navbar-brand {
   color: var(--honduras-primary) !important;
   font-weight: bold;
 }
-
 .bg-primary-custom {
   background-color: var(--honduras-primary) !important;
 }
-
 .text-primary-custom {
   color: var(--honduras-primary) !important;
 }
-
 .border-primary-custom {
   border-color: var(--honduras-primary) !important;
 }
-
-.sector-tag {
-  background-color: var(--honduras-bg-light);
-  border: 1px solid var(--honduras-primary);
-  border-radius: 20px;
-  padding: 5px 12px;
-  margin: 2px;
-  display: inline-block;
-  font-size: 0.875rem;
+.form-section {
+  background-color: var(--honduras-white);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-
-/* Accessibility Button Styles */
-.accessibility-button-container {
-  position: fixed;
-  left: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 1000;
-}
-
-.accessibility-button {
-  background-color: var(--honduras-primary) !important;
-  border-color: var(--honduras-primary) !important;
-  color: var(--honduras-white) !important;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(27, 209, 232, 0.3);
-  transition: all 0.3s ease;
-}
-
-.accessibility-button:hover {
-  background-color: var(--honduras-primary-dark) !important;
-  border-color: var(--honduras-primary-dark) !important;
-  transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(27, 209, 232, 0.4);
-}
-
-.accessibility-button:focus {
-  outline: 3px solid var(--honduras-primary);
-  outline-offset: 2px;
-}
-
-.accessibility-panel {
-  max-width: 500px;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-.accessibility-controls {
-  padding: 0;
-}
-
-.accessibility-section {
-  margin-bottom: 1rem;
-}
-
-.accessibility-section-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-  color: var(--honduras-primary);
-}
-
-.accessibility-controls-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.accessibility-toggle-button {
-  min-width: 120px;
-}
-
-.accessibility-font-indicator {
-  min-width: 60px;
-  text-align: center;
-  background-color: var(--honduras-primary);
-  color: var(--honduras-white);
-}
-
-.accessibility-help-text {
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin-top: 0.5rem;
-  font-style: italic;
-}
-
-/* High Contrast Mode */
-.accessibility-high-contrast {
-  filter: invert(1) hue-rotate(180deg);
-}
-
-.accessibility-high-contrast img,
-.accessibility-high-contrast video,
-.accessibility-high-contrast iframe,
-.accessibility-high-contrast svg {
-  filter: invert(1) hue-rotate(180deg);
-}
-
-.accessibility-high-contrast .accessibility-button {
-  filter: invert(1) hue-rotate(180deg);
-}
-
-/* Visual Guides Mode */
-.accessibility-visual-guides a,
-.accessibility-visual-guides [role="button"],
-.accessibility-visual-guides button {
-  text-decoration: underline !important;
-  outline: 2px solid var(--honduras-primary) !important;
-  outline-offset: 2px !important;
-}
-
-.accessibility-visual-guides input,
-.accessibility-visual-guides textarea,
-.accessibility-visual-guides select {
-  border: 3px solid var(--honduras-primary) !important;
-  box-shadow: 0 0 0 2px rgba(27, 209, 232, 0.3) !important;
-}
-
-.accessibility-visual-guides input:focus,
-.accessibility-visual-guides textarea:focus,
-.accessibility-visual-guides select:focus {
-  border-color: var(--honduras-primary-dark) !important;
-  box-shadow: 0 0 0 4px rgba(27, 209, 232, 0.5) !important;
-}
-
-/* Simple Mode */
-.accessibility-simple-mode .complex-text {
-  display: none;
-}
-
-.accessibility-simple-mode .simple-text {
-  display: block;
-}
-
-.accessibility-simple-mode h1,
-.accessibility-simple-mode h2,
-.accessibility-simple-mode h3,
-.accessibility-simple-mode h4,
-.accessibility-simple-mode h5,
-.accessibility-simple-mode h6 {
-  font-size: 1.5rem !important;
-  font-weight: bold !important;
-  margin-bottom: 1rem !important;
-}
-
-.accessibility-simple-mode p,
-.accessibility-simple-mode span,
-.accessibility-simple-mode div {
-  font-size: 1.1rem !important;
-  line-height: 1.6 !important;
-}
-
-/* Google Forms Style Sections */
 .form-section-card {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  background: white;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   margin-bottom: 24px;
-  transition: box-shadow 0.2s ease-in-out;
+  transition: box-shadow 0.2s;
+  overflow: visible;
 }
-
 .form-section-card:hover {
-  box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
-
 .form-section-header {
   border-bottom: 1px solid #e8f0fe;
-  background-color: #f8f9fa;
+  background: #f8f9fa;
   border-radius: 8px 8px 0 0;
   padding: 20px 24px 16px;
 }
-
 .form-section-title {
   font-size: 1rem;
   font-weight: 600;
   color: var(--honduras-primary);
-  margin: 0;
-  margin-bottom: 8px;
+  margin: 0 0 8px 0;
 }
-
+.form-section-title::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--honduras-primary);
+  border-radius: 50%;
+  margin-right: 12px;
+  vertical-align: middle;
+}
 .form-section-description {
   font-size: 0.875rem;
   color: #5f6368;
@@ -435,207 +195,389 @@
   line-height: 1.4;
 }
 
-.form-section-card .CardContent {
-  padding: 24px;
+/* =============== Combobox / Popover (Shadcn/Radix) =============== */
+.consultation-container .location-step,
+.consultation-container .conditional-fields {
+  overflow: visible;
+}
+.consultation-dropdown {
+  z-index: 60;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+}
+.consultation-dropdown [cmdk-root] {
+  max-height: 300px;
+  overflow: hidden;
+}
+.consultation-dropdown [cmdk-list] {
+  max-height: 250px;
+  overflow-y: auto;
+}
+/* wrapper que usa Radix para poppers */
+[data-radix-popper-content-wrapper] {
+  z-index: 60;
+}
+.location-map-container {
+  position: relative;
+  z-index: 1;
 }
 
-/* Section numbering visual enhancement */
-.form-section-title::before {
-  content: "";
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  background-color: var(--honduras-primary);
+/* =============== Tarjetas/selector persona =============== */
+.person-type-card {
+  background: #fff;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.person-type-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-color: var(--honduras-primary);
+}
+.person-type-card.selected {
+  border-color: var(--honduras-primary);
+  box-shadow: 0 4px 12px rgba(27, 209, 232, 0.15);
+  background: #f8fdff;
+}
+.person-type-content h6 {
+  color: #495057;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+.person-type-card.selected .person-type-content h6 {
+  color: var(--honduras-primary);
+}
+.conditional-fields {
+  animation: slideDown 0.4s ease-out;
+  overflow: hidden;
+}
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+    transform: translateY(0);
+  }
+}
+
+/* =============== Selector de ubicación =============== */
+.location-label {
+  font-weight: 500;
+  color: var(--honduras-primary);
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+  display: block;
+}
+.location-select {
+  border: 2px solid #e9f4f7;
+  border-radius: 12px;
+  transition: 0.3s;
+  background: #fff;
+  font-size: 0.875rem;
+  padding: 12px 16px;
+  height: auto;
+}
+.location-select:hover {
+  border-color: var(--honduras-primary);
+  box-shadow: 0 2px 8px rgba(27, 209, 232, 0.15);
+}
+.location-select:focus-within {
+  border-color: var(--honduras-primary);
+  box-shadow: 0 0 0 3px rgba(27, 209, 232, 0.1);
+}
+.location-map-wrapper {
+  height: 250px;
+}
+
+/* =============== Accesibilidad (SOLO con .a11y-on) =============== */
+.a11y-on .accessibility-button-container {
+  position: fixed;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1000;
+}
+.a11y-on .accessibility-button {
+  background-color: var(--honduras-primary) !important;
+  border-color: var(--honduras-primary) !important;
+  color: #fff !important;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  margin-right: 12px;
-  vertical-align: middle;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(27, 209, 232, 0.3);
+  transition: 0.3s;
+}
+.a11y-on .accessibility-button:hover {
+  background: var(--honduras-primary-dark) !important;
+  border-color: var(--honduras-primary-dark) !important;
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(27, 209, 232, 0.4);
 }
 
-/* Responsive section cards */
+.a11y-on.accessibility-high-contrast {
+  filter: invert(1) hue-rotate(180deg);
+}
+.a11y-on.accessibility-high-contrast img,
+.a11y-on.accessibility-high-contrast video,
+.a11y-on.accessibility-high-contrast iframe,
+.a11y-on.accessibility-high-contrast svg {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+.a11y-on.accessibility-visual-guides a,
+.a11y-on.accessibility-visual-guides [role="button"],
+.a11y-on.accessibility-visual-guides button {
+  text-decoration: underline !important;
+  outline: 2px solid var(--honduras-primary) !important;
+  outline-offset: 2px !important;
+}
+.a11y-on.accessibility-visual-guides input,
+.a11y-on.accessibility-visual-guides textarea,
+.a11y-on.accessibility-visual-guides select {
+  border: 3px solid var(--honduras-primary) !important;
+  box-shadow: 0 0 0 2px rgba(27, 209, 232, 0.3) !important;
+}
+.a11y-on.accessibility-visual-guides input:focus,
+.a11y-on.accessibility-visual-guides textarea:focus,
+.a11y-on.accessibility-visual-guides select:focus {
+  border-color: var(--honduras-primary-dark) !important;
+  box-shadow: 0 0 0 4px rgba(27, 209, 232, 0.5) !important;
+}
+
+.accessibility-simple-mode .complex-text {
+  display: none;
+}
+.accessibility-simple-mode .simple-text {
+  display: block;
+}
+
+/* Kill switch extra (por si quedan clases sueltas sin .a11y-on) */
+html:not(.a11y-on) .accessibility-visual-guides a,
+html:not(.a11y-on) .accessibility-visual-guides [role="button"],
+html:not(.a11y-on) .accessibility-visual-guides button,
+html:not(.a11y-on) .accessibility-visual-guides input,
+html:not(.a11y-on) .accessibility-visual-guides textarea,
+html:not(.a11y-on) .accessibility-visual-guides select {
+  outline: none !important;
+  text-decoration: none !important;
+  border: inherit !important;
+  box-shadow: none !important;
+}
+html:not(.a11y-on) .accessibility-high-contrast {
+  filter: none !important;
+}
+
+/* =============== Botones de formulario =============== */
+.form-buttons-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 32px;
+  padding: 24px 0;
+}
+.btn-submit-custom {
+  background: var(--honduras-primary) !important;
+  border-color: var(--honduras-primary) !important;
+  color: #fff !important;
+  font-weight: 600;
+  font-size: 1.1rem;
+  padding: 16px 32px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(27, 209, 232, 0.3);
+  transition: 0.3s;
+  text-transform: none;
+  letter-spacing: 0.5px;
+  border: 2px solid var(--honduras-primary);
+  width: 100%;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-submit-custom:hover:not(:disabled) {
+  background: var(--honduras-primary-dark) !important;
+  border-color: var(--honduras-primary-dark) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(23, 184, 205, 0.4);
+}
+.btn-submit-custom:disabled {
+  background: #a0d4dd !important;
+  border-color: #a0d4dd !important;
+  color: #fff !important;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 2px 8px rgba(160, 212, 221, 0.2);
+}
+.btn-reset-custom {
+  background: #fff !important;
+  border-color: var(--honduras-primary) !important;
+  color: var(--honduras-primary) !important;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 14px 28px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(27, 209, 232, 0.1);
+  transition: 0.3s;
+  text-transform: none;
+  letter-spacing: 0.3px;
+  border: 2px solid var(--honduras-primary);
+  width: 100%;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-reset-custom:hover {
+  background: #e6f9fb !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(27, 209, 232, 0.2);
+}
+
+/* =============== Otras pequeñas mejoras =============== */
+.sector-tag {
+  background: var(--honduras-bg-light);
+  border: 1px solid var(--honduras-primary);
+  border-radius: 20px;
+  padding: 5px 12px;
+  margin: 2px;
+  display: inline-block;
+  font-size: 0.875rem;
+}
+.dashboard-card {
+  transition: transform 0.2s;
+}
+.dashboard-card:hover {
+  transform: translateY(-2px);
+}
+.navbar {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.sidebar {
+  background: var(--honduras-bg-light);
+  min-height: calc(100vh - 76px);
+}
+.chart-container {
+  position: relative;
+  height: 300px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--honduras-bg-light);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--honduras-primary);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--honduras-primary-dark);
+}
+
+/* =============== Responsive tweaks =============== */
 @media (max-width: 768px) {
   .form-section-card {
     margin-bottom: 16px;
     border-radius: 6px;
   }
-  
   .form-section-header {
     padding: 16px 20px 12px;
   }
-  
   .form-section-title {
     font-size: 0.9rem;
   }
-  
-  .form-section-card .CardContent {
-    padding: 20px;
+  .form-buttons-container {
+    padding: 20px 0;
+    gap: 14px;
   }
-
-  /* Mapa responsivo para móvil */
-  .location-map-container {
-    margin-top: 12px;
+  .btn-submit-custom {
+    order: 1;
+    font-size: 1.05rem;
+    padding: 18px 24px;
+    min-height: 60px;
   }
-  
-  .location-map-container > div {
-    border-radius: 8px;
+  .btn-reset-custom {
+    order: 2;
+    font-size: 0.95rem;
+    padding: 16px 20px;
+    min-height: 52px;
   }
-  
-  .location-map-container .text-xs {
-    font-size: 0.75rem;
-  }
-
-  /* Mejorar los popovers para táctil */
   .location-select {
     min-height: 48px;
-    font-size: 16px; /* Prevenir zoom en iOS */
-  }
-  
-  /* Ajustar spacing entre elementos del formulario */
-  .location-step {
-    margin-bottom: 20px;
-  }
-  
-  /* Mejorar las tarjetas de tipo de persona */
-  .person-type-card {
-    min-height: 60px;
-    margin-bottom: 12px;
-  }
-  
-  .person-type-content {
-    padding: 16px 12px;
+    font-size: 16px; /* evita zoom iOS */
   }
 }
 
-/* Optimizaciones para tabletas */
-@media (min-width: 769px) and (max-width: 1024px) {
-  .form-section-card {
-    margin-bottom: 24px;
+@media (min-width: 768px) {
+  .form-buttons-container {
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 20px;
   }
-  
-  .location-select {
-    min-height: 44px;
+  .btn-reset-custom {
+    width: auto;
+    min-width: 180px;
   }
-  
-  .person-type-card {
-    min-height: 80px;
-  }
-  
-  /* Altura del mapa en tabletas */
-  .location-map-wrapper {
-    height: 300px;
+  .btn-submit-custom {
+    width: auto;
+    min-width: 200px;
   }
 }
 
-/* Pantallas muy pequeñas (móviles en horizontal o muy pequeños) */
-@media (max-width: 480px) {
-  .consultation-container .container {
-    padding-left: 12px;
-    padding-right: 12px;
-  }
-  
-  .form-section-card {
-    margin: 0 -8px 16px -8px;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
-  }
-  
-  .person-type-card {
-    min-height: 56px;
-    border-radius: 6px;
-  }
-  
-  .creative-title {
-    font-size: 1.1rem;
-    line-height: 1.3;
-  }
-  
-  /* Altura del mapa en pantallas muy pequeñas */
-  .location-map-wrapper {
-    height: 200px;
-  }
-  
-  /* Mejorar popovers en móvil */
-  .location-select {
-    font-size: 16px; /* Prevenir zoom iOS */
-    padding: 12px 16px;
-  }
-  
-  /* Mejor spacing para sectores */
-  .sectors-container {
-    max-height: 180px;
-    overflow-y: auto;
-  }
-}
-
-/* Altura base del mapa */
-.location-map-wrapper {
-  height: 250px;
-}
-
-/* Mejoras para dispositivos táctiles */
 @media (hover: none) and (pointer: coarse) {
-  .person-type-card:hover {
-    transform: none; /* Deshabilitar hover animations en táctil */
-  }
-  
-  .location-select:hover {
-    background-color: inherit;
-  }
-  
-  /* Hacer botones más grandes para táctil */
   .btn {
     min-height: 44px;
     padding: 12px 20px;
   }
-  
-  /* Mejorar área táctil de los botones del Command */
   [data-radix-collection-item] {
     min-height: 44px;
     padding: 8px 12px;
   }
 }
 
-.accessibility-simple-mode .form-text,
-.accessibility-simple-mode .text-muted,
-.accessibility-simple-mode small {
-  font-size: 1rem !important;
-  color: #374151 !important;
+/* =============== Animaciones pequeñas =============== */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-
-/* Responsive Design for Accessibility Button */
-@media (max-width: 768px) {
-  .accessibility-button-container {
-    left: 10px;
-    top: 20px;
-    transform: none;
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
   }
-  
-  .accessibility-button {
-    width: 45px;
-    height: 45px;
-  }
-  
-  .accessibility-panel {
-    max-width: 95vw;
-    margin: 1rem;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@media (max-width: 480px) {
-  .accessibility-controls-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .accessibility-toggle-button {
-    min-width: auto;
-    width: 100%;
-  }
-}
-
-/* Creative Title Styles */
+/* =============== Creative title (opcional) =============== */
 .creative-title {
-  color: white;
+  color: #fff;
   font-weight: 600;
   font-size: 1.5rem;
   letter-spacing: -0.02em;
@@ -645,14 +587,10 @@
   display: inline-block;
   animation: creativeGlow 3s ease-in-out infinite alternate;
 }
-
 .creative-title::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: linear-gradient(135deg, var(--honduras-secondary) 0%, var(--honduras-primary) 50%, var(--honduras-primary-dark) 100%);
   border-radius: 12px;
   opacity: 0.1;
@@ -660,7 +598,6 @@
   transform: scale(1.05);
   animation: creativeBackground 4s ease-in-out infinite alternate;
 }
-
 .creative-title::after {
   content: '';
   position: absolute;
@@ -675,18 +612,16 @@
   animation: creativeRotate 6s linear infinite;
   background-size: 300% 300%;
 }
-
 @keyframes creativeGlow {
   0% {
     filter: brightness(1) contrast(1);
-    transform: translateY(0px);
+    transform: translateY(0);
   }
   100% {
     filter: brightness(1.1) contrast(1.05);
     transform: translateY(-2px);
   }
 }
-
 @keyframes creativeBackground {
   0% {
     opacity: 0.1;
@@ -697,7 +632,6 @@
     transform: scale(1.08) rotate(1deg);
   }
 }
-
 @keyframes creativeRotate {
   0% {
     background-position: 0% 50%;
@@ -710,529 +644,372 @@
   }
 }
 
-/* Responsive adjustments for creative title */
-@media (max-width: 768px) {
-  .creative-title {
-    font-size: 1.25rem;
-    letter-spacing: -0.01em;
-  }
-}
+/* ===================== UI FIXES TOTALES ===================== */
 
-@media (max-width: 480px) {
-  .creative-title {
-    font-size: 1.125rem;
-    letter-spacing: 0;
-    line-height: 1.3;
-  }
-}
-
-/* Accessibility: Preserve text readability in high contrast mode */
-.accessibility-high-contrast .creative-title {
-  -webkit-text-fill-color: inherit;
-  background: none;
-  color: inherit !important;
-  text-shadow: none;
-}
-
-.accessibility-high-contrast .creative-title::before,
-.accessibility-high-contrast .creative-title::after {
-  display: none;
-}
-
-/* Person Type Card Styles */
-.person-type-card {
-  background-color: var(--honduras-white);
-  border: 2px solid #e9ecef;
-  border-radius: 12px;
-  padding: 20px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease-in-out;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  height: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.person-type-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border-color: var(--honduras-primary);
-}
-
-.person-type-card.selected {
-  border-color: var(--honduras-primary);
-  box-shadow: 0 4px 12px rgba(27, 209, 232, 0.15);
-  background-color: #f8fdff;
-}
-
-.person-type-content h6 {
-  color: #495057;
-  font-weight: 500;
-  font-size: 0.875rem;
-}
-
-.person-type-card.selected .person-type-content h6 {
-  color: var(--honduras-primary);
-}
-
-/* Conditional Fields Animation */
-.conditional-fields {
-  animation: slideDown 0.4s ease-out;
-  overflow: hidden;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    max-height: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    max-height: 500px;
-    transform: translateY(0);
-  }
-}
-
-/* Responsive Design for Cards */
-@media (max-width: 768px) {
-  .person-type-card {
-    margin-bottom: 16px;
-    height: 70px;
-    padding: 16px;
-  }
-  
-  .person-type-content h6 {
-    font-size: 0.8rem;
-  }
-}
-
-/* Modern Location Selector Styles */
-.modern-location-selector {
-  background: linear-gradient(135deg, #f8fdff 0%, #ffffff 100%);
-  border-radius: 16px;
-  padding: 32px;
-  border: 1px solid #e3f2fd;
-  box-shadow: 0 4px 20px rgba(27, 209, 232, 0.08);
-}
-
-.location-icon {
-  font-size: 1.8rem;
-  margin-right: 12px;
-}
-
-.location-step {
-  opacity: 0;
-  animation: slideInUp 0.5s ease-out forwards;
-}
-
-.location-label {
-  font-weight: 500;
-  color: var(--honduras-primary);
-  font-size: 0.8rem;
-  margin-bottom: 8px;
-  display: block;
-}
-
-.location-select {
-  border: 2px solid #e9f4f7;
-  border-radius: 12px;
-  transition: all 0.3s ease;
-  background: white;
-  font-size: 0.875rem;
-  padding: 12px 16px;
-  height: auto;
-}
-
-.location-select:hover {
-  border-color: var(--honduras-primary);
-  box-shadow: 0 2px 8px rgba(27, 209, 232, 0.15);
-}
-
-.location-select:focus-within {
-  border-color: var(--honduras-primary);
-  box-shadow: 0 0 0 3px rgba(27, 209, 232, 0.1);
-}
-
-/* Zone Selection Cards */
-.zone-selection {
-  margin-top: 8px;
-}
-
-.zone-card {
-  background: white;
-  border: 2px solid #e9f4f7;
-  border-radius: 12px;
-  padding: 20px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  height: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.zone-card:hover {
-  border-color: var(--honduras-primary);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(27, 209, 232, 0.15);
-}
-
-.zone-card.selected {
-  border-color: var(--honduras-primary);
-  background: linear-gradient(135deg, #f8fdff 0%, #ffffff 100%);
-  box-shadow: 0 4px 16px rgba(27, 209, 232, 0.2);
-}
-
-.zone-content {
-  text-align: center;
-}
-
-.zone-emoji {
-  font-size: 1.8rem;
-  display: block;
-  margin-bottom: 8px;
-}
-
-.zone-text {
-  font-weight: 600;
-  color: #333;
-  font-size: 1rem;
-  display: block;
-}
-
-.zone-card.selected .zone-text {
-  color: var(--honduras-primary);
-}
-
-.zone-subtitle {
-  color: #666;
-  font-size: 0.8rem;
-  margin-top: 4px;
-  display: block;
-}
-
-/* Geocode Display */
-.geocode-display {
-  margin-top: 16px;
-}
-
-.geocode-container {
-  background: none;
-  border-radius: 0;
-  padding: 8px 0;
-  text-align: center;
-  color: #666;
-}
-
-.geocode-label {
-  color: var(--honduras-primary);
-  font-weight: 500;
-  font-size: 0.7rem;
-  margin-bottom: 4px;
-  opacity: 0.9;
-}
-
-.geocode-value {
-  font-size: 0.85rem;
-  font-weight: 500;
-  font-family: 'Courier New', monospace;
-  letter-spacing: 0.5px;
-  background: none;
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin: 8px 0;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.geocode-subtitle {
-  color: #888;
-  font-size: 0.65rem;
-  margin-top: 2px;
-}
-
-/* Animations */
-.animate-fade-in {
-  animation: fadeInUp 0.4s ease-out;
-}
-
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(15px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Responsive Design for Location Selector */
-@media (max-width: 768px) {
-  .modern-location-selector {
-    padding: 20px;
-    margin: 0 -10px;
-  }
-  
-  .zone-card {
-    height: 90px;
-    padding: 16px;
-  }
-  
-  .zone-emoji {
-    font-size: 1.5rem;
-  }
-  
-  .zone-text {
-    font-size: 0.9rem;
-  }
-  
-  .geocode-value {
-    font-size: 1rem;
-    letter-spacing: 0.5px;
-  }
-  
-  .location-icon {
-    font-size: 1.5rem;
-  }
-}
-
-/* Modern Form Buttons Honduras Style */
-.form-buttons-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 32px;
-  padding: 24px 0;
-}
-
-/* Submit Button - Primary Honduras Style */
-.btn-submit-custom {
-  background-color: var(--honduras-primary) !important;
-  border-color: var(--honduras-primary) !important;
-  color: var(--honduras-white) !important;
-  font-weight: 600;
-  font-size: 1.1rem;
-  padding: 16px 32px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(27, 209, 232, 0.3);
-  transition: all 0.3s ease;
-  text-transform: none;
-  letter-spacing: 0.5px;
-  border: 2px solid var(--honduras-primary);
-  width: 100%;
-  min-height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-submit-custom:hover:not(:disabled) {
-  background-color: var(--honduras-primary-dark) !important;
-  border-color: var(--honduras-primary-dark) !important;
-  color: var(--honduras-white) !important;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(23, 184, 205, 0.4);
-}
-
-.btn-submit-custom:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(27, 209, 232, 0.3);
-}
-
-.btn-submit-custom:disabled {
-  background-color: #a0d4dd !important;
-  border-color: #a0d4dd !important;
-  color: #ffffff !important;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: 0 2px 8px rgba(160, 212, 221, 0.2);
-}
-
-/* Reset Button - Outline Honduras Style */
-.btn-reset-custom {
-  background-color: var(--honduras-white) !important;
-  border-color: var(--honduras-primary) !important;
-  color: var(--honduras-primary) !important;
-  font-weight: 600;
-  font-size: 1rem;
-  padding: 14px 28px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(27, 209, 232, 0.1);
-  transition: all 0.3s ease;
-  text-transform: none;
-  letter-spacing: 0.3px;
-  border: 2px solid var(--honduras-primary);
-  width: 100%;
-  min-height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-reset-custom:hover {
-  background-color: #e6f9fb !important;
-  border-color: var(--honduras-primary) !important;
-  color: var(--honduras-primary) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(27, 209, 232, 0.2);
-}
-
-.btn-reset-custom:active {
-  transform: translateY(0);
-  background-color: #d1f4f8 !important;
-  box-shadow: 0 2px 6px rgba(27, 209, 232, 0.15);
-}
-
-/* Desktop Layout - Side by Side */
-@media (min-width: 768px) {
-  .form-buttons-container {
-    flex-direction: row;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 20px;
-  }
-  
-  .btn-reset-custom {
-    width: auto;
-    min-width: 180px;
-  }
-  
-  .btn-submit-custom {
-    width: auto;
-    min-width: 200px;
-  }
-}
-
-/* Mobile Responsive - Full Width */
-@media (max-width: 767px) {
-  .form-buttons-container {
-    padding: 20px 0;
-    gap: 14px;
-  }
-  
-  .btn-submit-custom {
-    order: 1;
-    font-size: 1.05rem;
-    padding: 18px 24px;
-    min-height: 60px;
-  }
-  
-  .btn-reset-custom {
-    order: 2;
-    font-size: 0.95rem;
-    padding: 16px 20px;
-    min-height: 52px;
-  }
-}
-
-/* Icon Spacing in Buttons */
-.btn-submit-custom i,
-.btn-reset-custom i {
-  margin-right: 8px;
-}
-
-/* Loading Spinner in Submit Button */
-.btn-submit-custom .animate-spin {
-  margin-left: 8px;
-}
-
-.location-selector {
-  border-left: 3px solid var(--honduras-primary);
-}
-
-.form-section {
-  background-color: var(--honduras-white);
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.dashboard-card {
-  transition: transform 0.2s;
-}
-
-.dashboard-card:hover {
-  transform: translateY(-2px);
+/* Capas z-index unificadas */
+:root {
+  --z-navbar: 1020;
+  --z-dropdown: 1100;
+  --z-popover: 1200;
+  --z-modal: 1300;
+  --z-toast: 1400;
 }
 
 .navbar {
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: var(--z-navbar) !important;
+}
+/* Dropdown menu layering */
+.dropdown-menu {
+  z-index: var(--z-dropdown) !important;
 }
 
-.sidebar {
-  background-color: var(--honduras-bg-light);
-  min-height: calc(100vh - 76px);
+/* Radix / Shadcn popovers/comboboxes always on top */
+[data-radix-popper-content-wrapper],
+.consultation-dropdown{
+  z-index: var(--z-popover) !important;
 }
-
-.chart-container {
+/* Portals Radix */
+body > div[data-radix-portal]{
   position: relative;
-  height: 300px;
+  z-index: var(--z-popover) !important;
 }
 
-/* Custom scrollbar for better UX */
-::-webkit-scrollbar {
-  width: 8px;
+/* In modals even higher */
+.modal{ z-index: var(--z-modal) !important; }
+.modal-backdrop{ z-index: calc(var(--z-modal) - 10) !important; }
+.modal [data-radix-popper-content-wrapper],
+.modal body > div[data-radix-portal],
+.modal .consultation-dropdown{
+  z-index: calc(var(--z-modal) + 20) !important;
 }
 
-::-webkit-scrollbar-track {
-  background: var(--honduras-bg-light);
+/* Prevent containers from clipping overlays */
+.table-responsive,
+.card,
+.form-section-card,
+.card-header,
+.container, .container-fluid,
+.consultation-container .location-step,
+.consultation-container .conditional-fields{
+  overflow: visible !important;
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--honduras-primary);
-  border-radius: 4px;
+/* Menu actions in tables above */
+.table .dropdown-menu{ z-index: var(--z-dropdown) !important; }
+
+/* Map below popovers */
+.location-map-container{ position: relative; z-index: 1; }
+
+/* Comfortable command lists */
+[cmdk-root]{ max-height: 340px; overflow: hidden; }
+[cmdk-list]{ max-height: 280px; overflow-y: auto; }
+[data-radix-collection-item]{ min-height: 44px; }
+
+/* ===== Accessibility: do not apply filters to overlays ===== */
+.accessibility-high-contrast .modal,
+.accessibility-high-contrast .modal-backdrop,
+.accessibility-high-contrast .dropdown-menu,
+.accessibility-high-contrast [data-radix-popper-content-wrapper],
+.accessibility-high-contrast body > div[data-radix-portal]{
+  filter: none !important;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--honduras-primary-dark);
+/* Kill switch additional if some global filter leaked */
+html.a11y-off, body.a11y-off{ filter: none !important; }
+
+/* (If you have sticky headers) */
+.sticky-top, .navbar.sticky-top{ z-index: var(--z-navbar) !important; }
+
+/* =================== FIN UI FIXES TOTALES =================== */
+
+/* === POPUPS/COMBOS ALWAYS ON TOP === */
+:root { --z-pop: 9999; }
+
+[data-radix-popper-content-wrapper],
+.consultation-dropdown,
+body > div[data-radix-portal],
+[role="listbox"],
+div[cmdk-root],
+div[cmdk-list]{
+  position: relative;
+  z-index: var(--z-pop) !important;
 }
 
-/* Photo upload section styles */
-.photo-upload-section {
-  padding: 0.5rem 0;
+/* === LEAFLET ALWAYS BELOW POPUPS === */
+.leaflet-container,
+.leaflet-pane,
+.leaflet-pane *{
+  z-index: 0 !important;
+}
+.leaflet-top, .leaflet-bottom, .leaflet-control{
+  z-index: 10 !important; /* keep + / - buttons usable */
 }
 
-.photo-upload-button {
-  border: 2px dashed #cbd5e1;
+/* === PREVENT PARENTS FROM CLIPPING POPUPS === */
+.form-section-card,
+.card,
+.container, .container-fluid,
+.location-map-container{
+  overflow: visible !important;
+}
+
+/* Neutralize any ancestor creating a stacking context */
+.form-section-card, .card, .container, .container-fluid, .page, .main{
+  position: relative;
+  transform: none !important;
+  filter: none !important;
+  will-change: auto !important;
+}
+.modal, .modal-backdrop{ z-index: 1300 !important; }
+.modal [data-radix-popper-content-wrapper],
+.modal body > div[data-radix-portal]{
+  z-index: 1320 !important;
+}
+
+/* Dropdown/Command comfortable on mobile */
+.consultation-dropdown{
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+}
+.consultation-dropdown [cmdk-root]{ max-height: 320px; overflow: hidden; }
+.consultation-dropdown [cmdk-list]{ max-height: 260px; overflow-y: auto; }
+
+/* Trigger aspect of the combo (aligned to your theme) */
+.location-label { 
+  font-weight: 500; 
+  color: var(--honduras-primary, #1bd1e8); 
+  font-size: .8rem; 
+  margin-bottom: 8px; 
+  display: block; 
+}
+.location-select { 
+  border: 2px solid #e9f4f7; 
+  border-radius: 12px; 
+  transition: .3s; 
+  background: #fff; 
+  font-size: .875rem; 
+  padding: 12px 16px; 
+  height: auto; 
+}
+.location-select:hover { 
+  border-color: var(--honduras-primary, #1bd1e8); 
+  box-shadow: 0 2px 8px rgba(27,209,232,.15); 
+}
+.location-select:focus-within { 
+  border-color: var(--honduras-primary, #1bd1e8); 
+  box-shadow: 0 0 0 3px rgba(27,209,232,.1); 
+}
+
+/* === popovers SIEMPRE por encima del mapa === */
+:root { --overlay-z: 9999; }
+
+[data-radix-popper-content-wrapper],
+.consultation-dropdown,
+body > div[data-radix-portal] {
+  z-index: var(--overlay-z) !important;
+}
+
+/* evita que contenedores recorten el overlay */
+.form-section-card,
+.card,
+.container,
+.container-fluid,
+.location-map-container {
+  overflow: visible !important;
+}
+
+/* Leaflet por debajo y sin interacción cuando hay dropdown */
+.location-map-container .leaflet-container { z-index: 1 !important; }
+.map-muted, .map-muted .leaflet-container {
+  pointer-events: none !important;
+  filter: brightness(.96);
+}
+
+/* el trigger se ve consistente con tu tema */
+.location-select {
+  border: 2px solid #e9f4f7;
+  border-radius: 12px;
+  background: #fff;
+  font-size: .875rem;
+  padding: 12px 16px;
+  height: auto;
+}
+.location-select:hover { border-color: var(--honduras-primary, #1bd1e8); }
+
+/* Corrige el solapamiento de los selects sobre el mapa */
+.consultation-dropdown {
+  z-index: 9999 !important;
+  position: relative !important;
+}
+
+/* Asegura que el mapa no tape los popovers */
+.location-map-container {
+  position: relative;
+  z-index: 1;
+}
+
+/* Los popovers y selects deben ir siempre encima */
+.popover-content,
+[role="listbox"],
+[role="dialog"] {
+  z-index: 10000 !important;
+}
+
+/* También fuerza el fondo y bordes del dropdown */
+.consultation-dropdown .command-list {
+  background-color: white;
+  border: 1px solid #ddd;
   border-radius: 8px;
-  transition: all 0.2s ease;
-  padding: 1rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
 }
-
-.photo-upload-button:hover {
-  border-color: #1bd1e8;
-  background-color: #f8fafc;
-}
-
-.selected-photos-grid .photo-preview-card {
-  border: 1px solid #e2e8f0;
+.consultation-dropdown {
+  position: relative !important;
+  z-index: 9999 !important;
+  background: white;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  overflow: hidden;
-  background: #f8fafc;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-.selected-photos-grid .photo-preview-card:hover {
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  transform: translateY(-2px);
-  transition: all 0.2s ease;
+.location-map-container {
+  position: relative;
+  z-index: 1;
 }
 
-.photo-info {
-  padding: 0.5rem;
-  background: #f1f5f9;
-  font-size: 0.8rem;
+/* Asegura que el mapa no tape los popovers */
+.leaflet-container {
+  z-index: 0 !important;
+}
+
+/* Contenido del modal: 100% opaco y bien contrastado */
+.modal-content {
+  background-color: #ffffff !important;   /* sin transparencia */
+  backdrop-filter: none !important;
+  box-shadow: 0 24px 48px rgba(0,0,0,.36) !important;
+}
+
+/* Asegura que lo de adentro del modal no herede opacidad accidental */
+.modal, .modal * {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Velo de fondo bien oscuro y SIN transparencia visible del contenido detrás */
+.modal-backdrop.show {
+  opacity: 0.85 !important;   /* súbelo a 1 si quieres ocultar TODO el fondo */
+  background-color: #000 !important;
+}
+
+/* Por si usas tarjetas o contenedores dentro del modal */
+.modal .card,
+.modal .form-section-card {
+  background-color: #ffffff !important;
+}
+/* Contenido del modal: 100% opaco y bien contrastado */
+.modal-content {
+  background-color: #ffffff !important;   /* sin transparencia */
+  backdrop-filter: none !important;
+  box-shadow: 0 24px 48px rgba(0,0,0,.36) !important;
+}
+
+/* Asegura que lo de adentro del modal no herede opacidad accidental */
+.modal, .modal * {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Velo de fondo bien oscuro y SIN transparencia visible del contenido detrás */
+.modal-backdrop.show {
+  opacity: 0.85 !important;   /* súbelo a 1 si quieres ocultar TODO el fondo */
+  background-color: #000 !important;
+}
+
+/* Por si usas tarjetas o contenedores dentro del modal */
+.modal .card,
+.modal .form-section-card {
+  background-color: #ffffff !important;
+}
+/* ===== Bootstrap Modal: fondo SÓLIDO y velo opaco ===== */
+.modal-backdrop.show {
+  opacity: 1 !important;               /* 1 = sin ver nada del fondo */
+  background-color: #000 !important;   /* velo completamente negro */
+  backdrop-filter: none !important;
+}
+
+.modal,
+.modal-dialog {
+  backdrop-filter: none !important;
+  filter: none !important;
+}
+
+/* Contenido del modal totalmente sólido */
+.modal-content {
+  /* Forzamos variables de Bootstrap y el color real por si acaso */
+  --bs-modal-bg: #ffffff !important;
+  --bs-modal-border-color: rgba(0,0,0,.12) !important;
+  --bs-modal-border-width: 1px !important;
+
+  background-color: #ffffff !important;   /* sin alpha */
+  background-image: none !important;
+  opacity: 1 !important;
+  filter: none !important;
+  box-shadow: 0 24px 48px rgba(0,0,0,.36) !important;
+}
+
+/* Si dentro del modal hay elementos con clases Tailwind tipo bg-white/70, etc. */
+.modal [class^="bg-white/"],
+.modal [class*=" bg-white/"] {
+  background-color: #ffffff !important;
+}
+
+/* Tarjetas/inputs dentro del modal sin transparencias accidentales */
+.modal .card,
+.modal .form-section-card,
+.modal .form-control,
+.modal .btn,
+.modal .dropdown-menu {
+  background-color: #ffffff !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Por si algún modo de accesibilidad mete filtros */
+.accessibility-high-contrast .modal,
+.accessibility-high-contrast .modal-backdrop {
+  filter: none !important;
+}
+
+/* Asegura jerarquía correcta si usas popovers/combos dentro del modal */
+.modal { z-index: 1300 !important; }
+.modal-backdrop { z-index: 1290 !important; }
+/* ====== SHADCN DIALOG: overlay y contenido 100% sólidos ====== */
+
+/* Velo (overlay) bien oscuro y sin blur */
+body > div[data-radix-portal] [data-state="open"].fixed.inset-0 {
+  /* shadcn usa <DialogOverlay class="fixed inset-0 ..."> */
+  background: rgba(0, 0, 0, 0.9) !important; /* opaco */
+  backdrop-filter: none !important;
+  filter: none !important;
+}
+
+/* Contenido del modal totalmente sólido */
+body > div[data-radix-portal] [role="dialog"] {
+  /* <DialogContent role="dialog"> */
+  background: #ffffff !important;        /* SIN alpha */
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+  box-shadow: 0 24px 48px rgba(0,0,0,.35) !important;
+  border: 1px solid rgba(0,0,0,.08) !important;
+}
+
+/* Por si algún elemento interno trae clases tailwind con alpha (bg-white/xx) */
+body > div[data-radix-portal] [role="dialog"] [class^="bg-white/"],
+body > div[data-radix-portal] [role="dialog"] [class*=" bg-white/"] {
+  background-color: #ffffff !important;
+}
+
+/* Mantener los popovers/combobox por encima del modal si los usas dentro */
+body > div[data-radix-portal] [data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
 }

@@ -31,7 +31,7 @@ export function ProtectedRoute({
     );
   }
 
-  if (requiredRole && !requiredRole.includes(user.role)) {
+  if (requiredRole && !requiredRole.includes(user.rol)) {
     return (
       <Route path={path}>
         <div className="flex items-center justify-center min-h-screen">

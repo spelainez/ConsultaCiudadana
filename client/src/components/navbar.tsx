@@ -31,7 +31,7 @@ export function Navbar() {
               </Link>
             </li>
             
-            {user && (user.role === 'admin' || user.role === 'super_admin') && (
+            {user && (user.rol === 'admin' || user.rol === 'super_admin') && (
               <li className="nav-item">
                 <Link 
                   href="/admin" 
@@ -43,7 +43,7 @@ export function Navbar() {
               </li>
             )}
             
-            {user && user.role === 'super_admin' && (
+            {user && user.rol === 'super_admin' && (
               <li className="nav-item">
                 <Link 
                   href="/admin" 

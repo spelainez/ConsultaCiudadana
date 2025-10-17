@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useMemo, useState } from "react";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { insertConsultationSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import DepartmentSelect from "@/components/location/DepartmentSelect";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,15 +22,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Loader2,
-  X,
-  Plus,
-  ChevronsUpDown,
-  Upload,
-  Trash2,
-  Check,
-} from "lucide-react";
+import { Loader2, X, Plus, ChevronsUpDown, Trash2, Check, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Command,
@@ -41,208 +33,393 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-
 import LocationMap from "@/components/location-map";
+
 import aldeasData from "@shared/aldeas-honduras.json";
 
-type Department = { id: string; name: string; geocode: string };
-type Municipality = { id: string; name: string; geocode: string; departmentId: string };
+type Department = {
+  id: number;
+  name: string;
+  geocode: string;
+  latitude?: string | null;
+  longitude?: string | null;
+};
+type Municipality = {
+  id: number;
+  name: string;
+  geocode: string;
+  departmentId: number;
+  latitude?: string | null;
+  longitude?: string | null;
+};
 type Locality = {
-  id: string;
+  id: number | string;
   name: string;
   area: "urbano" | "rural";
-  municipalityId: string;
+  municipalityId: number;
+  geocode?: string | null;
   latitude?: string | null;
   longitude?: string | null;
 };
 
-const consultationFormSchema = insertConsultationSchema;
-type ConsultationFormData = z.infer<typeof consultationFormSchema>;
+const headerSchema = z
+  .object({
+    personType: z.enum(["natural", "juridica", "anonimo"]).default("natural"),
 
-function ConsultationForm() {
+    firstName: z.string().trim().optional(),
+    lastName: z.string().trim().optional(),
+    identity: z.string().trim().optional(),
+    email: z.string().email().optional(),
+
+    companyName: z.string().trim().optional(),
+    rtn: z.string().trim().optional(),
+    legalRepresentative: z.string().trim().optional(),
+    companyContact: z.string().trim().optional(),
+
+    mobile: z.string().trim().optional(),
+    phone: z.string().trim().optional(),
+    altEmail: z.string().email().optional(),
+
+    departmentId: z.number().int().positive().optional(),
+    municipalityId: z.number().int().positive().optional(),
+    zone: z.enum(["urbano", "rural"]).optional(),
+    localityId: z.union([z.number().int().positive(), z.literal("otro")]).optional(),
+    customLocalityName: z.string().trim().optional(),
+
+    latitude: z.string().trim().optional(),
+    longitude: z.string().trim().optional(),
+
+    status: z.enum(["active", "archived"]).default("active"),
+  })
+
+  
+  .superRefine((data, ctx) => {
+    if (!data.departmentId) {
+      ctx.addIssue({ code: "custom", path: ["departmentId"], message: "Seleccione un departamento" });
+    }
+    if (!data.municipalityId) {
+      ctx.addIssue({ code: "custom", path: ["municipalityId"], message: "Seleccione un municipio" });
+    }
+    if (!data.zone) {
+      ctx.addIssue({ code: "custom", path: ["zone"], message: "Seleccione la zona" });
+      return;
+    }
+
+    const isOtro = data.localityId === "otro";
+    if (data.zone === "urbano") {
+      if (!isOtro && (!data.localityId || typeof data.localityId !== "number")) {
+        ctx.addIssue({ code: "custom", path: ["localityId"], message: "Seleccione su colonia/barrio" });
+      }
+    } else if (data.zone === "rural") {
+      const hasLocNum = typeof data.localityId === "number" && data.localityId > 0;
+      if (!hasLocNum && !isOtro) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["localityId"],
+          message: "Seleccione su aldea/caserío",
+        });
+      }
+    }
+
+    if (isOtro) {
+      if (!data.customLocalityName?.trim()) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["customLocalityName"],
+          message: "Escriba el nombre de la colonia/barrio o aldea/caserío",
+        });
+      }
+      if (!data.latitude || !data.longitude) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["latitude"],
+          message: "Haz click en el mapa para fijar la ubicación",
+        });
+      }
+    }
+
+    if (data.personType === "anonimo") {
+      if (!data.email && !data.altEmail) {
+        ctx.addIssue({ code: "custom", path: ["altEmail"], message: "Correo requerido para anónimo" });
+      }
+      if (!data.mobile && !data.phone) {
+        ctx.addIssue({ code: "custom", path: ["mobile"], message: "Teléfono/celular requerido para anónimo" });
+      }
+    }
+  });
+
+type HeaderFormData = z.input<typeof headerSchema>;
+
+type SectorDetail = { message: string; files: File[] };
+
+export default function ConsultationForm() {
   const { toast } = useToast();
-  const [personType, setPersonType] = useState<string>("natural");
-  const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
-  const [selectedZone, setSelectedZone] = useState<string>("");
-  const [localitySearchOpen, setLocalitySearchOpen] = useState(false);
-  const [localitySearchValue, setLocalitySearchValue] = useState("");
-  const [selectedImages, setSelectedImages] = useState<File[]>([]);
-  const [openDepartment, setOpenDepartment] = useState(false);
-  const [openMunicipality, setOpenMunicipality] = useState(false);
-  const [showCustomLocality, setShowCustomLocality] = useState(false);
 
-  const form = useForm<ConsultationFormData>({
-    resolver: zodResolver(consultationFormSchema),
+  const [personType, setPersonType] = useState<"natural" | "juridica" | "anonimo">("natural");
+  const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
+  const [selectedZone, setSelectedZone] = useState<"" | "urbano" | "rural">("");
+
+  const [openDepartment, setOpenDepartment] = useState(false); 
+  const [openMunicipality, setOpenMunicipality] = useState(false);
+  const [openLocality, setOpenLocality] = useState(false);
+  const [openZone, setOpenZone] = useState(false);
+
+  const [detailsBySector, setDetailsBySector] = useState<Record<string, SectorDetail>>({});
+
+  const [mapLat, setMapLat] = useState<string | undefined>(undefined);
+  const [mapLng, setMapLng] = useState<string | undefined>(undefined);
+  const [geocoding, setGeocoding] = useState(false);
+
+
+  const form = useForm<HeaderFormData>({
+    resolver: zodResolver(headerSchema),
+    mode: "onSubmit",
+    reValidateMode: "onChange",
     defaultValues: {
       personType: "natural",
-      selectedSectors: [],
       status: "active",
-      // lat/lng se setean al hacer clic en el mapa
     },
   });
 
   const departmentId = form.watch("departmentId");
   const municipalityId = form.watch("municipalityId");
   const localityId = form.watch("localityId");
+  const customLocalityName = form.watch("customLocalityName");
+  const zone = form.watch("zone");
 
-  // Función para obtener aldeas rurales del JSON por municipio usando geocode
-  const getRuralAldeas = (municipalityGeocode: string) => {
-    if (!municipalityGeocode || selectedZone !== "rural") return [];
-    
-    // Normalizar geocode removiendo ceros a la izquierda para mapear al JSON
-    // DB: "0101" -> JSON: "101"
-    const normalizedGeocode = municipalityGeocode.replace(/^0+/, '') || '0';
-    
-    const aldeasForMunicipality = aldeasData[normalizedGeocode as keyof typeof aldeasData];
-    if (!aldeasForMunicipality) {
-      return [];
-    }
-    return aldeasForMunicipality.aldeas.map(aldea => ({
-      id: aldea.name, // Usar el nombre como ID para las aldeas
-      name: aldea.name,
-      area: "rural" as const,
-      municipalityId: municipalityId,
-      latitude: null,
-      longitude: null
-    }));
-  };
-
-  // Combinar localidades urbanas con aldeas rurales
-  const getAllLocalitiesForZone = () => {
-    if (selectedZone === "rural") {
-      // Construir el geocode completo: departamento + municipio
-      const selectedDepartment = departments.find(d => d.id === departmentId);
-      const selectedMunicipality = municipalities.find(m => m.id === municipalityId);
-      
-      if (!selectedDepartment || !selectedMunicipality) return [];
-      
-      // Geocode completo = departmentGeocode + municipalityGeocode
-      // Ej: ATLÁNTIDA("01") + LA CEIBA("01") = "0101"
-      const fullMunicipalityGeocode = selectedDepartment.geocode + selectedMunicipality.geocode;
-      
-      console.log('🏗️ Building full geocode:', { 
-        dept: selectedDepartment.geocode, 
-        muni: selectedMunicipality.geocode, 
-        full: fullMunicipalityGeocode 
-      });
-      
-      const ruralAldeas = getRuralAldeas(fullMunicipalityGeocode);
-      // Agregar opción "Otro" al final
-      ruralAldeas.push({
-        id: "otro",
-        name: "Otro (escribir manualmente)",
-        area: "rural" as const,
-        municipalityId: municipalityId,
-        latitude: null,
-        longitude: null
-      });
-      return ruralAldeas;
-    } else if (selectedZone === "urbano") {
-      return localities.filter(l => l.area === "urbano" && l.municipalityId === municipalityId);
-    }
-    return [];
-  };
-
-  // === Data queries ===
   const { data: departments = [] } = useQuery<Department[]>({
-    queryKey: ["/api/departments"],
+    queryKey: ["departments"],
+    queryFn: async () => {
+      const r = await fetch("/api/departments", { credentials: "include" });
+      if (!r.ok) throw new Error("Error cargando departamentos");
+      return r.json();
+    },
+    staleTime: 1000 * 60 * 10,
   });
 
-  // IMPORTANTE: usar rutas con parámetro para el defaultQueryFn
-  const { data: municipalities = [] } = useQuery<Municipality[]>({
-    queryKey: departmentId ? [`/api/municipalities/${departmentId}`] : [],
+  const {
+    data: municipalities = [],
+    isLoading: loadingMunis,
+  } = useQuery<Municipality[]>({
+    queryKey: ["municipalities", departmentId ?? null],
     enabled: !!departmentId,
+    queryFn: async () => {
+      const r = await fetch(`/api/municipalities/${departmentId}`, { credentials: "include" });
+      if (!r.ok) throw new Error("Error cargando municipios");
+      return r.json();
+    },
+    staleTime: 1000 * 60 * 10,
   });
 
-  const { data: localities = [] } = useQuery<Locality[]>({
-    queryKey: municipalityId ? [`/api/localities/${municipalityId}`] : [],
+  const {
+    data: dbLocalities = [],
+    isLoading: loadingLocs,
+  } = useQuery<Locality[]>({
+    queryKey: ["localities", municipalityId ?? null],
     enabled: !!municipalityId,
+    queryFn: async () => {
+      const r = await fetch(`/api/localities/${municipalityId}`, { credentials: "include" });
+      if (!r.ok) throw new Error("Error cargando localidades");
+      return r.json();
+    },
+    staleTime: 1000 * 60 * 10,
   });
 
-  const { data: sectors = [] } = useQuery<any[]>({
-    queryKey: ["/api/sectors"],
-  });
-
-  // Cargar todos los sectores para mostrarlos como botones
   const { data: allSectors = [] } = useQuery<any[]>({
     queryKey: ["/api/sectors"],
+    queryFn: async () => {
+      const r = await fetch("/api/sectors", { credentials: "include" });
+      if (!r.ok) throw new Error("Error cargando sectores");
+      return r.json();
+    },
+    staleTime: 1000 * 60 * 10,
   });
 
-  // === Mutación para crear consulta ===
-  const createConsultationMutation = useMutation({
-    mutationFn: async (data: ConsultationFormData) => {
-      const res = await apiRequest("POST", "/api/consultations", data);
+  const ruralAldeasForMunicipality = useMemo(() => {
+    if (!departmentId || !municipalityId || selectedZone !== "rural") return [];
+    const dept = departments.find((d) => d.id === departmentId);
+    const muni = municipalities.find((m) => m.id === municipalityId);
+    if (!dept || !muni) return [];
+
+    const key = `${dept.geocode}${muni.geocode}`;
+    const entry = (aldeasData as any)[key];
+    if (!entry) return [];
+
+    return (entry.aldeas as Array<{ name: string }>).map((a) => ({
+      id: a.name,
+      name: a.name,
+      area: "rural" as const,
+      municipalityId,
+      latitude: null,
+      longitude: null,
+    })) as Locality[];
+  }, [departmentId, municipalityId, selectedZone, departments, municipalities]);
+
+  const localityOptions: Locality[] = useMemo(() => {
+    if (!municipalityId || !zone) return [];
+    const base =
+      zone === "urbano"
+        ? dbLocalities.filter((l) => l.area === "urbano" && l.municipalityId === municipalityId)
+        : ruralAldeasForMunicipality;
+
+    return [
+      ...base,
+      { id: "otro", name: "Otro (escribir manualmente)", area: zone, municipalityId } as any,
+    ];
+  }, [municipalityId, zone, dbLocalities, ruralAldeasForMunicipality]);
+
+  useEffect(() => {
+    if (localityId !== "otro") return;
+    if (!customLocalityName || !departmentId || !municipalityId) return;
+
+    const dept = departments.find((d) => d.id === departmentId);
+    const muni = municipalities.find((m) => m.id === municipalityId);
+    if (!dept || !muni) return;
+
+    const q = `${customLocalityName}, ${muni.name}, ${dept.name}, Honduras`;
+    setGeocoding(true);
+
+    const t = setTimeout(async () => {
+      try {
+        const url =
+          "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=hn&q=" +
+          encodeURIComponent(q);
+        const res = await fetch(url, { headers: { "Accept-Language": "es" } });
+        if (res.ok) {
+          const data = (await res.json()) as Array<{ lat: string; lon: string }>;
+          if (data?.[0]) {
+            setMapLat(data[0].lat);
+            setMapLng(data[0].lon);
+            form.setValue("latitude", data[0].lat);
+            form.setValue("longitude", data[0].lon);
+          }
+        }
+      } catch {
+      } finally {
+        setGeocoding(false);
+      }
+    }, 700);
+
+    return () => clearTimeout(t);
+  }, [localityId, customLocalityName, departmentId, municipalityId, departments, municipalities, form]);
+
+  const mapCenterLat = useMemo(() => {
+    if (mapLat) return mapLat;
+    const selLoc =
+      typeof localityId === "number" ? dbLocalities.find((l) => l.id === localityId) : undefined;
+    if (selLoc?.latitude) return selLoc.latitude;
+    const selMuni = municipalities.find((m) => m.id === municipalityId);
+    if (selMuni?.latitude) return selMuni.latitude;
+    const selDept = departments.find((d) => d.id === departmentId);
+    if (selDept?.latitude) return selDept.latitude;
+    return undefined;
+  }, [mapLat, localityId, dbLocalities, municipalities, municipalityId, departments, departmentId]);
+
+  const mapCenterLng = useMemo(() => {
+    if (mapLng) return mapLng;
+    const selLoc =
+      typeof localityId === "number" ? dbLocalities.find((l) => l.id === localityId) : undefined;
+    if (selLoc?.longitude) return selLoc.longitude;
+    const selMuni = municipalities.find((m) => m.id === municipalityId);
+    if (selMuni?.longitude) return selMuni.longitude;
+    const selDept = departments.find((d) => d.id === departmentId);
+    if (selDept?.longitude) return selDept.longitude;
+    return undefined;
+  }, [mapLng, localityId, dbLocalities, municipalities, municipalityId, departments, departmentId]);
+
+  const createMultiMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      const res = await apiRequest("POST", "/api/consultations/multi", payload);
       if (!res.ok) {
         const msg = await res.text().catch(() => "");
-        throw new Error(msg || "Error al crear consulta");
+        throw new Error(msg || "Error al crear consultas");
       }
-      return await res.json();
+      return res.json();
     },
-    onSuccess: (result) => {
-      console.log("✅ Consulta exitosa:", result);
+    onSuccess: () => {
       toast({
         title: "¡Consulta enviada exitosamente!",
-        description: "Tu consulta ha sido registrada. Gracias por tu participación.",
+        description: "Gracias por tu participación.",
       });
       form.reset();
       setSelectedSectors([]);
+      setDetailsBySector({});
       setPersonType("natural");
-      setSelectedImages([]);
-      setSelectedZone("urbano");
+      setSelectedZone("");
+      setMapLat(undefined);
+      setMapLng(undefined);
       queryClient.invalidateQueries({ queryKey: ["/api/consultations"] });
     },
     onError: () => {
       toast({
-        title: "Error al enviar consulta",
-        description: "Hubo un problema al enviar tu consulta. Revisa los campos requeridos.",
+        title: "Faltan datos",
+        description: "Revisa la ubicación y completa mensaje + foto por cada sector.",
         variant: "destructive",
       });
     },
   });
 
-  const onSubmit = async (data: ConsultationFormData) => {
-    let imageUrls: string[] = [];
+  const onInvalid = () => {
+    toast({
+      title: "Faltan datos",
+      description: "Revisa la ubicación y completa mensaje + foto por cada sector.",
+      variant: "destructive",
+    });
+  };
 
-    // Subida de imágenes (opcional)
-    if (selectedImages.length > 0) {
-      const formData = new FormData();
-      selectedImages.forEach((file) => formData.append("images", file));
-      try {
-        const uploadRes = await fetch("/api/upload-images", {
-          method: "POST",
-          body: formData,
-        });
-        if (!uploadRes.ok) throw new Error("Error al subir imágenes");
-        const uploadData = await uploadRes.json();
-        imageUrls = uploadData.imageUrls;
-      } catch {
+  const onSubmit: SubmitHandler<HeaderFormData> = async (data) => {
+    if (selectedSectors.length === 0) {
+      toast({
+        title: "Faltan datos",
+        description: "Selecciona al menos un sector.",
+        variant: "destructive",
+      });
+      return;
+    }
+    for (const sec of selectedSectors) {
+      const det = detailsBySector[sec];
+      if (!det || !det.message?.trim() || !det.files?.length) {
         toast({
-          title: "Error al subir imágenes",
-          description: "No se pudieron subir las imágenes. Envía la consulta sin ellas o inténtalo de nuevo.",
+          title: "Faltan datos",
+          description: `Completa mensaje y al menos 1 foto para ${sec}.`,
           variant: "destructive",
         });
         return;
       }
     }
 
-    createConsultationMutation.mutate({
-      ...data,
-      selectedSectors,
-      images: imageUrls,
-    });
-  };
-
-  const handleSectorAdd = (sectorName: string) => {
-    if (!selectedSectors.includes(sectorName)) {
-      setSelectedSectors((prev) => [...prev, sectorName]);
+    const items: Array<{ sector: string; message: string; images: string[] }> = [];
+    for (const sec of selectedSectors) {
+      const det = detailsBySector[sec];
+      const fd = new FormData();
+      det.files.forEach((f) => fd.append("images", f));
+      let imageUrls: string[] = [];
+      try {
+        const up = await fetch("/api/upload-images", { method: "POST", body: fd });
+        if (!up.ok) throw new Error();
+        const payload = await up.json();
+        imageUrls = payload.imageUrls ?? [];
+      } catch {
+        toast({
+          title: "Error al subir imágenes",
+          description: `No se pudieron subir las fotos de ${sec}.`,
+          variant: "destructive",
+        });
+        return;
+      }
+      items.push({ sector: sec, message: det.message.trim(), images: imageUrls });
     }
+
+    const header = {
+      ...data,
+      personType,
+      latitude: mapLat ?? data.latitude,
+      longitude: mapLng ?? data.longitude,
+    };
+
+    createMultiMutation.mutate({ header, items });
   };
 
-  const handleSectorRemove = (sectorName: string) => {
-    setSelectedSectors((prev) => prev.filter((s) => s !== sectorName));
-  };
-
-  // Manejar cambios de tipo de persona (limpieza de campos)
   useEffect(() => {
     form.setValue("personType", personType);
     if (personType === "anonimo") {
@@ -255,7 +432,7 @@ function ConsultationForm() {
       form.setValue("legalRepresentative", undefined);
       form.setValue("companyContact", undefined);
     }
-  }, [personType, form]);
+  }, [personType]);
 
   return (
     <div className="consultation-container">
@@ -270,74 +447,48 @@ function ConsultationForm() {
               </CardHeader>
 
               <CardContent>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  {/* ============== 1. TIPO DE PERSONA ============== */}
+                <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} noValidate className="space-y-6">
+                  {}
                   <Card className="form-section-card">
                     <CardHeader className="form-section-header">
                       <h3 className="form-section-title">1. Tipo de Persona</h3>
-                      <p className="form-section-description">
-                        Seleccione el tipo de persona que mejor lo describa
-                      </p>
+                      <p className="form-section-description">Seleccione el tipo de persona que mejor lo describa</p>
                     </CardHeader>
                     <CardContent>
                       <div className="row g-3 mb-4">
-                        {/* Natural */}
+                        {}
                         <div className="col-md-4">
                           <div
                             className={`person-type-card ${personType === "natural" ? "selected" : ""}`}
                             onClick={() => setPersonType("natural")}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                setPersonType("natural");
-                              }
-                            }}
                             role="button"
                             tabIndex={0}
-                            data-testid="card-natural"
-                            aria-label="Seleccionar Persona Natural"
                           >
                             <div className="person-type-content">
                               <h6 className="mb-0 text-dark-emphasis">Persona Natural</h6>
                             </div>
                           </div>
                         </div>
-                        {/* Jurídica */}
+                        {}
                         <div className="col-md-4">
                           <div
                             className={`person-type-card ${personType === "juridica" ? "selected" : ""}`}
                             onClick={() => setPersonType("juridica")}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                setPersonType("juridica");
-                              }
-                            }}
                             role="button"
                             tabIndex={0}
-                            data-testid="card-juridica"
-                            aria-label="Seleccionar Persona Jurídica"
                           >
                             <div className="person-type-content">
                               <h6 className="mb-0 text-dark-emphasis">Persona Jurídica</h6>
                             </div>
                           </div>
                         </div>
-                        {/* Anónimo */}
+                        {}
                         <div className="col-md-4">
                           <div
                             className={`person-type-card ${personType === "anonimo" ? "selected" : ""}`}
                             onClick={() => setPersonType("anonimo")}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                setPersonType("anonimo");
-                              }
-                            }}
                             role="button"
                             tabIndex={0}
-                            data-testid="card-anonimo"
-                            aria-label="Seleccionar Anónimo"
                           >
                             <div className="person-type-content">
                               <h6 className="mb-0 text-dark-emphasis">Anónimo</h6>
@@ -346,243 +497,276 @@ function ConsultationForm() {
                         </div>
                       </div>
 
-                      {/* Datos persona natural */}
+                      {}
                       {personType === "natural" && (
                         <div className="conditional-fields mt-4">
                           <h6 className="mb-3 text-muted">Información de Persona Natural</h6>
                           <div className="row mb-3">
                             <div className="col-md-6">
-                              <Label htmlFor="firstName">Primer Nombre *</Label>
+                              <Label htmlFor="firstName">Primer Nombre</Label>
                               <Input id="firstName" {...form.register("firstName")} placeholder="Ingrese su primer nombre" />
-                              {form.formState.errors.firstName && (
-                                <div className="text-danger small">{form.formState.errors.firstName.message}</div>
-                              )}
                             </div>
                             <div className="col-md-6">
-                              <Label htmlFor="lastName">Apellido *</Label>
+                              <Label htmlFor="lastName">Apellido</Label>
                               <Input id="lastName" {...form.register("lastName")} placeholder="Ingrese su apellido" />
-                              {form.formState.errors.lastName && (
-                                <div className="text-danger small">{form.formState.errors.lastName.message}</div>
-                              )}
                             </div>
                           </div>
                           <div className="row mb-3">
                             <div className="col-md-6">
-                              <Label htmlFor="identity">Número de Identidad *</Label>
+                              <Label htmlFor="identity">Número de Identidad</Label>
                               <Input id="identity" placeholder="Ingrese su número de identidad" {...form.register("identity")} />
-                              {form.formState.errors.identity && (
-                                <div className="text-danger small">{form.formState.errors.identity.message}</div>
-                              )}
                             </div>
                             <div className="col-md-6">
-                              <Label htmlFor="email">Correo Electrónico *</Label>
+                              <Label htmlFor="email">Correo Electrónico</Label>
                               <Input id="email" type="email" {...form.register("email")} placeholder="Ingrese su correo" />
-                              {form.formState.errors.email && (
-                                <div className="text-danger small">{form.formState.errors.email.message}</div>
-                              )}
                             </div>
                           </div>
                         </div>
                       )}
 
-                      {/* Datos persona jurídica */}
+                      {/* Datos JURÍDICA */}
                       {personType === "juridica" && (
                         <div className="conditional-fields mt-4">
                           <h6 className="mb-3 text-muted">Información de Persona Jurídica</h6>
                           <div className="row mb-3">
                             <div className="col-md-6">
-                              <Label htmlFor="companyName">Nombre de la Empresa *</Label>
+                              <Label htmlFor="companyName">Nombre de la Empresa</Label>
                               <Input id="companyName" {...form.register("companyName")} placeholder="Nombre de la empresa" />
-                              {form.formState.errors.companyName && (
-                                <div className="text-danger small">{form.formState.errors.companyName.message}</div>
-                              )}
                             </div>
                             <div className="col-md-6">
-                              <Label htmlFor="rtn">RTN *</Label>
+                              <Label htmlFor="rtn">RTN</Label>
                               <Input id="rtn" {...form.register("rtn")} placeholder="RTN" />
-                              {form.formState.errors.rtn && (
-                                <div className="text-danger small">{form.formState.errors.rtn.message}</div>
-                              )}
                             </div>
                           </div>
                           <div className="row mb-3">
                             <div className="col-md-6">
-                              <Label htmlFor="legalRepresentative">Representante Legal *</Label>
+                              <Label htmlFor="legalRepresentative">Representante Legal</Label>
                               <Input id="legalRepresentative" {...form.register("legalRepresentative")} placeholder="Nombre del representante" />
-                              {form.formState.errors.legalRepresentative && (
-                                <div className="text-danger small">{form.formState.errors.legalRepresentative.message}</div>
-                              )}
                             </div>
                             <div className="col-md-6">
-                              <Label htmlFor="companyContact">Correo/Teléfono *</Label>
+                              <Label htmlFor="companyContact">Correo/Teléfono</Label>
                               <Input id="companyContact" {...form.register("companyContact")} placeholder="Correo o teléfono" />
-                              {form.formState.errors.companyContact && (
-                                <div className="text-danger small">{form.formState.errors.companyContact.message}</div>
-                              )}
                             </div>
                           </div>
                         </div>
                       )}
 
-                      {/* Contacto opcional */}
-                      {personType !== "anonimo" && (
-                        <div className="mt-4">
-                          <h6 className="mb-3 text-muted">Información de Contacto (Opcional)</h6>
-                          <div className="row mb-3">
-                            <div className="col-md-4">
-                              <Label htmlFor="mobile">Celular</Label>
-                              <Input id="mobile" placeholder="Celular" {...form.register("mobile")} />
-                            </div>
-                            <div className="col-md-4">
-                              <Label htmlFor="phone">Teléfono Fijo</Label>
-                              <Input id="phone" placeholder="Teléfono fijo" {...form.register("phone")} />
-                            </div>
-                            <div className="col-md-4">
-                              <Label htmlFor="altEmail">Correo Alternativo</Label>
-                              <Input id="altEmail" type="email" placeholder="Correo alternativo" {...form.register("altEmail")} />
-                            </div>
+                      {}
+                      <div className="mt-4">
+                        <h6 className="mb-3 text-muted">
+                          Información de Contacto{" "}
+                          {personType === "anonimo" ? "(requerida para anónimo)" : "(opcional)"}
+                        </h6>
+                        <div className="row mb-3">
+                          <div className="col-md-4">
+                            <Label htmlFor="mobile">Celular</Label>
+                            <Input id="mobile" placeholder="Celular" {...form.register("mobile")} />
+                          </div>
+                          <div className="col-md-4">
+                            <Label htmlFor="phone">Teléfono Fijo</Label>
+                            <Input id="phone" placeholder="Teléfono fijo" {...form.register("phone")} />
+                          </div>
+                          <div className="col-md-4">
+                            <Label htmlFor="altEmail">Correo</Label>
+                            <Input id="altEmail" type="email" placeholder="Correo" {...form.register("altEmail")} />
                           </div>
                         </div>
-                      )}
+                      </div>
                     </CardContent>
                   </Card>
 
-                  {/* ============== 2. UBICACIÓN ============== */}
+                  {}
                   <Card className="form-section-card">
                     <CardHeader className="form-section-header">
                       <h3 className="form-section-title">2. Ubicación</h3>
-                      <p className="form-section-description">
-                        Seleccione su ubicación geográfica para una mejor atención
-                      </p>
+                      <p className="form-section-description">Seleccione su ubicación geográfica para una mejor atención</p>
                     </CardHeader>
+
                     <CardContent>
-                      {/* Departamento */}
-                      <div className="location-step mb-3">
-                        <Label className="location-label">1. Departamento *</Label>
-                        <Popover open={openDepartment} onOpenChange={setOpenDepartment}>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              aria-expanded={openDepartment}
-                              className="location-select justify-between"
-                              data-testid="select-department"
-                            >
-                              {departmentId
-                                ? departments.find((d) => d.id === departmentId)?.name
-                                : "Seleccione su departamento..."}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-full p-0 consultation-dropdown" side="bottom" align="start" sideOffset={4} collisionPadding={16}>
-                            <Command>
-                              <CommandInput placeholder="Buscar departamento..." />
-                              <CommandEmpty>No se encontró el departamento.</CommandEmpty>
-                              <CommandGroup>
-                                {departments.map((dept) => (
-                                  <CommandItem
-                                    key={dept.id}
-                                    value={dept.name}
-                                    onSelect={() => {
-                                      form.setValue("departmentId", dept.id);
-                                      form.setValue("municipalityId", "");
-                                      form.setValue("localityId", "");
-                                      form.setValue("customLocalityName", "");
-                                      setSelectedZone("");
-                                      setShowCustomLocality(false);
-                                      setOpenDepartment(false);
-                                    }}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        departmentId === dept.id ? "opacity-100" : "opacity-0",
-                                      )}
-                                    />
-                                    {dept.name}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                        {form.formState.errors.departmentId && (
-                          <div className="text-danger small mt-1">{form.formState.errors.departmentId.message}</div>
-                        )}
-                      </div>
+                     {}
+<div className="location-step mb-3">
+  <Label className="location-label">1. Departamento *</Label>
 
-                      {/* Municipio */}
-                      <div className="location-step mb-3">
-                        <Label className="location-label">2. Municipio *</Label>
-                        <Popover open={openMunicipality} onOpenChange={setOpenMunicipality}>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              aria-expanded={openMunicipality}
-                              className="location-select justify-between"
-                              data-testid="select-municipality"
-                              disabled={!departmentId}
-                            >
-                              {municipalityId
-                                ? municipalities.find((m) => m.id === municipalityId)?.name
-                                : !departmentId
-                                  ? "Primero seleccione un departamento..."
-                                  : "Seleccione su municipio..."}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-full p-0 consultation-dropdown" side="bottom" align="start" sideOffset={4} collisionPadding={16}>
-                            <Command>
-                              <CommandInput placeholder="Buscar municipio..." />
-                              <CommandEmpty>No se encontró el municipio.</CommandEmpty>
-                              <CommandGroup>
-                                {municipalities.map((muni) => (
-                                  <CommandItem
-                                    key={muni.id}
-                                    value={muni.name}
-                                    onSelect={() => {
-                                      form.setValue("municipalityId", muni.id);
-                                      form.setValue("localityId", "");
-                                      form.setValue("customLocalityName", "");
-                                      setSelectedZone("");
-                                      setShowCustomLocality(false);
-                                      setOpenMunicipality(false);
-                                    }}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        municipalityId === muni.id ? "opacity-100" : "opacity-0",
-                                      )}
-                                    />
-                                    {muni.name}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                        {form.formState.errors.municipalityId && (
-                          <div className="text-danger small mt-1">{form.formState.errors.municipalityId.message}</div>
-                        )}
-                      </div>
+  <Popover
+    open={openDepartment}
+    onOpenChange={(o) => {
+      setOpenDepartment(o);
+      if (o) {
+        setOpenMunicipality(false);
+        setOpenLocality(false);
+        setOpenZone(false);
+      }
+    }}
+  >
+    <PopoverTrigger asChild>
+      <Button
+        variant="outline"
+        role="combobox"
+        aria-expanded={openDepartment}
+        className="location-select justify-between"
+        disabled={departments.length === 0}
+      >
+        {departmentId
+          ? departments.find((d) => d.id === departmentId)?.name
+          : "Seleccione su departamento..."}
+        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+      </Button>
+    </PopoverTrigger>
 
-                      {/* Zona */}
+    <PopoverContent
+      className="w-full p-0 consultation-dropdown z-[9999]"
+      side="bottom"
+      align="start"
+      sideOffset={4}
+      collisionPadding={16}
+    >
+      <Command>
+        <CommandInput placeholder="Buscar departamento..." />
+        <CommandList>
+          <CommandEmpty>No se encontró el departamento.</CommandEmpty>
+          <CommandGroup>
+            {departments.map((dep) => (
+              <CommandItem
+                key={dep.id}
+                value={dep.name}
+                onSelect={() => {
+                  
+                  form.setValue("departmentId", Number(dep.id), { shouldValidate: true });
+                  form.setValue("municipalityId", undefined);
+                  form.setValue("zone", undefined as any);
+                  form.setValue("localityId", undefined);
+                  form.setValue("customLocalityName", undefined);
+                  setSelectedZone("");
+                  setMapLat(undefined);
+                  setMapLng(undefined);
+                  setOpenDepartment(false);
+                }}
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    departmentId === dep.id ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                {dep.name}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    </PopoverContent>
+  </Popover>
+
+  {form.formState.errors.departmentId && (
+    <div className="text-danger small mt-1">
+      {form.formState.errors.departmentId.message as string}
+    </div>
+  )}
+</div>
+                     {}
+<div className="location-step mb-3">
+  <Label className="location-label">2. Municipio *</Label>
+
+  <Popover
+    open={openMunicipality}
+    onOpenChange={(o) => {
+      setOpenMunicipality(o);
+      if (o) {
+        setOpenDepartment(false);
+        setOpenLocality(false);
+        setOpenZone(false);
+      }
+    }}
+  >
+    <PopoverTrigger asChild>
+      <Button
+        variant="outline"
+        role="combobox"
+        aria-expanded={openMunicipality}
+        className="location-select justify-between"
+        disabled={!departmentId || loadingMunis}
+      >
+        {municipalityId
+          ? municipalities.find((m) => m.id === municipalityId)?.name
+          : !departmentId
+            ? "Primero seleccione un departamento..."
+            : "Seleccione su municipio..."}
+        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+      </Button>
+    </PopoverTrigger>
+
+    <PopoverContent
+      className="w-full p-0 consultation-dropdown z-[9999]"
+      side="bottom"
+      align="start"
+      sideOffset={4}
+      collisionPadding={16}
+    >
+      <Command>
+        <CommandInput placeholder="Buscar municipio..." />
+        <CommandList>
+          <CommandEmpty>No se encontró el municipio.</CommandEmpty>
+          <CommandGroup>
+            {municipalities.map((muni) => (
+              <CommandItem
+                key={muni.id}
+                value={muni.name}
+                onSelect={() => {
+                  form.setValue("municipalityId", Number(muni.id), { shouldValidate: true });
+                  form.setValue("zone", undefined as any);
+                  form.setValue("localityId", undefined);
+                  form.setValue("customLocalityName", undefined);
+                  setSelectedZone("");
+                  setOpenMunicipality(false);
+                  setMapLat(undefined);
+                  setMapLng(undefined);
+                }}
+              >
+                <Check className={cn("mr-2 h-4 w-4", municipalityId === muni.id ? "opacity-100" : "opacity-0")} />
+                {muni.name}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    </PopoverContent>
+  </Popover>
+
+  {form.formState.errors.municipalityId && (
+    <div className="text-danger small mt-1">
+      {form.formState.errors.municipalityId.message as string}
+    </div>
+  )}
+</div>
+
+                      {}
                       <div className="location-step mb-3">
                         <Label className="location-label">3. Zona *</Label>
+
                         <Select
+                          open={openZone}
+                          onOpenChange={(o) => {
+                            setOpenZone(o);
+                            if (o) {
+                              setOpenDepartment(false);
+                              setOpenMunicipality(false);
+                              setOpenLocality(false);
+                            }
+                          }}
                           onValueChange={(value) => {
-                            setSelectedZone(value);
-                            form.setValue("zone", value); // Setear el campo zone
-                            form.setValue("localityId", "");
-                            form.setValue("customLocalityName", "");
-                            setShowCustomLocality(false);
+                            const v = value as "urbano" | "rural";
+                            setSelectedZone(v);
+                            form.setValue("zone", v, { shouldValidate: true });
+                            form.setValue("localityId", undefined);
+                            form.setValue("customLocalityName", undefined);
+                            setMapLat(undefined);
+                            setMapLng(undefined);
+                            setOpenZone(false); 
                           }}
                           value={selectedZone}
                           disabled={!municipalityId}
                         >
-                          <SelectTrigger className="location-select" data-testid="select-zone">
+                          <SelectTrigger className="location-select">
                             <SelectValue
                               placeholder={
                                 !municipalityId
@@ -596,234 +780,217 @@ function ConsultationForm() {
                             <SelectItem value="rural">Rural</SelectItem>
                           </SelectContent>
                         </Select>
-                      </div>
 
-                      {/* Localidad + Buscador */}
-                      <div className="location-step mb-3">
-                        <Label className="location-label">
-                          4. {selectedZone === "urbano"
-                            ? "Colonia o Barrio"
-                            : selectedZone === "rural"
-                              ? "Aldea o Caserío"
-                              : "Localidad"} *
-                        </Label>
-                        <Popover open={localitySearchOpen} onOpenChange={setLocalitySearchOpen}>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              aria-expanded={localitySearchOpen}
-                              className="w-full justify-between location-select"
-                              data-testid="select-locality"
-                              disabled={!selectedZone}
-                            >
-                              {(() => {
-                                if (!selectedZone) return "Primero seleccione un tipo de zona...";
-                                if (selectedZone === "rural") {
-                                  const customName = form.watch("customLocalityName");
-                                  if (customName) return customName;
-                                  return "Busque su aldea o caserío...";
-                                } else {
-                                  const localityId = form.watch("localityId");
-                                  if (localityId) {
-                                    return getAllLocalitiesForZone().find((l) => l.id === localityId)?.name;
-                                  }
-                                  return "Busque su colonia o barrio...";
-                                }
-                              })()}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-full p-0 consultation-dropdown" side="bottom" align="start" sideOffset={4} collisionPadding={16}>
-                            <Command>
-                              <CommandInput
-                                placeholder={selectedZone === "urbano" ? "Buscar colonia o barrio..." : "Buscar aldea o caserío..."}
-                                value={localitySearchValue}
-                                onValueChange={setLocalitySearchValue}
-                              />
-                              <CommandList>
-                                <CommandEmpty>No se encontraron localidades.</CommandEmpty>
-                                <CommandGroup>
-                                  {selectedZone &&
-                                    getAllLocalitiesForZone()
-                                      .filter((l) => l.name.toLowerCase().includes(localitySearchValue.toLowerCase()))
-                                      .map((locality) => (
-                                        <CommandItem
-                                          key={locality.id}
-                                          value={locality.name}
-                                          onSelect={() => {
-                                            if (locality.id === "otro") {
-                                              // Opción "Otro" - permitir nombre personalizado
-                                              form.setValue("localityId", "");
-                                              form.setValue("customLocalityName", "");
-                                              setShowCustomLocality(true);
-                                            } else if (selectedZone === "rural") {
-                                              // Aldea rural - usar nombre en customLocalityName
-                                              form.setValue("localityId", "");
-                                              form.setValue("customLocalityName", locality.name);
-                                              setShowCustomLocality(false);
-                                            } else {
-                                              // Localidad urbana real de DB - usar ID real
-                                              form.setValue("localityId", locality.id);
-                                              form.setValue("customLocalityName", "");
-                                              setShowCustomLocality(false);
-                                            }
-                                            setLocalitySearchOpen(false);
-                                            setLocalitySearchValue("");
-                                          }}
-                                        >
-                                          <Check
-                                            className={`mr-2 h-4 w-4 ${
-                                              selectedZone === "rural" 
-                                                ? (locality.id === "otro" && showCustomLocality) || 
-                                                  (locality.id !== "otro" && form.watch("customLocalityName") === locality.name)
-                                                  ? "opacity-100" : "opacity-0"
-                                                : locality.id === form.watch("localityId") ? "opacity-100" : "opacity-0"
-                                            }`}
-                                          />
-                                          {locality.name}
-                                        </CommandItem>
-                                      ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                        {form.formState.errors.localityId && (
-                          <div className="text-danger small mt-1">{form.formState.errors.localityId.message}</div>
+                        {form.formState.errors.zone && (
+                          <div className="text-danger small mt-1">{form.formState.errors.zone.message as string}</div>
                         )}
                       </div>
 
-                      {/* Campo manual para "Otro" cuando es zona rural */}
-                      {showCustomLocality && (
+                  {}
+{selectedZone && (
+  <div className="location-step mb-3">
+    <Label className="location-label">4. Localidad *</Label>
+
+    <Popover
+      open={openLocality}
+      onOpenChange={(o) => {
+        setOpenLocality(o);
+        if (o) {
+          setOpenDepartment(false);
+          setOpenMunicipality(false);
+          setOpenZone(false);
+        }
+      }}
+    >
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={openLocality}
+          className="location-select justify-between"
+          disabled={!selectedZone || !municipalityId || loadingLocs}
+        >
+          {localityId
+            ? (localityOptions.find((l) => l.id === localityId)?.name) ||
+              (localityId === "otro" ? "Otro (manual)" : String(localityId))
+            : !selectedZone
+              ? "Primero seleccione un tipo de zona..."
+              : "Seleccione su localidad..."}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+
+      <PopoverContent
+        className="w-full p-0 consultation-dropdown z-[9999]"
+        side="bottom"
+        align="start"
+        sideOffset={4}
+        collisionPadding={16}
+      >
+        <Command>
+          <CommandInput placeholder="Buscar localidad..." />
+          <CommandList>
+            <CommandEmpty>No se encontró la localidad.</CommandEmpty>
+            <CommandGroup>
+              {localityOptions.map((loc) => (
+                <CommandItem
+                  key={loc.id}
+                  value={loc.name}
+                  onSelect={() => {
+                    form.setValue("localityId", loc.id as any, { shouldValidate: true });
+                    if (loc.id !== "otro") {
+                      form.setValue("customLocalityName", undefined);
+                      const sel = dbLocalities.find((l) => l.id === loc.id);
+                      if (sel?.latitude && sel?.longitude) {
+                        setMapLat(sel.latitude);
+                        setMapLng(sel.longitude);
+                        form.setValue("latitude", sel.latitude);
+                        form.setValue("longitude", sel.longitude);
+                      }
+                    }
+                    setOpenLocality(false);
+                  }}
+                >
+                  <Check className={cn("mr-2 h-4 w-4", localityId === loc.id ? "opacity-100" : "opacity-0")} />
+                  {loc.name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+
+    {form.formState.errors.localityId && (
+      <div className="text-danger small mt-1">
+        {form.formState.errors.localityId.message as string}
+      </div>
+    )}
+  </div>
+)}
+                      
+
+                      {}
+                      {localityId === "otro" && (
                         <div className="location-step mb-3">
-                          <Label htmlFor="customLocalityName">Escriba el nombre de su aldea o caserío *</Label>
+                          <Label htmlFor="customLocalityName">
+                            Escriba el nombre de su colonia/barrio o aldea/caserío * {geocoding && "(buscando ubicación...)"}
+                          </Label>
                           <Input
                             id="customLocalityName"
-                            placeholder="Ingrese el nombre de su aldea o caserío..."
-                            value={form.watch("customLocalityName") || ""}
-                            onChange={(e) => {
-                              form.setValue("customLocalityName", e.target.value);
-                            }}
-                            data-testid="input-custom-locality"
+                            placeholder="Ingrese el nombre..."
+                            value={customLocalityName || ""}
+                            onChange={(e) =>
+                              form.setValue("customLocalityName", e.target.value, { shouldValidate: true })
+                            }
                             className="location-select"
                           />
                           {form.formState.errors.customLocalityName && (
-                            <div className="text-danger small mt-1">{form.formState.errors.customLocalityName.message}</div>
+                            <div className="text-danger small">
+                              {form.formState.errors.customLocalityName.message as string}
+                            </div>
                           )}
                         </div>
                       )}
 
-
-                      {/* ====== MAPA e inputs ocultos ====== */}
+                      {}
                       <div className="mt-4 location-map-container">
                         <LocationMap
-                          latitude={(() => {
-                            // Prioridad: localidad > municipio > departamento
-                            const selectedLocality = localities.find((l) => l.id === form.watch("localityId"));
-                            if (selectedLocality?.latitude) return selectedLocality.latitude;
-                            
-                            const selectedMuni = municipalities.find((m) => m.id === municipalityId);
-                            if (selectedMuni && (selectedMuni as any).latitude) return (selectedMuni as any).latitude;
-                            
-                            const selectedDept = departments.find((d) => d.id === departmentId);
-                            if (selectedDept && (selectedDept as any).latitude) return (selectedDept as any).latitude;
-                            
-                            return undefined;
-                          })()}
-                          longitude={(() => {
-                            // Prioridad: localidad > municipio > departamento
-                            const selectedLocality = localities.find((l) => l.id === form.watch("localityId"));
-                            if (selectedLocality?.longitude) return selectedLocality.longitude;
-                            
-                            const selectedMuni = municipalities.find((m) => m.id === municipalityId);
-                            if (selectedMuni && (selectedMuni as any).longitude) return (selectedMuni as any).longitude;
-                            
-                            const selectedDept = departments.find((d) => d.id === departmentId);
-                            if (selectedDept && (selectedDept as any).longitude) return (selectedDept as any).longitude;
-                            
-                            return undefined;
-                          })()}
+                          latitude={mapCenterLat}
+                          longitude={mapCenterLng}
                           locationName={(() => {
-                            const selectedDept = departments.find((d) => d.id === departmentId);
-                            const selectedMuni = municipalities.find((m) => m.id === municipalityId);
-                            const selectedLocality = localities.find((l) => l.id === form.watch("localityId"));
-                            if (selectedDept && selectedMuni && selectedLocality) {
-                              return `${selectedLocality.name}, ${selectedMuni.name}, ${selectedDept.name}`;
-                            }
+                            const selDept = departments.find((d) => d.id === departmentId);
+                            const selMuni = municipalities.find((m) => m.id === municipalityId);
+                            const selLoc =
+                              typeof localityId === "number"
+                                ? dbLocalities.find((l) => l.id === localityId)
+                                : undefined;
+                            const locName = selLoc?.name || (localityId === "otro" ? customLocalityName : undefined);
+                            if (selDept && selMuni && locName) return `${locName}, ${selMuni.name}, ${selDept.name}`;
                             return undefined;
                           })()}
                           geocode={(() => {
-                            const selectedDept = departments.find((d) => d.id === departmentId);
-                            const selectedMuni = municipalities.find((m) => m.id === municipalityId);
-                            if (selectedDept && selectedMuni) {
-                              return `${selectedDept.geocode}${selectedMuni.geocode}`;
-                            }
+                            const selDept = departments.find((d) => d.id === departmentId);
+                            const selMuni = municipalities.find((m) => m.id === municipalityId);
+                            if (selDept && selMuni) return `${selDept.geocode}${selMuni.geocode}`;
                             return undefined;
                           })()}
-                          onPick={(lat, lng) => {
-                            // Las coordenadas se manejan internamente por el mapa
-                            console.log("Coordenadas seleccionadas:", lat, lng);
+                          onPick={(lat: number | string, lng: number | string) => {
+                            const latStr = String(lat);
+                            const lngStr = String(lng);
+                            setMapLat(latStr);
+                            setMapLng(lngStr);
+                            form.setValue("latitude", latStr);
+                            form.setValue("longitude", lngStr);
                           }}
                         />
-                      </div>
 
+                        {localityId === "otro" && (!mapLat || !mapLng) && (
+                          <div className="mt-2 text-warning small">
+                            Haz click en el mapa para fijar las coordenadas.
+                          </div>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
 
-                  {/* ============== 3. SECTORES ============== */}
+                  {}
                   <Card className="form-section-card">
                     <CardHeader className="form-section-header">
                       <h3 className="form-section-title">3. Sectores de Interés</h3>
-                      <p className="form-section-description">Seleccione los sectores sobre los que desea consultar</p>
+                      <p className="form-section-description">Seleccione los sectores y complete mensaje + fotos para cada uno</p>
                     </CardHeader>
                     <CardContent>
-                      {/* Botones de sectores para seleccionar */}
-                      <div className="sectors-grid">
-                        <p className="text-muted small mb-3">Haga clic en los sectores que le interesen:</p>
-                        <div className="row g-2">
-                          {allSectors.map((sector) => {
-                            const isSelected = selectedSectors.includes(sector.name);
-                            return (
-                              <div key={sector.id} className="col-md-6 col-lg-4">
-                                <Button
-                                  type="button"
-                                  variant={isSelected ? "default" : "outline"}
-                                  className={`w-100 text-start ${isSelected ? 'bg-primary text-white' : 'bg-light'}`}
-                                  onClick={() => {
-                                    if (isSelected) {
-                                      handleSectorRemove(sector.name);
-                                    } else {
-                                      handleSectorAdd(sector.name);
-                                    }
-                                  }}
-                                  data-testid={`button-sector-${sector.name}`}
-                                >
-                                  {isSelected ? (
-                                    <Check className="w-4 h-4 me-2" />
-                                  ) : (
-                                    <Plus className="w-4 h-4 me-2" />
-                                  )}
-                                  {sector.name}
-                                </Button>
-                              </div>
-                            );
-                          })}
-                        </div>
+                      <div className="row g-2">
+                        {allSectors.map((sector) => {
+                          const isSelected = selectedSectors.includes(sector.name);
+                          return (
+                            <div key={sector.id} className="col-md-6 col-lg-4">
+                              <Button
+                                type="button"
+                                variant={isSelected ? "default" : "outline"}
+                                className={`w-100 text-start ${isSelected ? "bg-primary text-white" : "bg-light"}`}
+                                onClick={() => {
+                                  if (isSelected) {
+                                    setSelectedSectors((p) => p.filter((s) => s !== sector.name));
+                                    setDetailsBySector((p) => {
+                                      const c = { ...p };
+                                      delete c[sector.name];
+                                      return c;
+                                    });
+                                  } else {
+                                    setSelectedSectors((p) => [...p, sector.name]);
+                                    setDetailsBySector((p) =>
+                                      p[sector.name] ? p : { ...p, [sector.name]: { message: "", files: [] } }
+                                    );
+                                  }
+                                }}
+                              >
+                                {isSelected ? <Check className="w-4 h-4 me-2" /> : <Plus className="w-4 h-4 me-2" />}
+                                {sector.name}
+                              </Button>
+                            </div>
+                          );
+                        })}
                       </div>
 
-                      {/* Seleccionados */}
                       <div className="mt-3">
                         <small className="text-muted">Sectores seleccionados:</small>
                         <div className="mt-2">
-                          {selectedSectors.map((sector) => (
-                            <Badge key={sector} variant="secondary" className="sector-tag me-1 mb-1" data-testid={`badge-sector-${sector}`}>
-                              {sector}
+                          {selectedSectors.map((s) => (
+                            <Badge key={s} variant="secondary" className="sector-tag me-1 mb-1">
+                              {s}
                               <button
                                 type="button"
                                 className="btn btn-sm btn-link p-0 ms-1"
-                                onClick={() => handleSectorRemove(sector)}
-                                data-testid={`button-removeSector-${sector}`}
+                                onClick={() => {
+                                  setSelectedSectors((p) => p.filter((x) => x !== s));
+                                  setDetailsBySector((p) => {
+                                    const c = { ...p };
+                                    delete c[s];
+                                    return c;
+                                  });
+                                }}
                               >
                                 <X className="w-3 h-3" />
                               </button>
@@ -837,129 +1004,111 @@ function ConsultationForm() {
                     </CardContent>
                   </Card>
 
-                  {/* ============== 4. MENSAJE / FOTOS ============== */}
-                  <Card className="form-section-card">
-                    <CardHeader className="form-section-header">
-                      <h3 className="form-section-title">Comparte tu idea</h3>
-                      <p className="form-section-description">Queremos escuchar tu voz para mejorar Honduras</p>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="mb-4">
-                        <Label htmlFor="message">Mensaje *</Label>
-                        <Textarea
-                          id="message"
-                          rows={5}
-                          placeholder="Ejemplo: En mi barrio necesitamos mejor alumbrado público."
-                          {...form.register("message")}
-                          data-testid="textarea-message"
-                        />
-                        <div className="form-text">Sea específico y constructivo en su mensaje.</div>
-                        {form.formState.errors.message && (
-                          <div className="text-danger small">{form.formState.errors.message.message}</div>
-                        )}
-                      </div>
+                  {}
+                  {selectedSectors.map((sec) => {
+                    const det = detailsBySector[sec] ?? { message: "", files: [] };
+                    return (
+                      <Card key={sec} className="form-section-card">
+                        <CardHeader className="form-section-header">
+                          <h3 className="form-section-title">{sec}</h3>
+                        </CardHeader>
+                        <CardContent>
+                          <Label>Mensaje para {sec} *</Label>
+                          <Textarea
+                            value={det.message}
+                            onChange={(e) =>
+                              setDetailsBySector((p) => ({ ...p, [sec]: { ...det, message: e.target.value } }))
+                            }
+                            placeholder={`Escribe el detalle para ${sec}...`}
+                          />
 
-                      {/* Subida de fotos */}
-                      <div className="mb-4">
-                        <Label className="mb-3 d-block">Fotografías (Opcional)</Label>
-                        <div className="photo-upload-section">
-                          {selectedImages.length < 3 && (
-                            <div className="photo-upload-button mb-3">
-                              <input
-                                type="file"
-                                id="photo-input"
-                                accept="image/*"
-                                multiple
-                                style={{ display: "none" }}
-                                onChange={(e) => {
-                                  const files = Array.from(e.target.files || []);
-                                  const remaining = 3 - selectedImages.length;
-                                  setSelectedImages((prev) => [...prev, ...files.slice(0, remaining)]);
-                                  e.target.value = "";
-                                }}
-                                data-testid="input-photos"
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="w-100 d-flex align-items-center justify-content-center gap-2 py-3"
-                                onClick={() => document.getElementById("photo-input")?.click()}
-                                data-testid="button-uploadPhotos"
-                              >
-                                <Upload className="w-5 h-5" />
-                                Subir fotografías ({selectedImages.length}/3)
-                              </Button>
-                              <div className="form-text mt-1">Máximo 3 fotografías.</div>
-                            </div>
-                          )}
+                          <div className="mt-3">
+                            <Label>Fotografías para {sec} (mínimo 1)</Label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              style={{ display: "none" }}
+                              id={`file-${sec}`}
+                              onChange={(e) => {
+                                const files = Array.from(e.target.files || []);
+                                setDetailsBySector((p) => ({
+                                  ...p,
+                                  [sec]: { ...det, files: [...det.files, ...files].slice(0, 6) },
+                                }));
+                                e.currentTarget.value = "";
+                              }}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="mt-2"
+                              onClick={() => document.getElementById(`file-${sec}`)?.click()}
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              Subir fotografías ({det.files.length}/6)
+                            </Button>
 
-                          {selectedImages.length > 0 && (
-                            <div className="selected-photos-grid row g-3">
-                              {selectedImages.map((file, index) => (
-                                <div key={index} className="col-md-4">
-                                  <div className="photo-preview-card position-relative">
-                                    <img
-                                      src={URL.createObjectURL(file)}
-                                      alt={`Fotografía ${index + 1}`}
-                                      className="img-fluid rounded"
-                                      style={{ width: "100%", height: "150px", objectFit: "cover" }}
-                                    />
-                                    <Button
-                                      type="button"
-                                      variant="destructive"
-                                      size="sm"
-                                      className="position-absolute top-0 end-0 m-1"
-                                      onClick={() =>
-                                        setSelectedImages((prev) => prev.filter((_, i) => i !== index))
-                                      }
-                                      data-testid={`button-removePhoto-${index}`}
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </Button>
-                                    <div className="photo-info mt-1">
-                                      <small className="text-muted">
-                                        {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                                      </small>
+                            {det.files.length > 0 && (
+                              <div className="row g-3 mt-2">
+                                {det.files.map((f, i) => (
+                                  <div key={i} className="col-md-4">
+                                    <div className="position-relative">
+                                      <img
+                                        src={URL.createObjectURL(f)}
+                                        alt={`${sec} ${i + 1}`}
+                                        className="img-fluid rounded"
+                                        style={{ width: "100%", height: 150, objectFit: "cover" }}
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="sm"
+                                        className="position-absolute top-0 end-0 m-1"
+                                        onClick={() =>
+                                          setDetailsBySector((p) => ({
+                                            ...p,
+                                            [sec]: { ...det, files: det.files.filter((_, idx) => idx !== i) },
+                                          }))
+                                        }
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                      </Button>
                                     </div>
+                                    <small className="text-muted d-block mt-1">{f.name}</small>
                                   </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
 
-                      {/* Botones */}
-                      <div className="form-buttons-container">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="btn-reset-custom"
-                          onClick={() => {
-                            form.reset();
-                            setSelectedSectors([]);
-                            setPersonType("natural");
-                            setSelectedZone("");
-                            setSelectedImages([]);
-                          }}
-                          data-testid="button-reset"
-                        >
-                          Limpiar Formulario
-                        </Button>
-                        <Button
-                          type="submit"
-                          className="btn-submit-custom"
-                          disabled={createConsultationMutation.isPending}
-                          data-testid="button-submit"
-                        >
-                          Enviar
-                          {createConsultationMutation.isPending && (
-                            <Loader2 className="w-4 h-4 ms-2 animate-spin" />
-                          )}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  {}
+                  <div className="form-buttons-container d-flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="btn-reset-custom"
+                      onClick={() => {
+                        form.reset();
+                        setSelectedSectors([]);
+                        setDetailsBySector({});
+                        setPersonType("natural");
+                        setSelectedZone("");
+                        setMapLat(undefined);
+                        setMapLng(undefined);
+                      }}
+                    >
+                      Limpiar Formulario
+                    </Button>
+                    <Button type="submit" className="btn-submit-custom" disabled={createMultiMutation.isPending}>
+                      Enviar
+                      {createMultiMutation.isPending && <Loader2 className="w-4 h-4 ms-2 animate-spin" />}
+                    </Button>
+                  </div>
                 </form>
               </CardContent>
             </Card>
@@ -969,6 +1118,3 @@ function ConsultationForm() {
     </div>
   );
 }
-
-
-export default ConsultationForm; 

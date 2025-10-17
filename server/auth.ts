@@ -5,205 +5,154 @@ import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 
-// Simplified auth context interface
-interface AuthUser {
-  id: string;
-  username: string;
-  role: string;
-}
+interface AuthUser { id: string; username: string; role: string; }
+declare global { namespace Express { interface Request { user?: AuthUser; } } }
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: AuthUser;
-    }
-  }
-}
-
-// Validate JWT secret at startup
 const JWT_SECRET = (() => {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret) {
-    throw new Error("SESSION_SECRET environment variable is required for JWT authentication");
-  }
-  if (secret.length < 32) {
-    console.warn("WARNING: SESSION_SECRET should be at least 32 characters for security");
-  }
-  return secret;
+  const s = process.env.SESSION_SECRET;
+  if (!s) throw new Error("SESSION_SECRET no está definido");
+  if (s.length < 32) console.warn("WARNING: SESSION_SECRET debería tener >= 32 chars");
+  return s;
 })();
-const JWT_EXPIRES_IN = "7d"; // Extended to 7 days for better UX
+const JWT_EXPIRES_IN = "7d";
 
-// JWT payload type
-interface JwtPayload {
-  id: string;
-  username: string;
-  role: string;
-  iat?: number;
-  exp?: number;
+interface JwtPayload { id: string; username: string; role: string; iat?: number; exp?: number; }
+
+//export async function hashPassword(password: string) { return bcrypt.hash(password, 12); }
+export async function hashPassword(password: string) {
+  const plain = String(password); // ¡no hagas trim/lower al password!
+  // evita re-hashear si por error te mandan un hash ya hecho
+  if (/^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(plain)) {
+    throw new Error("Password parece ya un hash bcrypt. Envía la contraseña en texto plano.");
+  }
+  const hash = await bcrypt.hash(plain, 12);
+  // sanity check: debe ser true siempre
+  if (!(await bcrypt.compare(plain, hash))) {
+    throw new Error("Hash mismatch inesperado al generar.");
+  }
+  return hash;
 }
 
-// bcrypt password hashing
-export async function hashPassword(password: string): Promise<string> {
-  const saltRounds = 12;
-  return await bcrypt.hash(password, saltRounds);
-}
 
-export async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
-  return await bcrypt.compare(supplied, stored);
-}
+export async function comparePasswords(supplied: string, stored: string) { return bcrypt.compare(supplied, stored); }
 
-// JWT functions
 export function generateToken(user: SelectUser): string {
-  return jwt.sign(
-    { 
-      id: user.id, 
-      username: user.username, 
-      role: user.role 
-    },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN }
-  );
+  return jwt.sign({ id: user.id, username: user.username, role: user.rol }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
 export function verifyToken(token: string): JwtPayload | null {
-  try {
-    return jwt.verify(token, JWT_SECRET, {
-      algorithms: ['HS256']
-    }) as JwtPayload;
-  } catch (error) {
-    return null;
-  }
+  try { return jwt.verify(token, JWT_SECRET) as JwtPayload; } catch { return null; }
 }
 
-// Rate limiting for login attempts
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts per window
-  message: {
-    error: "Demasiados intentos de inicio de sesión. Intente nuevamente en 15 minutos."
-  },
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: "Demasiados intentos. Intenta en 15 minutos." },
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true,
 });
 
-// JWT Authentication middleware
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.startsWith('Bearer ') 
-    ? authHeader.slice(7) 
-    : req.cookies?.token;
-
-  if (!token) {
-    return res.status(401).json({ error: "Token de acceso requerido" });
-  }
-
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : req.cookies?.token;
+  if (!token) return res.status(401).json({ error: "Token requerido" });
   const decoded = verifyToken(token);
-  if (!decoded) {
-    return res.status(401).json({ error: "Token inválido o expirado" });
-  }
-
-  // Store minimal auth context
-  req.user = {
-    id: decoded.id,
-    username: decoded.username,
-    role: decoded.role
-  };
-
+  if (!decoded) return res.status(401).json({ error: "Token inválido o expirado" });
+  req.user = { id: decoded.id, username: decoded.username, role: decoded.role };
   next();
 }
 
-// Role-based authorization middleware
 export function requireRole(roles: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return res.status(401).json({ error: "Autenticación requerida" });
-    }
-    
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ error: "No tiene permisos para acceder a este recurso" });
-    }
-    
+    if (!req.user) return res.status(401).json({ error: "Autenticación requerida" });
+    if (!roles.includes(req.user.role)) return res.status(403).json({ error: "Sin permisos" });
     next();
   };
 }
 
 export function setupAuth(app: Express) {
-  // Enable trust proxy for rate limiting
   app.set("trust proxy", 1);
 
-  // Login endpoint with rate limiting
-  app.post("/api/login", loginLimiter, async (req: Request, res: Response) => {
+app.post("/api/login", loginLimiter, async (req, res) => {
+  try {
+    const { username, password } = req.body ?? {};
+    if (typeof username !== "string" || typeof password !== "string") {
+      return res.status(400).json({ error: "Usuario y contraseña son requeridos" });
+    }
+
+    const user = await storage.getUserByUsername(username);
+
+    // ⬇️ LOG de diagnóstico
+    console.log('[login] candidate:', {
+      reqUser: username,
+      foundUser: user?.username,
+      active: user?.active,
+      hashLen: String(user?.password ?? '').length,
+      hashPrefix: String(user?.password ?? '').slice(0, 7), // ej: $2b$12$
+    });
+
+    if (!user) {
+      console.warn(`[login] user not found: ${username}`);
+      return res.status(401).json({ error: "Usuario o contraseña incorrectos" });
+    }
+
+    if (typeof user.password !== "string" || user.password.length < 10 || !/^\$2[aby]\$/.test(user.password)) {
+      console.error("[login] password hash inválido en DB para user id:", user.id);
+      return res.status(500).json({ error: "Configuración de credenciales inválida" });
+    }
+
+    let isValid = false;
     try {
-      const { username, password } = req.body;
+      isValid = await comparePasswords(password, user.password);
+    } catch (e) {
+      console.error("[login] bcrypt.compare error:", e);
+      return res.status(500).json({ error: "Error al validar credenciales" });
+    }
 
-      if (!username || !password) {
-        return res.status(400).json({ error: "Usuario y contraseña son requeridos" });
-      }
+    // ⬇️ LOG de resultado de compare
+    console.log('[login] compare result:', isValid);
 
-      const user = await storage.getUserByUsername(username);
-      if (!user) {
-        return res.status(401).json({ error: "Usuario o contraseña incorrectos" });
-      }
-
-      const isValidPassword = await comparePasswords(password, user.password);
-      if (!isValidPassword) {
-        return res.status(401).json({ error: "Usuario o contraseña incorrectos" });
-      }
+    if (!isValid) {
+      return res.status(401).json({ error: "Usuario o contraseña incorrectos" });
+    }
 
       const token = generateToken(user);
-      
-      // Set HTTP-only cookie for web app
-      res.cookie('token', token, {
+      const isProd = process.env.NODE_ENV === "production";
+      res.cookie("token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'none',
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days to match JWT expiration
+        secure: isProd,
+        sameSite: isProd ? "strict" : "lax",
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
-      // Return user data (without password)
-      const { password: _, ...userWithoutPassword } = user;
+      const { password: _omit, ...userWithoutPassword } = user as any;
       res.json(userWithoutPassword);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
-      res.status(500).json({ error: "Error interno del servidor" });
+      res.status(500).json({ error: "Error interno del servidor", detail: error?.message });
     }
   });
 
-  // Logout endpoint
-  app.post("/api/logout", (req: Request, res: Response) => {
-    res.clearCookie('token', {
+  app.post("/api/logout", (_req, res) => {
+    const isProd = process.env.NODE_ENV === "production";
+    res.clearCookie("token", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'none',
-      path: '/'
+      secure: isProd,
+      sameSite: isProd ? "strict" : "lax",
+      path: "/",
     });
     res.json({ message: "Sesión cerrada exitosamente" });
   });
 
-  // Get current user endpoint (allows unauthenticated access for frontend compatibility)
   app.get("/api/user", (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.startsWith('Bearer ') 
-      ? authHeader.slice(7) 
-      : req.cookies?.token;
-
-    if (!token) {
-      return res.status(401).json({ error: "No authenticated user" });
-    }
-
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : req.cookies?.token;
+    if (!token) return res.status(401).json({ error: "No authenticated user" });
     const decoded = verifyToken(token);
-    if (!decoded) {
-      return res.status(401).json({ error: "Invalid or expired token" });
-    }
-
-    // Return user data without password
-    res.json({
-      id: decoded.id,
-      username: decoded.username,
-      role: decoded.role,
-      createdAt: new Date() // Frontend expects this field
-    });
+    if (!decoded) return res.status(401).json({ error: "Invalid or expired token" });
+    res.json({ id: decoded.id, username: decoded.username, role: decoded.role, createdAt: new Date() });
   });
 }
