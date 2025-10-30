@@ -1,14 +1,11 @@
 @import url('https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css');
 @import url('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css');
 
-/* 2) Tailwind (tus utilidades) */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* =================== THEME VARS =================== */
 :root {
-  /* Honduras Colors */
   --honduras-primary: #1bd1e8;
   --honduras-primary-dark: #17b8cd;
   --honduras-secondary: #88cfe0;
@@ -16,17 +13,14 @@
   --honduras-white: hsl(0, 0%, 100%);
   --honduras-text-dark: hsl(220, 15%, 15%);
 
-  /* Bootstrap overrides */
   --bs-primary: var(--honduras-primary);
   --bs-primary-rgb: 27, 209, 232;
   --bs-link-color: var(--honduras-primary);
   --bs-link-hover-color: var(--honduras-primary-dark);
 
-  /* Placeholders */
   --placeholder-light: hsl(0, 0%, 75%);
   --placeholder-dark: hsl(0, 0%, 50%);
 
-  /* Shadcn tokens */
   --background: var(--honduras-white);
   --foreground: var(--honduras-text-dark);
   --card: var(--honduras-white);
@@ -100,7 +94,6 @@ textarea::placeholder {
   opacity: 1 !important;
 }
 
-/* =============== Botones Bootstrap temáticos =============== */
 .btn-primary {
   background-color: var(--honduras-primary);
   border-color: var(--honduras-primary);
@@ -195,7 +188,6 @@ textarea::placeholder {
   line-height: 1.4;
 }
 
-/* =============== Combobox / Popover (Shadcn/Radix) =============== */
 .consultation-container .location-step,
 .consultation-container .conditional-fields {
   overflow: visible;
@@ -213,7 +205,6 @@ textarea::placeholder {
   max-height: 250px;
   overflow-y: auto;
 }
-/* wrapper que usa Radix para poppers */
 [data-radix-popper-content-wrapper] {
   z-index: 60;
 }
@@ -222,7 +213,6 @@ textarea::placeholder {
   z-index: 1;
 }
 
-/* =============== Tarjetas/selector persona =============== */
 .person-type-card {
   background: #fff;
   border: 2px solid #e9ecef;
@@ -272,7 +262,6 @@ textarea::placeholder {
   }
 }
 
-/* =============== Selector de ubicación =============== */
 .location-label {
   font-weight: 500;
   color: var(--honduras-primary);
@@ -301,7 +290,6 @@ textarea::placeholder {
   height: 250px;
 }
 
-/* =============== Accesibilidad (SOLO con .a11y-on) =============== */
 .a11y-on .accessibility-button-container {
   position: fixed;
   left: 20px;
@@ -366,7 +354,6 @@ textarea::placeholder {
   display: block;
 }
 
-/* Kill switch extra (por si quedan clases sueltas sin .a11y-on) */
 html:not(.a11y-on) .accessibility-visual-guides a,
 html:not(.a11y-on) .accessibility-visual-guides [role="button"],
 html:not(.a11y-on) .accessibility-visual-guides button,
@@ -382,7 +369,6 @@ html:not(.a11y-on) .accessibility-high-contrast {
   filter: none !important;
 }
 
-/* =============== Botones de formulario =============== */
 .form-buttons-container {
   display: flex;
   flex-direction: column;
@@ -448,7 +434,6 @@ html:not(.a11y-on) .accessibility-high-contrast {
   box-shadow: 0 4px 12px rgba(27, 209, 232, 0.2);
 }
 
-/* =============== Otras pequeñas mejoras =============== */
 .sector-tag {
   background: var(--honduras-bg-light);
   border: 1px solid var(--honduras-primary);
@@ -476,7 +461,6 @@ html:not(.a11y-on) .accessibility-high-contrast {
   height: 300px;
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -491,7 +475,6 @@ html:not(.a11y-on) .accessibility-high-contrast {
   background: var(--honduras-primary-dark);
 }
 
-/* =============== Responsive tweaks =============== */
 @media (max-width: 768px) {
   .form-section-card {
     margin-bottom: 16px;
@@ -521,7 +504,7 @@ html:not(.a11y-on) .accessibility-high-contrast {
   }
   .location-select {
     min-height: 48px;
-    font-size: 16px; /* evita zoom iOS */
+    font-size: 16px; 
   }
 }
 
@@ -553,7 +536,6 @@ html:not(.a11y-on) .accessibility-high-contrast {
   }
 }
 
-/* =============== Animaciones pequeñas =============== */
 @keyframes slideInUp {
   from {
     opacity: 0;
@@ -575,7 +557,6 @@ html:not(.a11y-on) .accessibility-high-contrast {
   }
 }
 
-/* =============== Creative title (opcional) =============== */
 .creative-title {
   color: #fff;
   font-weight: 600;
@@ -644,9 +625,7 @@ html:not(.a11y-on) .accessibility-high-contrast {
   }
 }
 
-/* ===================== UI FIXES TOTALES ===================== */
 
-/* Capas z-index unificadas */
 :root {
   --z-navbar: 1020;
   --z-dropdown: 1100;
@@ -658,23 +637,16 @@ html:not(.a11y-on) .accessibility-high-contrast {
 .navbar {
   z-index: var(--z-navbar) !important;
 }
-/* Dropdown menu layering */
 .dropdown-menu {
   z-index: var(--z-dropdown) !important;
 }
 
-/* Radix / Shadcn popovers/comboboxes always on top */
-[data-radix-popper-content-wrapper],
-.consultation-dropdown{
-  z-index: var(--z-popover) !important;
-}
-/* Portals Radix */
+
 body > div[data-radix-portal]{
   position: relative;
   z-index: var(--z-popover) !important;
 }
 
-/* In modals even higher */
 .modal{ z-index: var(--z-modal) !important; }
 .modal-backdrop{ z-index: calc(var(--z-modal) - 10) !important; }
 .modal [data-radix-popper-content-wrapper],
@@ -683,7 +655,6 @@ body > div[data-radix-portal]{
   z-index: calc(var(--z-modal) + 20) !important;
 }
 
-/* Prevent containers from clipping overlays */
 .table-responsive,
 .card,
 .form-section-card,
@@ -694,18 +665,14 @@ body > div[data-radix-portal]{
   overflow: visible !important;
 }
 
-/* Menu actions in tables above */
 .table .dropdown-menu{ z-index: var(--z-dropdown) !important; }
 
-/* Map below popovers */
 .location-map-container{ position: relative; z-index: 1; }
 
-/* Comfortable command lists */
 [cmdk-root]{ max-height: 340px; overflow: hidden; }
 [cmdk-list]{ max-height: 280px; overflow-y: auto; }
 [data-radix-collection-item]{ min-height: 44px; }
 
-/* ===== Accessibility: do not apply filters to overlays ===== */
 .accessibility-high-contrast .modal,
 .accessibility-high-contrast .modal-backdrop,
 .accessibility-high-contrast .dropdown-menu,
@@ -714,38 +681,21 @@ body > div[data-radix-portal]{
   filter: none !important;
 }
 
-/* Kill switch additional if some global filter leaked */
 html.a11y-off, body.a11y-off{ filter: none !important; }
 
-/* (If you have sticky headers) */
-.sticky-top, .navbar.sticky-top{ z-index: var(--z-navbar) !important; }
 
-/* =================== FIN UI FIXES TOTALES =================== */
-
-/* === POPUPS/COMBOS ALWAYS ON TOP === */
 :root { --z-pop: 9999; }
 
-[data-radix-popper-content-wrapper],
-.consultation-dropdown,
-body > div[data-radix-portal],
-[role="listbox"],
-div[cmdk-root],
-div[cmdk-list]{
-  position: relative;
-  z-index: var(--z-pop) !important;
-}
 
-/* === LEAFLET ALWAYS BELOW POPUPS === */
 .leaflet-container,
 .leaflet-pane,
 .leaflet-pane *{
   z-index: 0 !important;
 }
 .leaflet-top, .leaflet-bottom, .leaflet-control{
-  z-index: 10 !important; /* keep + / - buttons usable */
+  z-index: 10 !important; 
 }
 
-/* === PREVENT PARENTS FROM CLIPPING POPUPS === */
 .form-section-card,
 .card,
 .container, .container-fluid,
@@ -753,7 +703,6 @@ div[cmdk-list]{
   overflow: visible !important;
 }
 
-/* Neutralize any ancestor creating a stacking context */
 .form-section-card, .card, .container, .container-fluid, .page, .main{
   position: relative;
   transform: none !important;
@@ -766,7 +715,6 @@ div[cmdk-list]{
   z-index: 1320 !important;
 }
 
-/* Dropdown/Command comfortable on mobile */
 .consultation-dropdown{
   max-width: calc(100vw - 32px);
   max-height: calc(100vh - 32px);
@@ -774,7 +722,6 @@ div[cmdk-list]{
 .consultation-dropdown [cmdk-root]{ max-height: 320px; overflow: hidden; }
 .consultation-dropdown [cmdk-list]{ max-height: 260px; overflow-y: auto; }
 
-/* Trigger aspect of the combo (aligned to your theme) */
 .location-label { 
   font-weight: 500; 
   color: var(--honduras-primary, #1bd1e8); 
@@ -800,16 +747,9 @@ div[cmdk-list]{
   box-shadow: 0 0 0 3px rgba(27,209,232,.1); 
 }
 
-/* === popovers SIEMPRE por encima del mapa === */
 :root { --overlay-z: 9999; }
 
-[data-radix-popper-content-wrapper],
-.consultation-dropdown,
-body > div[data-radix-portal] {
-  z-index: var(--overlay-z) !important;
-}
 
-/* evita que contenedores recorten el overlay */
 .form-section-card,
 .card,
 .container,
@@ -818,14 +758,12 @@ body > div[data-radix-portal] {
   overflow: visible !important;
 }
 
-/* Leaflet por debajo y sin interacción cuando hay dropdown */
 .location-map-container .leaflet-container { z-index: 1 !important; }
 .map-muted, .map-muted .leaflet-container {
   pointer-events: none !important;
   filter: brightness(.96);
 }
 
-/* el trigger se ve consistente con tu tema */
 .location-select {
   border: 2px solid #e9f4f7;
   border-radius: 12px;
@@ -836,26 +774,22 @@ body > div[data-radix-portal] {
 }
 .location-select:hover { border-color: var(--honduras-primary, #1bd1e8); }
 
-/* Corrige el solapamiento de los selects sobre el mapa */
 .consultation-dropdown {
   z-index: 9999 !important;
   position: relative !important;
 }
 
-/* Asegura que el mapa no tape los popovers */
 .location-map-container {
   position: relative;
   z-index: 1;
 }
 
-/* Los popovers y selects deben ir siempre encima */
 .popover-content,
 [role="listbox"],
 [role="dialog"] {
   z-index: 10000 !important;
 }
 
-/* También fuerza el fondo y bordes del dropdown */
 .consultation-dropdown .command-list {
   background-color: white;
   border: 1px solid #ddd;
@@ -876,63 +810,53 @@ body > div[data-radix-portal] {
   z-index: 1;
 }
 
-/* Asegura que el mapa no tape los popovers */
 .leaflet-container {
   z-index: 0 !important;
 }
 
-/* Contenido del modal: 100% opaco y bien contrastado */
 .modal-content {
-  background-color: #ffffff !important;   /* sin transparencia */
+  background-color: #ffffff !important;   
   backdrop-filter: none !important;
   box-shadow: 0 24px 48px rgba(0,0,0,.36) !important;
 }
 
-/* Asegura que lo de adentro del modal no herede opacidad accidental */
 .modal, .modal * {
   opacity: 1 !important;
   filter: none !important;
 }
 
-/* Velo de fondo bien oscuro y SIN transparencia visible del contenido detrás */
 .modal-backdrop.show {
-  opacity: 0.85 !important;   /* súbelo a 1 si quieres ocultar TODO el fondo */
+  opacity: 0.85 !important;   
   background-color: #000 !important;
 }
 
-/* Por si usas tarjetas o contenedores dentro del modal */
 .modal .card,
 .modal .form-section-card {
   background-color: #ffffff !important;
 }
-/* Contenido del modal: 100% opaco y bien contrastado */
 .modal-content {
-  background-color: #ffffff !important;   /* sin transparencia */
+  background-color: #ffffff !important;   
   backdrop-filter: none !important;
   box-shadow: 0 24px 48px rgba(0,0,0,.36) !important;
 }
 
-/* Asegura que lo de adentro del modal no herede opacidad accidental */
 .modal, .modal * {
   opacity: 1 !important;
   filter: none !important;
 }
 
-/* Velo de fondo bien oscuro y SIN transparencia visible del contenido detrás */
 .modal-backdrop.show {
-  opacity: 0.85 !important;   /* súbelo a 1 si quieres ocultar TODO el fondo */
+  opacity: 0.85 !important;   
   background-color: #000 !important;
 }
 
-/* Por si usas tarjetas o contenedores dentro del modal */
 .modal .card,
 .modal .form-section-card {
   background-color: #ffffff !important;
 }
-/* ===== Bootstrap Modal: fondo SÓLIDO y velo opaco ===== */
 .modal-backdrop.show {
-  opacity: 1 !important;               /* 1 = sin ver nada del fondo */
-  background-color: #000 !important;   /* velo completamente negro */
+  opacity: 1 !important;               
+  background-color: #000 !important;   
   backdrop-filter: none !important;
 }
 
@@ -942,27 +866,23 @@ body > div[data-radix-portal] {
   filter: none !important;
 }
 
-/* Contenido del modal totalmente sólido */
 .modal-content {
-  /* Forzamos variables de Bootstrap y el color real por si acaso */
   --bs-modal-bg: #ffffff !important;
   --bs-modal-border-color: rgba(0,0,0,.12) !important;
   --bs-modal-border-width: 1px !important;
 
-  background-color: #ffffff !important;   /* sin alpha */
+  background-color: #ffffff !important;   
   background-image: none !important;
   opacity: 1 !important;
   filter: none !important;
   box-shadow: 0 24px 48px rgba(0,0,0,.36) !important;
 }
 
-/* Si dentro del modal hay elementos con clases Tailwind tipo bg-white/70, etc. */
 .modal [class^="bg-white/"],
 .modal [class*=" bg-white/"] {
   background-color: #ffffff !important;
 }
 
-/* Tarjetas/inputs dentro del modal sin transparencias accidentales */
 .modal .card,
 .modal .form-section-card,
 .modal .form-control,
@@ -973,29 +893,22 @@ body > div[data-radix-portal] {
   filter: none !important;
 }
 
-/* Por si algún modo de accesibilidad mete filtros */
 .accessibility-high-contrast .modal,
 .accessibility-high-contrast .modal-backdrop {
   filter: none !important;
 }
 
-/* Asegura jerarquía correcta si usas popovers/combos dentro del modal */
 .modal { z-index: 1300 !important; }
 .modal-backdrop { z-index: 1290 !important; }
-/* ====== SHADCN DIALOG: overlay y contenido 100% sólidos ====== */
 
-/* Velo (overlay) bien oscuro y sin blur */
 body > div[data-radix-portal] [data-state="open"].fixed.inset-0 {
-  /* shadcn usa <DialogOverlay class="fixed inset-0 ..."> */
-  background: rgba(0, 0, 0, 0.9) !important; /* opaco */
+  background: rgba(0, 0, 0, 0.9) !important; 
   backdrop-filter: none !important;
   filter: none !important;
 }
 
-/* Contenido del modal totalmente sólido */
 body > div[data-radix-portal] [role="dialog"] {
-  /* <DialogContent role="dialog"> */
-  background: #ffffff !important;        /* SIN alpha */
+  background: #ffffff !important;       
   opacity: 1 !important;
   backdrop-filter: none !important;
   filter: none !important;
@@ -1003,13 +916,53 @@ body > div[data-radix-portal] [role="dialog"] {
   border: 1px solid rgba(0,0,0,.08) !important;
 }
 
-/* Por si algún elemento interno trae clases tailwind con alpha (bg-white/xx) */
 body > div[data-radix-portal] [role="dialog"] [class^="bg-white/"],
 body > div[data-radix-portal] [role="dialog"] [class*=" bg-white/"] {
   background-color: #ffffff !important;
 }
 
-/* Mantener los popovers/combobox por encima del modal si los usas dentro */
 body > div[data-radix-portal] [data-radix-popper-content-wrapper] {
   z-index: 9999 !important;
+}
+
+[data-radix-dialog-overlay] {
+  background-color: rgba(0, 0, 0, 0.30) !important; 
+  backdrop-filter: none !important;                   
+}
+
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 47.4% 11.2%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47.4% 11.2%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+  }
+}
+
+.dialog-surface {
+  background-color: hsl(var(--background)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+
+#consultas-card,
+#consultas-card .card-header {
+  overflow: visible;
+}
+
+#consultas-card [data-radix-popper-content-wrapper],
+#consultas-card .dropdown-menu {
+  z-index: 10000 !important;
 }

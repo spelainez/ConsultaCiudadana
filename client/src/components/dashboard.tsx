@@ -612,33 +612,37 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
               <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-white mr-2 sm:mr-3" />
               <h4 className="mb-0 font-bold text-white text-sm sm:text-lg">Panel Principal</h4>
             </div>
-            <div className="flex items-center gap-1 sm:gap-3">
+              <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-end">
+
               <Button variant="outline" className="border-white text-white hover:bg-white hover:text-slate-800 bg-transparent" size="sm" onClick={handleRefresh}>
                 <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline ml-1">Actualizar</span>
               </Button>
               <div className="flex items-center text-white">
                 <span className="font-medium mr-1 text-sm sm:text-base hidden sm:inline">{user?.username}</span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-white hover:bg-white hover:bg-opacity-20 p-1">
-                      <User className="w-4 h-4 sm:hidden" />
-                      <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => navigate("/admin/users")}>
-                      <UserPlus className="w-4 h-4 mr-2" />Crear Usuario
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {/* perfil opcional */}}>
-                      <User className="w-4 h-4 mr-2" />Mi Perfil
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
-                      <LogOut className="w-4 h-4 mr-2" />Cerrar Sesión
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {/* Menú usuario */}
+<DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <Button variant="ghost" size="sm" className="text-white hover:bg-white hover:bg-opacity-20 p-1">
+      <User className="w-4 h-4 sm:hidden" />
+      <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
+    </Button>
+  </DropdownMenuTrigger>
+
+  {/* clave */}
+  <DropdownMenuContent className="z-[9999]" sideOffset={6} align="end">
+    <DropdownMenuItem onClick={() => navigate("/admin/users")}>
+      <UserPlus className="w-4 h-4 mr-2" />Crear Usuario
+    </DropdownMenuItem>
+    <DropdownMenuItem onClick={() => {/* perfil */}}>
+      <User className="w-4 h-4 mr-2" />Mi Perfil
+    </DropdownMenuItem>
+    <DropdownMenuSeparator />
+    <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
+      <LogOut className="w-4 h-4 mr-2" />Cerrar Sesión
+    </DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
               </div>
             </div>
           </div>
@@ -650,7 +654,9 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
         <div className="grid grid-cols-1 gap-2 sm:gap-4">
           {/* ===================== Tabla ===================== */}
           <div className="w-full">
-            <Card className="border-0 shadow-sm rounded-lg">
+            <Card className="border-0 shadow-sm rounded-lg overflow-visible">
+
+
               <CardHeader style={{ backgroundColor: '#fff' }} className="border-0 rounded-t-lg px-3 sm:px-6 py-3 sm:py-4">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 sm:mb-4 gap-2 sm:gap-0">
                   <CardTitle className="mb-0 flex items-center text-lg sm:text-xl">
@@ -661,21 +667,38 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
 
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
                   <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="border text-gray-600 hover:bg-gray-50 flex-1 sm:flex-none">
-                          <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                          <span className="hidden sm:inline">Exportar</span>
-                          <span className="sm:hidden">Exp.</span>
-                          <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={handleExportCSV}><Download className="w-4 h-4 mr-2" />CSV</DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleExportExcel}><Download className="w-4 h-4 mr-2" />Excel</DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleExportPDF}><Download className="w-4 h-4 mr-2" /> PDF</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                   
+                   <DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <Button
+      variant="outline"
+      size="sm"
+      className="border text-gray-600 hover:bg-gray-50 flex-1 sm:flex-none"
+    >
+      <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+      <span className="hidden sm:inline">Exportar</span>
+      <span className="sm:hidden">Exp.</span>
+      <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
+    </Button>
+  </DropdownMenuTrigger>
+
+  {}
+  <DropdownMenuContent
+    className="z-[9999]"
+    sideOffset={6}
+    align="start"
+  >
+    <DropdownMenuItem onClick={handleExportCSV}>
+      <Download className="w-4 h-4 mr-2" /> CSV
+    </DropdownMenuItem>
+    <DropdownMenuItem onClick={handleExportExcel}>
+      <Download className="w-4 h-4 mr-2" /> Excel
+    </DropdownMenuItem>
+    <DropdownMenuItem onClick={handleExportPDF}>
+      <Download className="w-4 h-4 mr-2" /> PDF
+    </DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
                   </div>
 
                   {/* Filtros */}

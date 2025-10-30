@@ -1,156 +1,50 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { useForm, type SubmitHandler, type SubmitErrorHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { z } from "zod";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import DepartmentSelect from "@/components/location/DepartmentSelect";
+import {
+  headerSchema,
+  type HeaderFormInputs,
+  type HeaderFormValues,
+} from "@/helpers/validation";
+
+import {
+  getDepartments,
+  getMunicipalities,
+  getLocalities,
+  getSectors,
+  uploadImages,
+  postConsultations,
+  type Department,
+  type Municipality,
+  type Locality,
+} from "@/helpers/api";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, X, Plus, ChevronsUpDown, Trash2, Check, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import LocationMap from "@/components/location-map";
 
-import aldeasData from "@shared/aldeas-honduras.json";
-
-type Department = {
-  id: number;
-  name: string;
-  geocode: string;
-  latitude?: string | null;
-  longitude?: string | null;
-};
-type Municipality = {
-  id: number;
-  name: string;
-  geocode: string;
-  departmentId: number;
-  latitude?: string | null;
-  longitude?: string | null;
-};
-type Locality = {
-  id: number | string;
-  name: string;
-  area: "urbano" | "rural";
-  municipalityId: number;
-  geocode?: string | null;
-  latitude?: string | null;
-  longitude?: string | null;
-};
-
-const headerSchema = z
-  .object({
-    personType: z.enum(["natural", "juridica", "anonimo"]).default("natural"),
-
-    firstName: z.string().trim().optional(),
-    lastName: z.string().trim().optional(),
-    identity: z.string().trim().optional(),
-    email: z.string().email().optional(),
-
-    companyName: z.string().trim().optional(),
-    rtn: z.string().trim().optional(),
-    legalRepresentative: z.string().trim().optional(),
-    companyContact: z.string().trim().optional(),
-
-    mobile: z.string().trim().optional(),
-    phone: z.string().trim().optional(),
-    altEmail: z.string().email().optional(),
-
-    departmentId: z.number().int().positive().optional(),
-    municipalityId: z.number().int().positive().optional(),
-    zone: z.enum(["urbano", "rural"]).optional(),
-    localityId: z.union([z.number().int().positive(), z.literal("otro")]).optional(),
-    customLocalityName: z.string().trim().optional(),
-
-    latitude: z.string().trim().optional(),
-    longitude: z.string().trim().optional(),
-
-    status: z.enum(["active", "archived"]).default("active"),
-  })
-
-  
-  .superRefine((data, ctx) => {
-    if (!data.departmentId) {
-      ctx.addIssue({ code: "custom", path: ["departmentId"], message: "Seleccione un departamento" });
-    }
-    if (!data.municipalityId) {
-      ctx.addIssue({ code: "custom", path: ["municipalityId"], message: "Seleccione un municipio" });
-    }
-    if (!data.zone) {
-      ctx.addIssue({ code: "custom", path: ["zone"], message: "Seleccione la zona" });
-      return;
-    }
-
-    const isOtro = data.localityId === "otro";
-    if (data.zone === "urbano") {
-      if (!isOtro && (!data.localityId || typeof data.localityId !== "number")) {
-        ctx.addIssue({ code: "custom", path: ["localityId"], message: "Seleccione su colonia/barrio" });
-      }
-    } else if (data.zone === "rural") {
-      const hasLocNum = typeof data.localityId === "number" && data.localityId > 0;
-      if (!hasLocNum && !isOtro) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["localityId"],
-          message: "Seleccione su aldea/caserío",
-        });
-      }
-    }
-
-    if (isOtro) {
-      if (!data.customLocalityName?.trim()) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["customLocalityName"],
-          message: "Escriba el nombre de la colonia/barrio o aldea/caserío",
-        });
-      }
-      if (!data.latitude || !data.longitude) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["latitude"],
-          message: "Haz click en el mapa para fijar la ubicación",
-        });
-      }
-    }
-
-    if (data.personType === "anonimo") {
-      if (!data.email && !data.altEmail) {
-        ctx.addIssue({ code: "custom", path: ["altEmail"], message: "Correo requerido para anónimo" });
-      }
-      if (!data.mobile && !data.phone) {
-        ctx.addIssue({ code: "custom", path: ["mobile"], message: "Teléfono/celular requerido para anónimo" });
-      }
-    }
-  });
-
-type HeaderFormData = z.input<typeof headerSchema>;
-
 type SectorDetail = { message: string; files: File[] };
+
+type LocalityOption = {
+  id: number | "otro";
+  name: string;
+  area: HeaderFormInputs["zone"];
+  municipalityId: number;
+};
 
 export default function ConsultationForm() {
   const { toast } = useToast();
@@ -159,7 +53,7 @@ export default function ConsultationForm() {
   const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
   const [selectedZone, setSelectedZone] = useState<"" | "urbano" | "rural">("");
 
-  const [openDepartment, setOpenDepartment] = useState(false); 
+  const [openDepartment, setOpenDepartment] = useState(false);
   const [openMunicipality, setOpenMunicipality] = useState(false);
   const [openLocality, setOpenLocality] = useState(false);
   const [openZone, setOpenZone] = useState(false);
@@ -171,14 +65,14 @@ export default function ConsultationForm() {
   const [geocoding, setGeocoding] = useState(false);
 
 
-  const form = useForm<HeaderFormData>({
+  const form = useForm<HeaderFormInputs>({
     resolver: zodResolver(headerSchema),
     mode: "onSubmit",
     reValidateMode: "onChange",
     defaultValues: {
       personType: "natural",
       status: "active",
-    },
+    } satisfies Partial<HeaderFormInputs>,
   });
 
   const departmentId = form.watch("departmentId");
@@ -187,86 +81,58 @@ export default function ConsultationForm() {
   const customLocalityName = form.watch("customLocalityName");
   const zone = form.watch("zone");
 
+
   const { data: departments = [] } = useQuery<Department[]>({
     queryKey: ["departments"],
-    queryFn: async () => {
-      const r = await fetch("/api/departments", { credentials: "include" });
-      if (!r.ok) throw new Error("Error cargando departamentos");
-      return r.json();
-    },
+    queryFn: getDepartments,
     staleTime: 1000 * 60 * 10,
   });
 
-  const {
-    data: municipalities = [],
-    isLoading: loadingMunis,
-  } = useQuery<Municipality[]>({
+  const { data: municipalities = [], isLoading: loadingMunis } = useQuery<Municipality[]>({
     queryKey: ["municipalities", departmentId ?? null],
     enabled: !!departmentId,
-    queryFn: async () => {
-      const r = await fetch(`/api/municipalities/${departmentId}`, { credentials: "include" });
-      if (!r.ok) throw new Error("Error cargando municipios");
-      return r.json();
-    },
+    queryFn: () => getMunicipalities(departmentId!),
     staleTime: 1000 * 60 * 10,
   });
 
-  const {
-    data: dbLocalities = [],
-    isLoading: loadingLocs,
-  } = useQuery<Locality[]>({
+  const { data: dbLocalities = [], isLoading: loadingLocs } = useQuery<Locality[]>({
     queryKey: ["localities", municipalityId ?? null],
     enabled: !!municipalityId,
-    queryFn: async () => {
-      const r = await fetch(`/api/localities/${municipalityId}`, { credentials: "include" });
-      if (!r.ok) throw new Error("Error cargando localidades");
-      return r.json();
-    },
+    queryFn: () => getLocalities(municipalityId!),
     staleTime: 1000 * 60 * 10,
   });
 
   const { data: allSectors = [] } = useQuery<any[]>({
     queryKey: ["/api/sectors"],
-    queryFn: async () => {
-      const r = await fetch("/api/sectors", { credentials: "include" });
-      if (!r.ok) throw new Error("Error cargando sectores");
-      return r.json();
-    },
+    queryFn: getSectors,
     staleTime: 1000 * 60 * 10,
   });
 
-  const ruralAldeasForMunicipality = useMemo(() => {
-    if (!departmentId || !municipalityId || selectedZone !== "rural") return [];
-    const dept = departments.find((d) => d.id === departmentId);
-    const muni = municipalities.find((m) => m.id === municipalityId);
-    if (!dept || !muni) return [];
 
-    const key = `${dept.geocode}${muni.geocode}`;
-    const entry = (aldeasData as any)[key];
-    if (!entry) return [];
-
-    return (entry.aldeas as Array<{ name: string }>).map((a) => ({
-      id: a.name,
-      name: a.name,
-      area: "rural" as const,
-      municipalityId,
-      latitude: null,
-      longitude: null,
-    })) as Locality[];
-  }, [departmentId, municipalityId, selectedZone, departments, municipalities]);
-
-  const localityOptions: Locality[] = useMemo(() => {
+  const localityOptions: LocalityOption[] = useMemo(() => {
     if (!municipalityId || !zone) return [];
-    const base =
-      zone === "urbano"
-        ? dbLocalities.filter((l) => l.area === "urbano" && l.municipalityId === municipalityId)
-        : ruralAldeasForMunicipality;
+    const muniId = Number(municipalityId);
+
+    const baseOpts: LocalityOption[] = dbLocalities
+      .filter((l) => Number(l.municipalityId) === muniId && l.area === zone)
+      .map((l) => ({
+        id: Number(l.id),
+        name: l.name,
+        area: l.area as HeaderFormInputs["zone"],
+        municipalityId: Number(l.municipalityId),
+      }));
 
     return [
-      ...base,
-      { id: "otro", name: "Otro (escribir manualmente)", area: zone, municipalityId } as any,
+      ...baseOpts,
+      {
+        id: "otro",
+        name: "Otro (escribir manualmente)",
+        area: zone,
+        municipalityId: muniId,
+      },
     ];
-  }, [municipalityId, zone, dbLocalities, ruralAldeasForMunicipality]);
+  }, [municipalityId, zone, dbLocalities]);
+
 
   useEffect(() => {
     if (localityId !== "otro") return;
@@ -303,10 +169,11 @@ export default function ConsultationForm() {
     return () => clearTimeout(t);
   }, [localityId, customLocalityName, departmentId, municipalityId, departments, municipalities, form]);
 
+
   const mapCenterLat = useMemo(() => {
     if (mapLat) return mapLat;
     const selLoc =
-      typeof localityId === "number" ? dbLocalities.find((l) => l.id === localityId) : undefined;
+      typeof localityId === "number" ? dbLocalities.find((l) => Number(l.id) === Number(localityId)) : undefined;
     if (selLoc?.latitude) return selLoc.latitude;
     const selMuni = municipalities.find((m) => m.id === municipalityId);
     if (selMuni?.latitude) return selMuni.latitude;
@@ -318,7 +185,7 @@ export default function ConsultationForm() {
   const mapCenterLng = useMemo(() => {
     if (mapLng) return mapLng;
     const selLoc =
-      typeof localityId === "number" ? dbLocalities.find((l) => l.id === localityId) : undefined;
+      typeof localityId === "number" ? dbLocalities.find((l) => Number(l.id) === Number(localityId)) : undefined;
     if (selLoc?.longitude) return selLoc.longitude;
     const selMuni = municipalities.find((m) => m.id === municipalityId);
     if (selMuni?.longitude) return selMuni.longitude;
@@ -327,15 +194,9 @@ export default function ConsultationForm() {
     return undefined;
   }, [mapLng, localityId, dbLocalities, municipalities, municipalityId, departments, departmentId]);
 
+
   const createMultiMutation = useMutation({
-    mutationFn: async (payload: any) => {
-      const res = await apiRequest("POST", "/api/consultations/multi", payload);
-      if (!res.ok) {
-        const msg = await res.text().catch(() => "");
-        throw new Error(msg || "Error al crear consultas");
-      }
-      return res.json();
-    },
+    mutationFn: postConsultations,
     onSuccess: () => {
       toast({
         title: "¡Consulta enviada exitosamente!",
@@ -359,7 +220,7 @@ export default function ConsultationForm() {
     },
   });
 
-  const onInvalid = () => {
+  const onInvalid: SubmitErrorHandler<HeaderFormInputs> = () => {
     toast({
       title: "Faltan datos",
       description: "Revisa la ubicación y completa mensaje + foto por cada sector.",
@@ -367,7 +228,7 @@ export default function ConsultationForm() {
     });
   };
 
-  const onSubmit: SubmitHandler<HeaderFormData> = async (data) => {
+  const onSubmit: SubmitHandler<HeaderFormInputs> = async (data) => {
     if (selectedSectors.length === 0) {
       toast({
         title: "Faltan datos",
@@ -391,14 +252,9 @@ export default function ConsultationForm() {
     const items: Array<{ sector: string; message: string; images: string[] }> = [];
     for (const sec of selectedSectors) {
       const det = detailsBySector[sec];
-      const fd = new FormData();
-      det.files.forEach((f) => fd.append("images", f));
       let imageUrls: string[] = [];
       try {
-        const up = await fetch("/api/upload-images", { method: "POST", body: fd });
-        if (!up.ok) throw new Error();
-        const payload = await up.json();
-        imageUrls = payload.imageUrls ?? [];
+        imageUrls = await uploadImages(det.files);
       } catch {
         toast({
           title: "Error al subir imágenes",
@@ -410,14 +266,14 @@ export default function ConsultationForm() {
       items.push({ sector: sec, message: det.message.trim(), images: imageUrls });
     }
 
-    const header = {
+    const header: HeaderFormValues = headerSchema.parse({
       ...data,
       personType,
       latitude: mapLat ?? data.latitude,
       longitude: mapLng ?? data.longitude,
-    };
+    });
 
-    createMultiMutation.mutate({ header, items });
+    createMultiMutation.mutate({ header, items } as any);
   };
 
   useEffect(() => {
@@ -432,7 +288,8 @@ export default function ConsultationForm() {
       form.setValue("legalRepresentative", undefined);
       form.setValue("companyContact", undefined);
     }
-  }, [personType]);
+  }, [personType, form]);
+
 
   return (
     <div className="consultation-container">
@@ -442,13 +299,18 @@ export default function ConsultationForm() {
             <Card className="form-section">
               <CardHeader>
                 <CardTitle className="text-center">
-                  <h2 className="mb-1 creative-title">Construyamos una Honduras Próspera Juntos</h2>
+                  <img
+                    src="/assets/logo-consulta-ciudadana.png"
+                    alt="Consulta Ciudadana - Secretaría de Planificación Estratégica SPE"
+                    className="mx-auto"
+                    style={{ maxWidth: "200px", width: "100%", height: "auto" }}
+                  />
                 </CardTitle>
               </CardHeader>
 
               <CardContent>
                 <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} noValidate className="space-y-6">
-                  {}
+                  {/* 1. Tipo de Persona */}
                   <Card className="form-section-card">
                     <CardHeader className="form-section-header">
                       <h3 className="form-section-title">1. Tipo de Persona</h3>
@@ -456,7 +318,6 @@ export default function ConsultationForm() {
                     </CardHeader>
                     <CardContent>
                       <div className="row g-3 mb-4">
-                        {}
                         <div className="col-md-4">
                           <div
                             className={`person-type-card ${personType === "natural" ? "selected" : ""}`}
@@ -469,7 +330,7 @@ export default function ConsultationForm() {
                             </div>
                           </div>
                         </div>
-                        {}
+
                         <div className="col-md-4">
                           <div
                             className={`person-type-card ${personType === "juridica" ? "selected" : ""}`}
@@ -482,7 +343,7 @@ export default function ConsultationForm() {
                             </div>
                           </div>
                         </div>
-                        {}
+
                         <div className="col-md-4">
                           <div
                             className={`person-type-card ${personType === "anonimo" ? "selected" : ""}`}
@@ -497,85 +358,133 @@ export default function ConsultationForm() {
                         </div>
                       </div>
 
-                      {}
+                      {/* Campos condicionales */}
                       {personType === "natural" && (
                         <div className="conditional-fields mt-4">
                           <h6 className="mb-3 text-muted">Información de Persona Natural</h6>
                           <div className="row mb-3">
                             <div className="col-md-6">
-                              <Label htmlFor="firstName">Primer Nombre</Label>
+                              <Label htmlFor="firstName">Primer Nombre *</Label>
                               <Input id="firstName" {...form.register("firstName")} placeholder="Ingrese su primer nombre" />
+                              {form.formState.errors.firstName && (
+                                <div className="text-danger small mt-1">
+                                  {form.formState.errors.firstName.message as string}
+                                </div>
+                              )}
                             </div>
                             <div className="col-md-6">
-                              <Label htmlFor="lastName">Apellido</Label>
+                              <Label htmlFor="lastName">Apellido *</Label>
                               <Input id="lastName" {...form.register("lastName")} placeholder="Ingrese su apellido" />
+                              {form.formState.errors.lastName && (
+                                <div className="text-danger small mt-1">
+                                  {form.formState.errors.lastName.message as string}
+                                </div>
+                              )}
                             </div>
                           </div>
                           <div className="row mb-3">
                             <div className="col-md-6">
-                              <Label htmlFor="identity">Número de Identidad</Label>
-                              <Input id="identity" placeholder="Ingrese su número de identidad" {...form.register("identity")} />
+                              <Label htmlFor="identity">Número de Identidad *</Label>
+                              <Input id="identity" placeholder="Ingrese su numero de Identidad" {...form.register("identity")} />
+                              {form.formState.errors.identity && (
+                                <div className="text-danger small mt-1">
+                                  {form.formState.errors.identity.message as string}
+                                </div>
+                              )}
                             </div>
                             <div className="col-md-6">
                               <Label htmlFor="email">Correo Electrónico</Label>
-                              <Input id="email" type="email" {...form.register("email")} placeholder="Ingrese su correo" />
+                              <Input id="email" type="email" {...form.register("email")} placeholder="Digite su correo Electronico" />
+                              {form.formState.errors.email && (
+                                <div className="text-danger small mt-1">
+                                  {form.formState.errors.email.message as string}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
                       )}
 
-                      {/* Datos JURÍDICA */}
                       {personType === "juridica" && (
                         <div className="conditional-fields mt-4">
                           <h6 className="mb-3 text-muted">Información de Persona Jurídica</h6>
                           <div className="row mb-3">
                             <div className="col-md-6">
-                              <Label htmlFor="companyName">Nombre de la Empresa</Label>
+                              <Label htmlFor="companyName">Nombre de la Empresa *</Label>
                               <Input id="companyName" {...form.register("companyName")} placeholder="Nombre de la empresa" />
+                              {form.formState.errors.companyName && (
+                                <div className="text-danger small mt-1">
+                                  {form.formState.errors.companyName.message as string}
+                                </div>
+                              )}
                             </div>
                             <div className="col-md-6">
-                              <Label htmlFor="rtn">RTN</Label>
-                              <Input id="rtn" {...form.register("rtn")} placeholder="RTN" />
+                              <Label htmlFor="rtn">RTN *</Label>
+                              <Input id="rtn" {...form.register("rtn")} placeholder="Digite su RTN" />
+                              {form.formState.errors.rtn && (
+                                <div className="text-danger small mt-1">
+                                  {form.formState.errors.rtn.message as string}
+                                </div>
+                              )}
                             </div>
                           </div>
                           <div className="row mb-3">
                             <div className="col-md-6">
-                              <Label htmlFor="legalRepresentative">Representante Legal</Label>
+                              <Label htmlFor="legalRepresentative">Representante Legal *</Label>
                               <Input id="legalRepresentative" {...form.register("legalRepresentative")} placeholder="Nombre del representante" />
+                              {form.formState.errors.legalRepresentative && (
+                                <div className="text-danger small mt-1">
+                                  {form.formState.errors.legalRepresentative.message as string}
+                                </div>
+                              )}
                             </div>
                             <div className="col-md-6">
-                              <Label htmlFor="companyContact">Correo/Teléfono</Label>
+                              <Label htmlFor="companyContact">Correo/Teléfono *</Label>
                               <Input id="companyContact" {...form.register("companyContact")} placeholder="Correo o teléfono" />
+                              {form.formState.errors.companyContact && (
+                                <div className="text-danger small mt-1">
+                                  {form.formState.errors.companyContact.message as string}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
                       )}
 
-                      {}
                       <div className="mt-4">
                         <h6 className="mb-3 text-muted">
-                          Información de Contacto{" "}
-                          {personType === "anonimo" ? "(requerida para anónimo)" : "(opcional)"}
+                          Información de Contacto {personType === "anonimo" ? "(requerida para anónimo)" : "(opcional)"}
                         </h6>
                         <div className="row mb-3">
                           <div className="col-md-4">
-                            <Label htmlFor="mobile">Celular</Label>
-                            <Input id="mobile" placeholder="Celular" {...form.register("mobile")} />
+                            <Label htmlFor="mobile">Celular {personType === "anonimo" && "*"}</Label>
+                            <Input id="mobile" placeholder="Digite su numero de Celular" {...form.register("mobile")} />
+                            {form.formState.errors.mobile && (
+                              <div className="text-danger small mt-1">{form.formState.errors.mobile.message as string}</div>
+                            )}
                           </div>
                           <div className="col-md-4">
-                            <Label htmlFor="phone">Teléfono Fijo</Label>
-                            <Input id="phone" placeholder="Teléfono fijo" {...form.register("phone")} />
+                            <Label htmlFor="phone">Teléfono Fijo {personType === "anonimo" && "*"}</Label>
+                            <Input id="phone" placeholder="Digite su numero de Telefono" {...form.register("phone")} />
+                            {form.formState.errors.phone && (
+                              <div className="text-danger small mt-1">{form.formState.errors.phone.message as string}</div>
+                            )}
                           </div>
                           <div className="col-md-4">
-                            <Label htmlFor="altEmail">Correo</Label>
-                            <Input id="altEmail" type="email" placeholder="Correo" {...form.register("altEmail")} />
+                            <Label htmlFor="altEmail">Correo {personType === "anonimo" && "*"}</Label>
+                            <Input id="altEmail" type="email" placeholder="Digite su correo Electronico" {...form.register("altEmail")} />
+                            {form.formState.errors.altEmail && (
+                              <div className="text-danger small mt-1">
+                                {form.formState.errors.altEmail.message as string}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  {}
+                  {/* 2. Ubicación */}
                   <Card className="form-section-card">
                     <CardHeader className="form-section-header">
                       <h3 className="form-section-title">2. Ubicación</h3>
@@ -583,163 +492,140 @@ export default function ConsultationForm() {
                     </CardHeader>
 
                     <CardContent>
-                     {}
-<div className="location-step mb-3">
-  <Label className="location-label">1. Departamento *</Label>
+                      {/* Departamento */}
+                      <div className="location-step mb-3">
+                        <Label className="location-label">1. Departamento *</Label>
 
-  <Popover
-    open={openDepartment}
-    onOpenChange={(o) => {
-      setOpenDepartment(o);
-      if (o) {
-        setOpenMunicipality(false);
-        setOpenLocality(false);
-        setOpenZone(false);
-      }
-    }}
-  >
-    <PopoverTrigger asChild>
-      <Button
-        variant="outline"
-        role="combobox"
-        aria-expanded={openDepartment}
-        className="location-select justify-between"
-        disabled={departments.length === 0}
-      >
-        {departmentId
-          ? departments.find((d) => d.id === departmentId)?.name
-          : "Seleccione su departamento..."}
-        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-      </Button>
-    </PopoverTrigger>
+                        <Popover
+                          open={openDepartment}
+                          onOpenChange={(o) => {
+                            setOpenDepartment(o);
+                            if (o) {
+                              setOpenMunicipality(false);
+                              setOpenLocality(false);
+                              setOpenZone(false);
+                            }
+                          }}
+                        >
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={openDepartment}
+                              className="location-select justify-between"
+                              disabled={departments.length === 0}
+                            >
+                              {departmentId ? departments.find((d) => d.id === departmentId)?.name : "Seleccione su departamento..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
 
-    <PopoverContent
-      className="w-full p-0 consultation-dropdown z-[9999]"
-      side="bottom"
-      align="start"
-      sideOffset={4}
-      collisionPadding={16}
-    >
-      <Command>
-        <CommandInput placeholder="Buscar departamento..." />
-        <CommandList>
-          <CommandEmpty>No se encontró el departamento.</CommandEmpty>
-          <CommandGroup>
-            {departments.map((dep) => (
-              <CommandItem
-                key={dep.id}
-                value={dep.name}
-                onSelect={() => {
-                  
-                  form.setValue("departmentId", Number(dep.id), { shouldValidate: true });
-                  form.setValue("municipalityId", undefined);
-                  form.setValue("zone", undefined as any);
-                  form.setValue("localityId", undefined);
-                  form.setValue("customLocalityName", undefined);
-                  setSelectedZone("");
-                  setMapLat(undefined);
-                  setMapLng(undefined);
-                  setOpenDepartment(false);
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    departmentId === dep.id ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                {dep.name}
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </CommandList>
-      </Command>
-    </PopoverContent>
-  </Popover>
+                          <PopoverContent className="w-full p-0 consultation-dropdown z-[9999]" side="bottom" align="start" sideOffset={4} collisionPadding={16}>
+                            <Command>
+                              <CommandInput placeholder="Buscar departamento..." />
+                              <CommandList>
+                                <CommandEmpty>No se encontró el departamento.</CommandEmpty>
+                                <CommandGroup>
+                                  {departments.map((dep) => (
+                                    <CommandItem
+                                      key={dep.id}
+                                      value={dep.name}
+                                      onSelect={() => {
+                                        form.setValue("departmentId", Number(dep.id), { shouldValidate: true });
+                                        form.setValue("municipalityId", undefined);
+                                        form.setValue("zone", undefined);
+                                        form.setValue("localityId", undefined);
+                                        form.setValue("customLocalityName", undefined);
+                                        setSelectedZone("");
+                                        setMapLat(undefined);
+                                        setMapLng(undefined);
+                                        setOpenDepartment(false);
+                                      }}
+                                    >
+                                      <Check className={cn("mr-2 h-4 w-4", departmentId === dep.id ? "opacity-100" : "opacity-0")} />
+                                      {dep.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
 
-  {form.formState.errors.departmentId && (
-    <div className="text-danger small mt-1">
-      {form.formState.errors.departmentId.message as string}
-    </div>
-  )}
-</div>
-                     {}
-<div className="location-step mb-3">
-  <Label className="location-label">2. Municipio *</Label>
+                        {form.formState.errors.departmentId && (
+                          <div className="text-danger small mt-1">{form.formState.errors.departmentId.message as string}</div>
+                        )}
+                      </div>
 
-  <Popover
-    open={openMunicipality}
-    onOpenChange={(o) => {
-      setOpenMunicipality(o);
-      if (o) {
-        setOpenDepartment(false);
-        setOpenLocality(false);
-        setOpenZone(false);
-      }
-    }}
-  >
-    <PopoverTrigger asChild>
-      <Button
-        variant="outline"
-        role="combobox"
-        aria-expanded={openMunicipality}
-        className="location-select justify-between"
-        disabled={!departmentId || loadingMunis}
-      >
-        {municipalityId
-          ? municipalities.find((m) => m.id === municipalityId)?.name
-          : !departmentId
-            ? "Primero seleccione un departamento..."
-            : "Seleccione su municipio..."}
-        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-      </Button>
-    </PopoverTrigger>
+                      {/* Municipio */}
+                      <div className="location-step mb-3">
+                        <Label className="location-label">2. Municipio *</Label>
 
-    <PopoverContent
-      className="w-full p-0 consultation-dropdown z-[9999]"
-      side="bottom"
-      align="start"
-      sideOffset={4}
-      collisionPadding={16}
-    >
-      <Command>
-        <CommandInput placeholder="Buscar municipio..." />
-        <CommandList>
-          <CommandEmpty>No se encontró el municipio.</CommandEmpty>
-          <CommandGroup>
-            {municipalities.map((muni) => (
-              <CommandItem
-                key={muni.id}
-                value={muni.name}
-                onSelect={() => {
-                  form.setValue("municipalityId", Number(muni.id), { shouldValidate: true });
-                  form.setValue("zone", undefined as any);
-                  form.setValue("localityId", undefined);
-                  form.setValue("customLocalityName", undefined);
-                  setSelectedZone("");
-                  setOpenMunicipality(false);
-                  setMapLat(undefined);
-                  setMapLng(undefined);
-                }}
-              >
-                <Check className={cn("mr-2 h-4 w-4", municipalityId === muni.id ? "opacity-100" : "opacity-0")} />
-                {muni.name}
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </CommandList>
-      </Command>
-    </PopoverContent>
-  </Popover>
+                        <Popover
+                          open={openMunicipality}
+                          onOpenChange={(o) => {
+                            setOpenMunicipality(o);
+                            if (o) {
+                              setOpenDepartment(false);
+                              setOpenLocality(false);
+                              setOpenZone(false);
+                            }
+                          }}
+                        >
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={openMunicipality}
+                              className="location-select justify-between"
+                              disabled={!departmentId || loadingMunis}
+                            >
+                              {municipalityId
+                                ? municipalities.find((m) => m.id === municipalityId)?.name
+                                : !departmentId
+                                ? "Primero seleccione un departamento..."
+                                : "Seleccione su municipio..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
 
-  {form.formState.errors.municipalityId && (
-    <div className="text-danger small mt-1">
-      {form.formState.errors.municipalityId.message as string}
-    </div>
-  )}
-</div>
+                          <PopoverContent className="w-full p-0 consultation-dropdown z-[9999]" side="bottom" align="start" sideOffset={4} collisionPadding={16}>
+                            <Command>
+                              <CommandInput placeholder="Buscar municipio..." />
+                              <CommandList>
+                                <CommandEmpty>No se encontró el municipio.</CommandEmpty>
+                                <CommandGroup>
+                                  {municipalities.map((muni) => (
+                                    <CommandItem
+                                      key={muni.id}
+                                      value={muni.name}
+                                      onSelect={() => {
+                                        form.setValue("municipalityId", Number(muni.id), { shouldValidate: true });
+                                        form.setValue("zone", undefined);
+                                        form.setValue("localityId", undefined);
+                                        form.setValue("customLocalityName", undefined);
+                                        setSelectedZone("");
+                                        setOpenMunicipality(false);
+                                        setMapLat(undefined);
+                                        setMapLng(undefined);
+                                      }}
+                                    >
+                                      <Check className={cn("mr-2 h-4 w-4", municipalityId === muni.id ? "opacity-100" : "opacity-0")} />
+                                      {muni.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
 
-                      {}
+                        {form.formState.errors.municipalityId && (
+                          <div className="text-danger small mt-1">{form.formState.errors.municipalityId.message as string}</div>
+                        )}
+                      </div>
+
+                      {/* Zona */}
                       <div className="location-step mb-3">
                         <Label className="location-label">3. Zona *</Label>
 
@@ -761,18 +647,14 @@ export default function ConsultationForm() {
                             form.setValue("customLocalityName", undefined);
                             setMapLat(undefined);
                             setMapLng(undefined);
-                            setOpenZone(false); 
+                            setOpenZone(false);
                           }}
                           value={selectedZone}
                           disabled={!municipalityId}
                         >
                           <SelectTrigger className="location-select">
                             <SelectValue
-                              placeholder={
-                                !municipalityId
-                                  ? "Primero seleccione un municipio..."
-                                  : "Seleccione el tipo de zona..."
-                              }
+                              placeholder={!municipalityId ? "Primero seleccione un municipio..." : "Seleccione el tipo de zona..."}
                             />
                           </SelectTrigger>
                           <SelectContent className="consultation-dropdown" position="popper" side="bottom" align="start" sideOffset={4} collisionPadding={16}>
@@ -786,91 +668,86 @@ export default function ConsultationForm() {
                         )}
                       </div>
 
-                  {}
-{selectedZone && (
-  <div className="location-step mb-3">
-    <Label className="location-label">4. Localidad *</Label>
+                      {/* Localidad */}
+                      {selectedZone && (
+                        <div className="location-step mb-3">
+                          <Label className="location-label">4. Localidad *</Label>
 
-    <Popover
-      open={openLocality}
-      onOpenChange={(o) => {
-        setOpenLocality(o);
-        if (o) {
-          setOpenDepartment(false);
-          setOpenMunicipality(false);
-          setOpenZone(false);
-        }
-      }}
-    >
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={openLocality}
-          className="location-select justify-between"
-          disabled={!selectedZone || !municipalityId || loadingLocs}
-        >
-          {localityId
-            ? (localityOptions.find((l) => l.id === localityId)?.name) ||
-              (localityId === "otro" ? "Otro (manual)" : String(localityId))
-            : !selectedZone
-              ? "Primero seleccione un tipo de zona..."
-              : "Seleccione su localidad..."}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
+                          <Popover
+                            open={openLocality}
+                            onOpenChange={(o) => {
+                              setOpenLocality(o);
+                              if (o) {
+                                setOpenDepartment(false);
+                                setOpenMunicipality(false);
+                                setOpenZone(false);
+                              }
+                            }}
+                          >
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={openLocality}
+                                className="location-select justify-between"
+                                disabled={!selectedZone || !municipalityId || loadingLocs}
+                              >
+                                {localityId
+                                  ? localityOptions.find((l) => l.id === localityId)?.name ||
+                                    (localityId === "otro" ? "Otro (manual)" : String(localityId))
+                                  : !selectedZone
+                                  ? "Primero seleccione un tipo de zona..."
+                                  : "Seleccione su localidad..."}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
 
-      <PopoverContent
-        className="w-full p-0 consultation-dropdown z-[9999]"
-        side="bottom"
-        align="start"
-        sideOffset={4}
-        collisionPadding={16}
-      >
-        <Command>
-          <CommandInput placeholder="Buscar localidad..." />
-          <CommandList>
-            <CommandEmpty>No se encontró la localidad.</CommandEmpty>
-            <CommandGroup>
-              {localityOptions.map((loc) => (
-                <CommandItem
-                  key={loc.id}
-                  value={loc.name}
-                  onSelect={() => {
-                    form.setValue("localityId", loc.id as any, { shouldValidate: true });
-                    if (loc.id !== "otro") {
-                      form.setValue("customLocalityName", undefined);
-                      const sel = dbLocalities.find((l) => l.id === loc.id);
-                      if (sel?.latitude && sel?.longitude) {
-                        setMapLat(sel.latitude);
-                        setMapLng(sel.longitude);
-                        form.setValue("latitude", sel.latitude);
-                        form.setValue("longitude", sel.longitude);
-                      }
-                    }
-                    setOpenLocality(false);
-                  }}
-                >
-                  <Check className={cn("mr-2 h-4 w-4", localityId === loc.id ? "opacity-100" : "opacity-0")} />
-                  {loc.name}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+                            <PopoverContent className="w-full p-0 consultation-dropdown z-[9999]" side="bottom" align="start" sideOffset={4} collisionPadding={16}>
+                              <Command>
+                                <CommandInput placeholder="Buscar localidad..." />
+                                <CommandList>
+                                  <CommandEmpty>No se encontró la localidad.</CommandEmpty>
+                                  <CommandGroup>
+                                    {localityOptions.map((loc) => (
+                                      <CommandItem
+                                        key={String(loc.id)}
+                                        value={loc.name}
+                                        onSelect={() => {
+                                          form.setValue("localityId", loc.id as HeaderFormInputs["localityId"], {
+                                            shouldValidate: true,
+                                          });
+                                          if (loc.id !== "otro") {
+                                            form.setValue("customLocalityName", undefined);
+                                            const sel = dbLocalities.find((l) => Number(l.id) === Number(loc.id));
+                                            if (sel?.latitude && sel?.longitude) {
+                                              setMapLat(sel.latitude);
+                                              setMapLng(sel.longitude);
+                                              form.setValue("latitude", sel.latitude);
+                                              form.setValue("longitude", sel.longitude);
+                                            }
+                                          }
+                                          setOpenLocality(false);
+                                        }}
+                                      >
+                                        <Check className={cn("mr-2 h-4 w-4", localityId === loc.id ? "opacity-100" : "opacity-0")} />
+                                        {loc.name}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
 
-    {form.formState.errors.localityId && (
-      <div className="text-danger small mt-1">
-        {form.formState.errors.localityId.message as string}
-      </div>
-    )}
-  </div>
-)}
-                      
+                          {form.formState.errors.localityId && (
+                            <div className="text-danger small mt-1">
+                              {form.formState.errors.localityId.message as string}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
-                      {}
+                      {/* Localidad manual */}
                       {localityId === "otro" && (
                         <div className="location-step mb-3">
                           <Label htmlFor="customLocalityName">
@@ -880,9 +757,7 @@ export default function ConsultationForm() {
                             id="customLocalityName"
                             placeholder="Ingrese el nombre..."
                             value={customLocalityName || ""}
-                            onChange={(e) =>
-                              form.setValue("customLocalityName", e.target.value, { shouldValidate: true })
-                            }
+                            onChange={(e) => form.setValue("customLocalityName", e.target.value, { shouldValidate: true })}
                             className="location-select"
                           />
                           {form.formState.errors.customLocalityName && (
@@ -893,7 +768,7 @@ export default function ConsultationForm() {
                         </div>
                       )}
 
-                      {}
+                      {/* Mapa */}
                       <div className="mt-4 location-map-container">
                         <LocationMap
                           latitude={mapCenterLat}
@@ -903,7 +778,7 @@ export default function ConsultationForm() {
                             const selMuni = municipalities.find((m) => m.id === municipalityId);
                             const selLoc =
                               typeof localityId === "number"
-                                ? dbLocalities.find((l) => l.id === localityId)
+                                ? dbLocalities.find((l) => Number(l.id) === Number(localityId))
                                 : undefined;
                             const locName = selLoc?.name || (localityId === "otro" ? customLocalityName : undefined);
                             if (selDept && selMuni && locName) return `${locName}, ${selMuni.name}, ${selDept.name}`;
@@ -926,15 +801,13 @@ export default function ConsultationForm() {
                         />
 
                         {localityId === "otro" && (!mapLat || !mapLng) && (
-                          <div className="mt-2 text-warning small">
-                            Haz click en el mapa para fijar las coordenadas.
-                          </div>
+                          <div className="mt-2 text-warning small">Haz click en el mapa para fijar las coordenadas.</div>
                         )}
                       </div>
                     </CardContent>
                   </Card>
 
-                  {}
+                  {/* 3. Sectores e Items */}
                   <Card className="form-section-card">
                     <CardHeader className="form-section-header">
                       <h3 className="form-section-title">3. Sectores de Interés</h3>
@@ -960,9 +833,7 @@ export default function ConsultationForm() {
                                     });
                                   } else {
                                     setSelectedSectors((p) => [...p, sector.name]);
-                                    setDetailsBySector((p) =>
-                                      p[sector.name] ? p : { ...p, [sector.name]: { message: "", files: [] } }
-                                    );
+                                    setDetailsBySector((p) => (p[sector.name] ? p : { ...p, [sector.name]: { message: "", files: [] } }));
                                   }
                                 }}
                               >
@@ -996,15 +867,13 @@ export default function ConsultationForm() {
                               </button>
                             </Badge>
                           ))}
-                          {selectedSectors.length === 0 && (
-                            <span className="text-muted small">Ningún sector seleccionado</span>
-                          )}
+                          {selectedSectors.length === 0 && <span className="text-muted small">Ningún sector seleccionado</span>}
                         </div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  {}
+                  {/* Detalles por sector */}
                   {selectedSectors.map((sec) => {
                     const det = detailsBySector[sec] ?? { message: "", files: [] };
                     return (
@@ -1016,9 +885,7 @@ export default function ConsultationForm() {
                           <Label>Mensaje para {sec} *</Label>
                           <Textarea
                             value={det.message}
-                            onChange={(e) =>
-                              setDetailsBySector((p) => ({ ...p, [sec]: { ...det, message: e.target.value } }))
-                            }
+                            onChange={(e) => setDetailsBySector((p) => ({ ...p, [sec]: { ...det, message: e.target.value } }))}
                             placeholder={`Escribe el detalle para ${sec}...`}
                           />
 
@@ -1039,12 +906,7 @@ export default function ConsultationForm() {
                                 e.currentTarget.value = "";
                               }}
                             />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className="mt-2"
-                              onClick={() => document.getElementById(`file-${sec}`)?.click()}
-                            >
+                            <Button type="button" variant="outline" className="mt-2" onClick={() => document.getElementById(`file-${sec}`)?.click()}>
                               <Upload className="w-4 h-4 mr-2" />
                               Subir fotografías ({det.files.length}/6)
                             </Button>
@@ -1054,12 +916,7 @@ export default function ConsultationForm() {
                                 {det.files.map((f, i) => (
                                   <div key={i} className="col-md-4">
                                     <div className="position-relative">
-                                      <img
-                                        src={URL.createObjectURL(f)}
-                                        alt={`${sec} ${i + 1}`}
-                                        className="img-fluid rounded"
-                                        style={{ width: "100%", height: 150, objectFit: "cover" }}
-                                      />
+                                      <img src={URL.createObjectURL(f)} alt={`${sec} ${i + 1}`} className="img-fluid rounded" style={{ width: "100%", height: 150, objectFit: "cover" }} />
                                       <Button
                                         type="button"
                                         variant="destructive"
@@ -1086,7 +943,7 @@ export default function ConsultationForm() {
                     );
                   })}
 
-                  {}
+                  {/* Botones */}
                   <div className="form-buttons-container d-flex gap-2">
                     <Button
                       type="button"
