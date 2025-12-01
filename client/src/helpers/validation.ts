@@ -36,9 +36,10 @@ export const headerSchema = z
   .object({
     personType: z.enum(["natural", "juridica"]).default("natural"),
 
+    // Persona natural
     firstName: nameSchema.optional(),
     lastName: nameSchema.optional(),
-    email: emailSchema.optional(), 
+    email: emailSchema.optional(),
 
     companyName: nonEmpty(
       "El nombre de la institución u organización es requerido"
@@ -73,6 +74,7 @@ export const headerSchema = z
         message: "Seleccione un departamento",
       });
     }
+
     if (!data.municipalityId) {
       ctx.addIssue({
         code: "custom",
@@ -80,6 +82,7 @@ export const headerSchema = z
         message: "Seleccione un municipio",
       });
     }
+
     if (!data.zone) {
       ctx.addIssue({
         code: "custom",
@@ -130,8 +133,6 @@ export const headerSchema = z
     }
 
     // ✅ Reglas por tipo de persona
-
-    // Persona NATURAL: solo valida nombre y apellido
     if (data.personType === "natural") {
       if (!data.firstName?.trim()) {
         ctx.addIssue({
@@ -166,6 +167,8 @@ export const headerSchema = z
         });
       }
     }
+
+ 
   });
 
 export type HeaderFormInputs = z.input<typeof headerSchema>;

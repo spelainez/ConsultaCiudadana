@@ -97,7 +97,7 @@ export default function ConsultationForm() {
 
   const form = useForm<HeaderFormInputs>({
     resolver: zodResolver(headerSchema),
-    mode: "onTouched", 
+    mode: "onTouched",
     reValidateMode: "onChange",
     defaultValues: {
       personType: "natural",
@@ -278,7 +278,7 @@ export default function ConsultationForm() {
       toast({
         title: "No se pudo guardar",
         description:
-          "Revise los campos marcados en rojo y vuelva a intentar. Si el sector lo requiere, adjunte la fotografía.",
+          "Revise los campos marcados en rojo y, si el sector lo requiere, adjunte la fotografía.",
         variant: "destructive",
       });
     },
@@ -329,10 +329,12 @@ export default function ConsultationForm() {
       return;
     }
 
+    // 🔴 Solo estos sectores obligan fotografía
     const sectorsRequiringImage = new Set<string>([
       "Infraestructura vial",
-      "Energía",
-      "Salud",
+      // Si mañana otro sector necesita foto obligatoria, lo agregas aquí.
+      // "Salud",
+      // "Energía",
     ]);
 
     for (const sec of selectedSectors) {
@@ -359,6 +361,7 @@ export default function ConsultationForm() {
         return;
       }
 
+      // 🟢 Solo si el sector está en la lista de obligatorios se exige foto
       if (needsImage && fileCount === 0) {
         toast({
           title: "No se agregó foto",
@@ -1346,3 +1349,4 @@ export default function ConsultationForm() {
     </div>
   );
 }
+
