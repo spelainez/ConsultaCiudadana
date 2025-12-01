@@ -59,12 +59,10 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import LocationMap from "@/components/location-map";
+
+import logoConsulta from "@/assets/logo-consulta-ciudadana.png";
 
 type SectorDetail = { message: string; files: File[] };
 
@@ -78,6 +76,7 @@ type LocalityOption = {
 export default function ConsultationForm() {
   const { toast } = useToast();
 
+  const [personType, setPersonType] = useState<"natural" | "juridica">("natural");
   const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
   const [selectedZone, setSelectedZone] = useState<"" | "urbano" | "rural">("");
 
@@ -98,16 +97,13 @@ export default function ConsultationForm() {
 
   const form = useForm<HeaderFormInputs>({
     resolver: zodResolver(headerSchema),
-    mode: "onSubmit",
+    mode: "onTouched", 
     reValidateMode: "onChange",
     defaultValues: {
       personType: "natural",
       status: "active",
     } satisfies Partial<HeaderFormInputs>,
   });
-
-  // 🔹 Ahora el tipo de persona viene del formulario
-  const personType = form.watch("personType") ?? "natural";
 
   const departmentId = form.watch("departmentId");
   const municipalityId = form.watch("municipalityId");
@@ -130,14 +126,14 @@ export default function ConsultationForm() {
     staleTime: 1000 * 60 * 10,
   });
 
-  const { data: dbLocalities = [], isLoading: loadingLocs } = useQuery<
-    Locality[]
-  >({
-    queryKey: ["localities", municipalityId ?? null],
-    enabled: !!municipalityId,
-    queryFn: () => getLocalities(municipalityId!),
-    staleTime: 1000 * 60 * 10,
-  });
+  const { data: dbLocalities = [], isLoading: loadingLocs } = useQuery<Locality[]>(
+    {
+      queryKey: ["localities", municipalityId ?? null],
+      enabled: !!municipalityId,
+      queryFn: () => getLocalities(municipalityId!),
+      staleTime: 1000 * 60 * 10,
+    }
+  );
 
   const { data: allSectors = [] } = useQuery<any[]>({
     queryKey: ["/api/sectors"],
@@ -185,14 +181,9 @@ export default function ConsultationForm() {
         const url =
           "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=hn&q=" +
           encodeURIComponent(q);
-        const res = await fetch(url, {
-          headers: { "Accept-Language": "es" },
-        });
+        const res = await fetch(url, { headers: { "Accept-Language": "es" } });
         if (res.ok) {
-          const data = (await res.json()) as Array<{
-            lat: string;
-            lon: string;
-          }>;
+          const data = (await res.json()) as Array<{ lat: string; lon: string }>;
           if (data?.[0]) {
             setMapLat(data[0].lat);
             setMapLng(data[0].lon);
@@ -276,6 +267,7 @@ export default function ConsultationForm() {
       form.reset();
       setSelectedSectors([]);
       setDetailsBySector({});
+      setPersonType("natural");
       setSelectedZone("");
       setMapLat(undefined);
       setMapLng(undefined);
@@ -337,7 +329,11 @@ export default function ConsultationForm() {
       return;
     }
 
-    const sectorsRequiringImage = new Set<string>(["Infraestructura vial"]);
+    const sectorsRequiringImage = new Set<string>([
+      "Infraestructura vial",
+      "Energía",
+      "Salud",
+    ]);
 
     for (const sec of selectedSectors) {
       const det = detailsBySector[sec];
@@ -373,8 +369,7 @@ export default function ConsultationForm() {
       }
     }
 
-    const items: Array<{ sector: string; message: string; images: string[] }> =
-      [];
+    const items: Array<{ sector: string; message: string; images: string[] }> = [];
 
     for (const sec of selectedSectors) {
       const det = detailsBySector[sec];
@@ -393,15 +388,12 @@ export default function ConsultationForm() {
         }
       }
 
-      items.push({
-        sector: sec,
-        message: det.message.trim(),
-        images: imageUrls,
-      });
+      items.push({ sector: sec, message: det.message.trim(), images: imageUrls });
     }
 
     const header: HeaderFormValues = headerSchema.parse({
       ...data,
+      personType,
       latitude: mapLat ?? data.latitude,
       longitude: mapLng ?? data.longitude,
       mobile: enableContact ? data.mobile : undefined,
@@ -410,6 +402,23 @@ export default function ConsultationForm() {
 
     createMultiMutation.mutate({ header, items } as any);
   };
+
+  // 🔁 Sincronizar tipo de persona y limpiar campos del otro tipo
+  useEffect(() => {
+    form.setValue("personType", personType);
+
+    if (personType === "natural") {
+      // limpiar campos de persona jurídica
+      form.setValue("companyName", undefined);
+      form.setValue("legalRepresentative", undefined);
+      form.clearErrors(["companyName", "legalRepresentative"]);
+    } else {
+      // limpiar campos de persona natural
+      form.setValue("firstName", undefined);
+      form.setValue("lastName", undefined);
+      form.clearErrors(["firstName", "lastName"]);
+    }
+  }, [personType, form]);
 
   return (
     <div className="consultation-container">
@@ -420,14 +429,10 @@ export default function ConsultationForm() {
               <CardHeader>
                 <CardTitle className="text-center">
                   <img
-                    src="/assets/logo-consulta-ciudadana.png"
+                    src={logoConsulta}
                     alt="Consulta Ciudadana - Secretaría de Planificación Estratégica SPE"
                     className="mx-auto"
-                    style={{
-                      maxWidth: "200px",
-                      width: "100%",
-                      height: "auto",
-                    }}
+                    style={{ maxWidth: "200px", width: "100%", height: "auto" }}
                   />
                 </CardTitle>
               </CardHeader>
@@ -438,7 +443,7 @@ export default function ConsultationForm() {
                   noValidate
                   className="space-y-6"
                 >
-                  {}
+                  {/* 1. Tipo de Persona */}
                   <Card className="form-section-card">
                     <CardHeader className="form-section-header">
                       <h3 className="form-section-title">1. Tipo de Persona</h3>
@@ -453,11 +458,7 @@ export default function ConsultationForm() {
                             className={`person-type-card ${
                               personType === "natural" ? "selected" : ""
                             }`}
-                            onClick={() =>
-                              form.setValue("personType", "natural", {
-                                shouldValidate: true,
-                              })
-                            }
+                            onClick={() => setPersonType("natural")}
                             role="button"
                             tabIndex={0}
                           >
@@ -474,11 +475,7 @@ export default function ConsultationForm() {
                             className={`person-type-card ${
                               personType === "juridica" ? "selected" : ""
                             }`}
-                            onClick={() =>
-                              form.setValue("personType", "juridica", {
-                                shouldValidate: true,
-                              })
-                            }
+                            onClick={() => setPersonType("juridica")}
                             role="button"
                             tabIndex={0}
                           >
@@ -491,7 +488,7 @@ export default function ConsultationForm() {
                         </div>
                       </div>
 
-                      {}
+                      {/* Persona natural */}
                       {personType === "natural" && (
                         <div className="conditional-fields mt-4">
                           <h6 className="mb-3 text-muted">
@@ -499,9 +496,7 @@ export default function ConsultationForm() {
                           </h6>
                           <div className="row mb-3">
                             <div className="col-md-6">
-                              <Label htmlFor="firstName">
-                                Primer Nombre *
-                              </Label>
+                              <Label htmlFor="firstName">Primer Nombre *</Label>
                               <Input
                                 id="firstName"
                                 {...form.register("firstName")}
@@ -546,10 +541,7 @@ export default function ConsultationForm() {
                               />
                               {form.formState.errors.email && (
                                 <div className="text-danger small mt-1">
-                                  {
-                                    form.formState.errors.email
-                                      .message as string
-                                  }
+                                  {form.formState.errors.email.message as string}
                                 </div>
                               )}
                             </div>
@@ -557,7 +549,7 @@ export default function ConsultationForm() {
                         </div>
                       )}
 
-                      {}
+                      {/* Persona jurídica */}
                       {personType === "juridica" && (
                         <div className="conditional-fields mt-4">
                           <h6 className="mb-3 text-muted">
@@ -566,7 +558,7 @@ export default function ConsultationForm() {
                           <div className="row mb-3">
                             <div className="col-md-6">
                               <Label htmlFor="companyName">
-                                Institución u Organización
+                                Institución u Organización *
                               </Label>
                               <Input
                                 id="companyName"
@@ -585,7 +577,7 @@ export default function ConsultationForm() {
 
                             <div className="col-md-6">
                               <Label htmlFor="legalRepresentative">
-                                Persona de contacto{" "}
+                                Persona de contacto *
                               </Label>
                               <Input
                                 id="legalRepresentative"
@@ -603,7 +595,7 @@ export default function ConsultationForm() {
                             </div>
                           </div>
 
-                          {}
+                          {/* Contacto opcional */}
                           <div className="row mb-3">
                             <div className="col-md-6">
                               <Label htmlFor="email">
@@ -617,10 +609,7 @@ export default function ConsultationForm() {
                               />
                               {form.formState.errors.email && (
                                 <div className="text-danger small mt-1">
-                                  {
-                                    form.formState.errors.email
-                                      .message as string
-                                  }
+                                  {form.formState.errors.email.message as string}
                                 </div>
                               )}
                             </div>
@@ -628,7 +617,7 @@ export default function ConsultationForm() {
                         </div>
                       )}
 
-                      {/* 🔹 Información de contacto opcional con checkbox */}
+                      {/* Información de contacto adicional */}
                       <div className="mt-4">
                         <div className="d-flex align-items-center gap-2 mb-3">
                           <input
@@ -640,16 +629,13 @@ export default function ConsultationForm() {
                               const checked = e.target.checked;
                               setEnableContact(checked);
                               if (!checked) {
-                                // limpiamos los valores cuando se oculta
                                 form.setValue("mobile", "");
                                 form.setValue("phone", "");
+                                form.clearErrors(["mobile", "phone"]);
                               }
                             }}
                           />
-                          <Label
-                            htmlFor="extraContact"
-                            className="mb-0"
-                          >
+                          <Label htmlFor="extraContact" className="mb-0">
                             Deseo agregar información de contacto adicional
                           </Label>
                         </div>
@@ -678,9 +664,7 @@ export default function ConsultationForm() {
                                 )}
                               </div>
                               <div className="col-md-6">
-                                <Label htmlFor="phone">
-                                  Teléfono Fijo
-                                </Label>
+                                <Label htmlFor="phone">Teléfono Fijo</Label>
                                 <Input
                                   id="phone"
                                   placeholder="Digite su número de teléfono"
@@ -707,17 +691,14 @@ export default function ConsultationForm() {
                     <CardHeader className="form-section-header">
                       <h3 className="form-section-title">2. Ubicación</h3>
                       <p className="form-section-description">
-                        Seleccione su ubicación geográfica para una mejor
-                        atención
+                        Seleccione su ubicación geográfica para una mejor atención
                       </p>
                     </CardHeader>
 
                     <CardContent>
                       {/* Departamento */}
                       <div className="location-step mb-3">
-                        <Label className="location-label">
-                          1. Departamento *
-                        </Label>
+                        <Label className="location-label">1. Departamento *</Label>
 
                         <Popover
                           open={openDepartment}
@@ -739,9 +720,7 @@ export default function ConsultationForm() {
                               disabled={departments.length === 0}
                             >
                               {departmentId
-                                ? departments.find(
-                                    (d) => d.id === departmentId
-                                  )?.name
+                                ? departments.find((d) => d.id === departmentId)?.name
                                 : "Seleccione su departamento..."}
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
@@ -766,26 +745,13 @@ export default function ConsultationForm() {
                                       key={dep.id}
                                       value={dep.name}
                                       onSelect={() => {
-                                        form.setValue(
-                                          "departmentId",
-                                          Number(dep.id),
-                                          {
-                                            shouldValidate: true,
-                                          }
-                                        );
-                                        form.setValue(
-                                          "municipalityId",
-                                          undefined
-                                        );
+                                        form.setValue("departmentId", Number(dep.id), {
+                                          shouldValidate: true,
+                                        });
+                                        form.setValue("municipalityId", undefined);
                                         form.setValue("zone", undefined);
-                                        form.setValue(
-                                          "localityId",
-                                          undefined
-                                        );
-                                        form.setValue(
-                                          "customLocalityName",
-                                          undefined
-                                        );
+                                        form.setValue("localityId", undefined);
+                                        form.setValue("customLocalityName", undefined);
                                         setSelectedZone("");
                                         setMapLat(undefined);
                                         setMapLng(undefined);
@@ -811,19 +777,14 @@ export default function ConsultationForm() {
 
                         {form.formState.errors.departmentId && (
                           <div className="text-danger small mt-1">
-                            {
-                              form.formState.errors.departmentId
-                                .message as string
-                            }
+                            {form.formState.errors.departmentId.message as string}
                           </div>
                         )}
                       </div>
 
                       {/* Municipio */}
                       <div className="location-step mb-3">
-                        <Label className="location-label">
-                          2. Municipio *
-                        </Label>
+                        <Label className="location-label">2. Municipio *</Label>
 
                         <Popover
                           open={openMunicipality}
@@ -845,9 +806,8 @@ export default function ConsultationForm() {
                               disabled={!departmentId || loadingMunis}
                             >
                               {municipalityId
-                                ? municipalities.find(
-                                    (m) => m.id === municipalityId
-                                  )?.name
+                                ? municipalities.find((m) => m.id === municipalityId)
+                                    ?.name
                                 : !departmentId
                                 ? "Primero seleccione un departamento..."
                                 : "Seleccione su municipio..."}
@@ -865,31 +825,19 @@ export default function ConsultationForm() {
                             <Command>
                               <CommandInput placeholder="Buscar municipio..." />
                               <CommandList>
-                                <CommandEmpty>
-                                  No se encontró el municipio.
-                                </CommandEmpty>
+                                <CommandEmpty>No se encontró el municipio.</CommandEmpty>
                                 <CommandGroup>
                                   {municipalities.map((muni) => (
                                     <CommandItem
                                       key={muni.id}
                                       value={muni.name}
                                       onSelect={() => {
-                                        form.setValue(
-                                          "municipalityId",
-                                          Number(muni.id),
-                                          {
-                                            shouldValidate: true,
-                                          }
-                                        );
+                                        form.setValue("municipalityId", Number(muni.id), {
+                                          shouldValidate: true,
+                                        });
                                         form.setValue("zone", undefined);
-                                        form.setValue(
-                                          "localityId",
-                                          undefined
-                                        );
-                                        form.setValue(
-                                          "customLocalityName",
-                                          undefined
-                                        );
+                                        form.setValue("localityId", undefined);
+                                        form.setValue("customLocalityName", undefined);
                                         setSelectedZone("");
                                         setOpenMunicipality(false);
                                         setMapLat(undefined);
@@ -915,10 +863,7 @@ export default function ConsultationForm() {
 
                         {form.formState.errors.municipalityId && (
                           <div className="text-danger small mt-1">
-                            {
-                              form.formState.errors.municipalityId
-                                .message as string
-                            }
+                            {form.formState.errors.municipalityId.message as string}
                           </div>
                         )}
                       </div>
@@ -940,9 +885,7 @@ export default function ConsultationForm() {
                           onValueChange={(value) => {
                             const v = value as "urbano" | "rural";
                             setSelectedZone(v);
-                            form.setValue("zone", v, {
-                              shouldValidate: true,
-                            });
+                            form.setValue("zone", v, { shouldValidate: true });
                             form.setValue("localityId", undefined);
                             form.setValue("customLocalityName", undefined);
                             setMapLat(undefined);
@@ -984,9 +927,7 @@ export default function ConsultationForm() {
                       {/* Localidad */}
                       {selectedZone && (
                         <div className="location-step mb-3">
-                          <Label className="location-label">
-                            4. Localidad *
-                          </Label>
+                          <Label className="location-label">4. Localidad *</Label>
 
                           <Popover
                             open={openLocality}
@@ -1005,16 +946,11 @@ export default function ConsultationForm() {
                                 role="combobox"
                                 aria-expanded={openLocality}
                                 className="location-select justify-between"
-                                disabled={
-                                  !selectedZone ||
-                                  !municipalityId ||
-                                  loadingLocs
-                                }
+                                disabled={!selectedZone || !municipalityId || loadingLocs}
                               >
                                 {localityId
-                                  ? localityOptions.find(
-                                      (l) => l.id === localityId
-                                    )?.name ||
+                                  ? localityOptions.find((l) => l.id === localityId)
+                                      ?.name ||
                                     (localityId === "otro"
                                       ? "Otro (manual)"
                                       : String(localityId))
@@ -1052,29 +988,15 @@ export default function ConsultationForm() {
                                             }
                                           );
                                           if (loc.id !== "otro") {
-                                            form.setValue(
-                                              "customLocalityName",
-                                              undefined
-                                            );
+                                            form.setValue("customLocalityName", undefined);
                                             const sel = dbLocalities.find(
-                                              (l) =>
-                                                Number(l.id) ===
-                                                Number(loc.id)
+                                              (l) => Number(l.id) === Number(loc.id)
                                             );
-                                            if (
-                                              sel?.latitude &&
-                                              sel?.longitude
-                                            ) {
+                                            if (sel?.latitude && sel?.longitude) {
                                               setMapLat(sel.latitude);
                                               setMapLng(sel.longitude);
-                                              form.setValue(
-                                                "latitude",
-                                                sel.latitude
-                                              );
-                                              form.setValue(
-                                                "longitude",
-                                                sel.longitude
-                                              );
+                                              form.setValue("latitude", sel.latitude);
+                                              form.setValue("longitude", sel.longitude);
                                             }
                                           }
                                           setOpenLocality(false);
@@ -1099,10 +1021,7 @@ export default function ConsultationForm() {
 
                           {form.formState.errors.localityId && (
                             <div className="text-danger small mt-1">
-                              {
-                                form.formState.errors.localityId
-                                  .message as string
-                              }
+                              {form.formState.errors.localityId.message as string}
                             </div>
                           )}
                         </div>
@@ -1112,8 +1031,7 @@ export default function ConsultationForm() {
                       {localityId === "otro" && (
                         <div className="location-step mb-3">
                           <Label htmlFor="customLocalityName">
-                            Escriba el nombre de su colonia/barrio o
-                            aldea/caserío *{" "}
+                            Escriba el nombre de su colonia/barrio o aldea/caserío *{" "}
                             {geocoding && "(buscando ubicación...)"}
                           </Label>
                           <Input
@@ -1121,13 +1039,9 @@ export default function ConsultationForm() {
                             placeholder="Ingrese el nombre..."
                             value={customLocalityName || ""}
                             onChange={(e) =>
-                              form.setValue(
-                                "customLocalityName",
-                                e.target.value,
-                                {
-                                  shouldValidate: true,
-                                }
-                              )
+                              form.setValue("customLocalityName", e.target.value, {
+                                shouldValidate: true,
+                              })
                             }
                             className="location-select"
                           />
@@ -1157,15 +1071,12 @@ export default function ConsultationForm() {
                             const selLoc =
                               typeof localityId === "number"
                                 ? dbLocalities.find(
-                                    (l) =>
-                                      Number(l.id) === Number(localityId)
+                                    (l) => Number(l.id) === Number(localityId)
                                   )
                                 : undefined;
                             const locName =
                               selLoc?.name ||
-                              (localityId === "otro"
-                                ? customLocalityName
-                                : undefined);
+                              (localityId === "otro" ? customLocalityName : undefined);
                             if (selDept && selMuni && locName)
                               return `${locName}, ${selMuni.name}, ${selDept.name}`;
                             return undefined;
@@ -1203,31 +1114,23 @@ export default function ConsultationForm() {
                   {/* 3. Sectores */}
                   <Card className="form-section-card">
                     <CardHeader className="form-section-header">
-                      <h3 className="form-section-title">
-                        3. Sector de Necesidad
-                      </h3>
+                      <h3 className="form-section-title">3. Sector de Necesidad</h3>
                       <p className="form-section-description">
-                        Seleccione un sector y complete mensaje + fotografía
-                        (si aplica)
+                        Seleccione un sector y complete mensaje + fotografía (si
+                        aplica)
                       </p>
                     </CardHeader>
                     <CardContent>
                       <div className="row g-2">
                         {allSectors.map((sector) => {
-                          const isSelected =
-                            selectedSectors.includes(sector.name);
+                          const isSelected = selectedSectors.includes(sector.name);
                           return (
-                            <div
-                              key={sector.id}
-                              className="col-md-6 col-lg-4"
-                            >
+                            <div key={sector.id} className="col-md-6 col-lg-4">
                               <Button
                                 type="button"
                                 variant={isSelected ? "default" : "outline"}
                                 className={`w-100 text-start ${
-                                  isSelected
-                                    ? "bg-primary text-white"
-                                    : "bg-light"
+                                  isSelected ? "bg-primary text-white" : "bg-light"
                                 }`}
                                 onClick={() => {
                                   if (isSelected) {
@@ -1244,10 +1147,7 @@ export default function ConsultationForm() {
                                         ? p
                                         : {
                                             ...p,
-                                            [sector.name]: {
-                                              message: "",
-                                              files: [],
-                                            },
+                                            [sector.name]: { message: "", files: [] },
                                           }
                                     );
                                   }
@@ -1266,9 +1166,7 @@ export default function ConsultationForm() {
                       </div>
 
                       <div className="mt-3">
-                        <small className="text-muted">
-                          Sector seleccionado:
-                        </small>
+                        <small className="text-muted">Sector seleccionado:</small>
                         <div className="mt-2">
                           {selectedSectors.map((s) => (
                             <Badge
@@ -1305,12 +1203,8 @@ export default function ConsultationForm() {
 
                   {/* Detalles por sector */}
                   {selectedSectors.map((sec) => {
-                    const det =
-                      detailsBySector[sec] ?? { message: "", files: [] };
-                    const safeId = `file-${sec.replace(
-                      /[^a-zA-Z0-9_-]/g,
-                      "-"
-                    )}`;
+                    const det = detailsBySector[sec] ?? { message: "", files: [] };
+                    const safeId = `file-${sec.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 
                     return (
                       <Card key={sec} className="form-section-card">
@@ -1347,10 +1241,7 @@ export default function ConsultationForm() {
                                 const file = e.target.files?.[0] ?? null;
                                 setDetailsBySector((p) => ({
                                   ...p,
-                                  [sec]: {
-                                    ...det,
-                                    files: file ? [file] : [],
-                                  },
+                                  [sec]: { ...det, files: file ? [file] : [] },
                                 }));
                                 e.target.value = "";
                               }}
@@ -1426,6 +1317,7 @@ export default function ConsultationForm() {
                         form.reset();
                         setSelectedSectors([]);
                         setDetailsBySector({});
+                        setPersonType("natural");
                         setSelectedZone("");
                         setMapLat(undefined);
                         setMapLng(undefined);

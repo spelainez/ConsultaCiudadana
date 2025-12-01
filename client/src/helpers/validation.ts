@@ -3,10 +3,10 @@ import { z } from "zod";
 const NAME_MIN = 2;
 const NAME_MAX = 50;
 
-// const emailSchema = z.string().trim().email("Correo inválido");
 const emailSchema = z
   .string()
   .trim()
+  .optional()
   .refine((v) => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), {
     message: "Correo inválido",
   });
@@ -16,6 +16,7 @@ const nonEmpty = (m: string) => z.string().trim().min(1, m);
 const nameRegex = new RegExp(
   `^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\\s'\\-]{${NAME_MIN},${NAME_MAX}}$`
 );
+
 const nameSchema = z
   .string()
   .trim()
@@ -26,7 +27,10 @@ const nameSchema = z
 const phoneStrictSchema = z
   .string()
   .trim()
-  .regex(/^\d{8}$/, "Debe tener exactamente 8 dígitos (solo números)");
+  .optional()
+  .refine((v) => !v || /^\d{8}$/.test(v), {
+    message: "Debe tener exactamente 8 dígitos (solo números)",
+  });
 
 export const headerSchema = z
   .object({
@@ -36,11 +40,10 @@ export const headerSchema = z
     lastName: nameSchema.optional(),
     email: emailSchema.optional(), 
 
- 
     companyName: nonEmpty(
       "El nombre de la institución u organización es requerido"
     ).optional(),
-    legalRepresentative: nameSchema.optional(), 
+    legalRepresentative: nameSchema.optional(),
 
     mobile: phoneStrictSchema.optional(),
     phone: phoneStrictSchema.optional(),
@@ -87,11 +90,9 @@ export const headerSchema = z
     }
 
     const isOtro = data.localityId === "otro";
+
     if (data.zone === "urbano") {
-      if (
-        !isOtro &&
-        (!data.localityId || typeof data.localityId !== "number")
-      ) {
+      if (!isOtro && (!data.localityId || typeof data.localityId !== "number")) {
         ctx.addIssue({
           code: "custom",
           path: ["localityId"],
@@ -128,7 +129,9 @@ export const headerSchema = z
       }
     }
 
+    // ✅ Reglas por tipo de persona
 
+    // Persona NATURAL: solo valida nombre y apellido
     if (data.personType === "natural") {
       if (!data.firstName?.trim()) {
         ctx.addIssue({
