@@ -475,18 +475,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
+  // app.post("/api/consultations/multi", async (req: Request, res: Response) => {
+  //   try {
+  //     const payload = multiConsultationSchema.parse(req.body);
+  //     const result = await storage.createConsultationsForSectors(payload);
+  //     return res.status(201).json(result); // { createdIds: number[] }
+  //   } catch (err: any) {
+  //     console.error("Error creating multi consultations:", err);
+  //     const msg =
+  //       err?.errors?.[0]?.message || err?.message || "Datos inválidos para multi-consulta";
+  //     return res.status(400).json({ error: msg });
+  //   }
+  // });
+
   app.post("/api/consultations/multi", async (req: Request, res: Response) => {
-    try {
-      const payload = multiConsultationSchema.parse(req.body);
-      const result = await storage.createConsultationsForSectors(payload);
-      return res.status(201).json(result); // { createdIds: number[] }
-    } catch (err: any) {
-      console.error("Error creating multi consultations:", err);
-      const msg =
-        err?.errors?.[0]?.message || err?.message || "Datos inválidos para multi-consulta";
-      return res.status(400).json({ error: msg });
+  try {
+    const rawSectors = (req.body.selectedSectors ?? req.body.sectors) as unknown;
+    const selectedSectors = normalizeStringArray(rawSectors);
+
+    const rawImageUrls = req.body.imageUrls as unknown;
+    const imageUrls =
+      Array.isArray(rawImageUrls)
+        ? rawImageUrls.filter(Boolean)
+        : rawImageUrls
+        ? [String(rawImageUrls)]
+        : [];
+
+    const sectoresQueRequierenFoto = ["Infraestructura"];
+
+    const requiereFoto = selectedSectors.some((s) =>
+      sectoresQueRequierenFoto.includes(s.trim())
+    );
+
+    if (requiereFoto && imageUrls.length === 0) {
+      return res.status(400).json({
+        error: "Debe adjuntar al menos una fotografía para el sector seleccionado.",
+      });
     }
-  });
+
+    const payload = multiConsultationSchema.parse({
+      ...req.body,
+      selectedSectors,
+      imageUrls,
+    });
+
+    const result = await storage.createConsultationsForSectors(payload);
+    return res.status(201).json(result);
+  } catch (err: any) {
+    console.error("Error creating multi consultations:", err);
+    const msg =
+      err?.errors?.[0]?.message || err?.message || "Datos inválidos para multi-consulta";
+    return res.status(400).json({ error: msg });
+  }
+});
 
   /* ------------------------ Dashboard simples ------------------------ */
   app.get(
