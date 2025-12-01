@@ -147,10 +147,10 @@ export default function Dashboard() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [showConsultationDetail, setShowConsultationDetail] = useState(false);
   const [selectedConsultation, setSelectedConsultation] = useState<any>(null);
-const [openDepartment, setOpenDepartment] = useState(false);
-const [openMunicipality, setOpenMunicipality] = useState(false);
-const [openLocality, setOpenLocality] = useState(false);
-const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
+  const [openDepartment, setOpenDepartment] = useState(false);
+  const [openMunicipality, setOpenMunicipality] = useState(false);
+  const [openLocality, setOpenLocality] = useState(false);
+  const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
 
   // Galería
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -612,37 +612,50 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
               <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-white mr-2 sm:mr-3" />
               <h4 className="mb-0 font-bold text-white text-sm sm:text-lg">Panel Principal</h4>
             </div>
-              <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-end">
-
-              <Button variant="outline" className="border-white text-white hover:bg-white hover:text-slate-800 bg-transparent" size="sm" onClick={handleRefresh}>
+            <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-end">
+              <Button
+                variant="outline"
+                className="border-white text-white hover:bg-white hover:text-slate-800 bg-transparent"
+                size="sm"
+                onClick={handleRefresh}
+              >
                 <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline ml-1">Actualizar</span>
               </Button>
               <div className="flex items-center text-white">
-                <span className="font-medium mr-1 text-sm sm:text-base hidden sm:inline">{user?.username}</span>
+                <span className="font-medium mr-1 text-sm sm:text-base hidden sm:inline">
+                  {user?.username}
+                </span>
                 {/* Menú usuario */}
-<DropdownMenu>
-  <DropdownMenuTrigger asChild>
-    <Button variant="ghost" size="sm" className="text-white hover:bg-white hover:bg-opacity-20 p-1">
-      <User className="w-4 h-4 sm:hidden" />
-      <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
-    </Button>
-  </DropdownMenuTrigger>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-white hover:bg-white hover:bg-opacity-20 p-1"
+                    >
+                      <User className="w-4 h-4 sm:hidden" />
+                      <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
 
-  {/* clave */}
-  <DropdownMenuContent className="z-[9999]" sideOffset={6} align="end">
-    <DropdownMenuItem onClick={() => navigate("/admin/users")}>
-      <UserPlus className="w-4 h-4 mr-2" />Crear Usuario
-    </DropdownMenuItem>
-    <DropdownMenuItem onClick={() => {/* perfil */}}>
-      <User className="w-4 h-4 mr-2" />Mi Perfil
-    </DropdownMenuItem>
-    <DropdownMenuSeparator />
-    <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
-      <LogOut className="w-4 h-4 mr-2" />Cerrar Sesión
-    </DropdownMenuItem>
-  </DropdownMenuContent>
-</DropdownMenu>
+                  {/* clave */}
+                  <DropdownMenuContent className="z-[9999]" sideOffset={6} align="end">
+                    <DropdownMenuItem onClick={() => navigate("/admin/users")}>
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Crear Usuario
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { /* perfil */ }}>
+                      <User className="w-4 h-4 mr-2" />
+                      Mi Perfil
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Cerrar Sesión
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
@@ -655,57 +668,64 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
           {/* ===================== Tabla ===================== */}
           <div className="w-full">
             <Card className="border-0 shadow-sm rounded-lg overflow-visible">
-
-
-              <CardHeader style={{ backgroundColor: '#fff' }} className="border-0 rounded-t-lg px-3 sm:px-6 py-3 sm:py-4">
+              <CardHeader
+                style={{ backgroundColor: '#fff' }}
+                className="border-0 rounded-t-lg px-3 sm:px-6 py-3 sm:py-4"
+              >
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 sm:mb-4 gap-2 sm:gap-0">
                   <CardTitle className="mb-0 flex items-center text-lg sm:text-xl">
-                    <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" style={{ color: '#1bd1e8' }} />
+                    <BarChart3
+                      className="w-4 h-4 sm:w-5 sm:h-5 mr-2"
+                      style={{ color: '#1bd1e8' }}
+                    />
                     Consultas Ciudadanas
                   </CardTitle>
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
                   <div className="flex items-center gap-2 w-full sm:w-auto">
-                   
-                   <DropdownMenu>
-  <DropdownMenuTrigger asChild>
-    <Button
-      variant="outline"
-      size="sm"
-      className="border text-gray-600 hover:bg-gray-50 flex-1 sm:flex-none"
-    >
-      <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-      <span className="hidden sm:inline">Exportar</span>
-      <span className="sm:hidden">Exp.</span>
-      <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
-    </Button>
-  </DropdownMenuTrigger>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border text-gray-600 hover:bg-gray-50 flex-1 sm:flex-none"
+                        >
+                          <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                          <span className="hidden sm:inline">Exportar</span>
+                          <span className="sm:hidden">Exp.</span>
+                          <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
+                        </Button>
+                      </DropdownMenuTrigger>
 
-  {}
-  <DropdownMenuContent
-    className="z-[9999]"
-    sideOffset={6}
-    align="start"
-  >
-    <DropdownMenuItem onClick={handleExportCSV}>
-      <Download className="w-4 h-4 mr-2" /> CSV
-    </DropdownMenuItem>
-    <DropdownMenuItem onClick={handleExportExcel}>
-      <Download className="w-4 h-4 mr-2" /> Excel
-    </DropdownMenuItem>
-    <DropdownMenuItem onClick={handleExportPDF}>
-      <Download className="w-4 h-4 mr-2" /> PDF
-    </DropdownMenuItem>
-  </DropdownMenuContent>
-</DropdownMenu>
+                      <DropdownMenuContent
+                        className="z-[9999]"
+                        sideOffset={6}
+                        align="start"
+                      >
+                        <DropdownMenuItem onClick={handleExportCSV}>
+                          <Download className="w-4 h-4 mr-2" /> CSV
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportExcel}>
+                          <Download className="w-4 h-4 mr-2" /> Excel
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportPDF}>
+                          <Download className="w-4 h-4 mr-2" /> PDF
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
 
                   {/* Filtros */}
                   <div className="w-full sm:w-auto">
                     <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
                       <CollapsibleTrigger asChild>
-                        <Button variant="outline" size="sm" className="border-2 w-full sm:w-auto" style={{ borderColor: '#1bd1e8', color: '#1bd1e8' }}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-2 w-full sm:w-auto"
+                          style={{ borderColor: '#1bd1e8', color: '#1bd1e8' }}
+                        >
                           <Filter className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                           Filtros
                           <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
@@ -715,36 +735,69 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
                           <div>
                             <Label className="text-sm font-medium">Fecha Desde</Label>
-                            <Input type="date" value={filters.dateFrom} onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })} />
+                            <Input
+                              type="date"
+                              value={filters.dateFrom}
+                              onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
+                            />
                           </div>
                           <div>
                             <Label className="text-sm font-medium">Fecha Hasta</Label>
-                            <Input type="date" value={filters.dateTo} onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })} />
+                            <Input
+                              type="date"
+                              value={filters.dateTo}
+                              onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
+                            />
                           </div>
                           <div>
                             <Label className="text-sm font-medium">Departamento</Label>
-                            <Select value={filters.departmentId} onValueChange={(v) => setFilters({ ...filters, departmentId: v })}>
-                              <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
+                            <Select
+                              value={filters.departmentId}
+                              onValueChange={(v) => setFilters({ ...filters, departmentId: v })}
+                              open={openDepartment}
+                              onOpenChange={setOpenDepartment}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Todos" />
+                              </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">Todos</SelectItem>
-                                {departments.map((d: any) => (<SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>))}
+                                {departments.map((d: any) => (
+                                  <SelectItem key={d.id} value={String(d.id)}>
+                                    {d.name}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
                           <div>
                             <Label className="text-sm font-medium">Sector</Label>
-                            <Select value={filters.sector} onValueChange={(v) => setFilters({ ...filters, sector: v })}>
-                              <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
+                            <Select
+                              value={filters.sector}
+                              onValueChange={(v) => setFilters({ ...filters, sector: v })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Todos" />
+                              </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">Todos</SelectItem>
-                                {sectors.map((s: any) => (<SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>))}
+                                {sectors.map((s: any) => (
+                                  <SelectItem key={s.id} value={s.name}>
+                                    {s.name}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
                           <div>
                             <Label className="text-sm font-medium">Tipo Persona</Label>
-                            <Select value={filters.personType} onValueChange={(v) => setFilters({ ...filters, personType: v })}>
-                              <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
+                            <Select
+                              value={filters.personType}
+                              onValueChange={(v) => setFilters({ ...filters, personType: v })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Todos" />
+                              </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">Todos</SelectItem>
                                 <SelectItem value="natural">Natural</SelectItem>
@@ -755,8 +808,13 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                           </div>
                           <div>
                             <Label className="text-sm font-medium">Estado</Label>
-                            <Select value={filters.status} onValueChange={(v) => setFilters({ ...filters, status: v })}>
-                              <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
+                            <Select
+                              value={filters.status}
+                              onValueChange={(v) => setFilters({ ...filters, status: v })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Todos" />
+                              </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">Todos</SelectItem>
                                 <SelectItem value="active">Activa</SelectItem>
@@ -766,10 +824,23 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                           </div>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-2 mt-3">
-                          <Button size="sm" onClick={handleFilterApply} style={{ backgroundColor: '#1bd1e8', borderColor: '#1bd1e8' }} className="w-full sm:w-auto">
-                            <Filter className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />Aplicar Filtros
+                          <Button
+                            size="sm"
+                            onClick={handleFilterApply}
+                            style={{ backgroundColor: '#1bd1e8', borderColor: '#1bd1e8' }}
+                            className="w-full sm:w-auto"
+                          >
+                            <Filter className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                            Aplicar Filtros
                           </Button>
-                          <Button variant="outline" size="sm" onClick={handleFilterClear} className="w-full sm:w-auto">Limpiar</Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleFilterClear}
+                            className="w-full sm:w-auto"
+                          >
+                            Limpiar
+                          </Button>
                         </div>
                       </CollapsibleContent>
                     </Collapsible>
@@ -783,17 +854,32 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                     <TableHeader>
                       <TableRow>
                         <TableHead className="font-bold">
-                          <Button variant="ghost" size="sm" onClick={() => handleSort("id")} className="p-0 h-auto font-bold">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSort("id")}
+                            className="p-0 h-auto font-bold"
+                          >
                             ID <ArrowUpDown className="w-3 h-3 ml-1" />
                           </Button>
                         </TableHead>
                         <TableHead className="font-bold">
-                          <Button variant="ghost" size="sm" onClick={() => handleSort("createdAt")} className="p-0 h-auto font-bold">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSort("createdAt")}
+                            className="p-0 h-auto font-bold"
+                          >
                             Fecha <ArrowUpDown className="w-3 h-3 ml-1" />
                           </Button>
                         </TableHead>
                         <TableHead className="font-bold">
-                          <Button variant="ghost" size="sm" onClick={() => handleSort("personType")} className="p-0 h-auto font-bold">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSort("personType")}
+                            className="p-0 h-auto font-bold"
+                          >
                             Tipo Persona <ArrowUpDown className="w-3 h-3 ml-1" />
                           </Button>
                         </TableHead>
@@ -809,7 +895,12 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                         <TableHead className="font-bold">Imagen</TableHead>
 
                         <TableHead className="font-bold">
-                          <Button variant="ghost" size="sm" onClick={() => handleSort("status")} className="p-0 h-auto font-bold">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSort("status")}
+                            className="p-0 h-auto font-bold"
+                          >
                             Estado <ArrowUpDown className="w-3 h-3 ml-1" />
                           </Button>
                         </TableHead>
@@ -818,89 +909,148 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                     </TableHeader>
 
                     <TableBody>
-                      {sortedConsultations.length > 0 ? sortedConsultations.map((c: any) => {
-                        const idStr = asStringId(c);
-                        const sectorsArr = asArray<string>(c.selectedSectors);
-                        const imgs = asArray<string>(c.images);
-                        return (
-                          <TableRow key={idStr}>
-                            <TableCell><code className="text-sm">{idStr}</code></TableCell>
-                            <TableCell>{c.createdAt ? fmtDateHN(String(c.createdAt)) : "-"}</TableCell>
-                            <TableCell><Badge variant={badgeVariantPerson(c.personType)}>{labelPerson(c.personType)}</Badge></TableCell>
+                      {sortedConsultations.length > 0 ? (
+                        sortedConsultations.map((c: any) => {
+                          const idStr = asStringId(c);
+                          const sectorsArr = asArray<string>(c.selectedSectors);
+                          const imgs = asArray<string>(c.images);
+                          return (
+                            <TableRow key={idStr}>
+                              <TableCell>
+                                <code className="text-sm">{idStr}</code>
+                              </TableCell>
+                              <TableCell>
+                                {c.createdAt ? fmtDateHN(String(c.createdAt)) : "-"}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={badgeVariantPerson(c.personType)}>
+                                  {labelPerson(c.personType)}
+                                </Badge>
+                              </TableCell>
 
-                            <TableCell><span className="text-sm">{getPersonalData(c)}</span></TableCell>
-                            <TableCell>{c.department?.name || "-"}</TableCell>
-                            <TableCell>{c.municipality?.name || "-"}</TableCell>
-                            <TableCell>{c.locality?.name || (c.customLocalityName || "-")}</TableCell>
-                            <TableCell className="text-xs">{c.latitude || "-"}</TableCell>
-                            <TableCell className="text-xs">{c.longitude || "-"}</TableCell>
+                              <TableCell>
+                                <span className="text-sm">{getPersonalData(c)}</span>
+                              </TableCell>
+                              <TableCell>{c.department?.name || "-"}</TableCell>
+                              <TableCell>{c.municipality?.name || "-"}</TableCell>
+                              <TableCell>
+                                {c.locality?.name || c.customLocalityName || "-"}
+                              </TableCell>
+                              <TableCell className="text-xs">{c.latitude || "-"}</TableCell>
+                              <TableCell className="text-xs">{c.longitude || "-"}</TableCell>
 
-                            <TableCell>
-                              <div className="flex flex-wrap gap-1">
-                                {sectorsArr.slice(0, 2).map((s, i) => (
-                                  <Badge key={`${idStr}-s-${i}`} variant="secondary" className="text-xs">{s}</Badge>
-                                ))}
-                                {sectorsArr.length > 2 && (
-                                  <Badge variant="outline" className="text-xs">+{sectorsArr.length - 2}</Badge>
+                              <TableCell>
+                                <div className="flex flex-wrap gap-1">
+                                  {sectorsArr.slice(0, 2).map((s, i) => (
+                                    <Badge
+                                      key={`${idStr}-s-${i}`}
+                                      variant="secondary"
+                                      className="text-xs"
+                                    >
+                                      {s}
+                                    </Badge>
+                                  ))}
+                                  {sectorsArr.length > 2 && (
+                                    <Badge variant="outline" className="text-xs">
+                                      +{sectorsArr.length - 2}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </TableCell>
+
+                              <TableCell>
+                                <span className="text-sm">
+                                  {typeof c.message === "string" && c.message.length > 50
+                                    ? `${c.message.substring(0, 50)}...`
+                                    : c.message}
+                                </span>
+                              </TableCell>
+
+                              <TableCell className="w-[60px]">
+                                {imgs.length ? (
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    title="Ver imágenes"
+                                    onClick={() => openGallery(imgs, 0)}
+                                    className="h-8 w-8"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </Button>
+                                ) : (
+                                  "—"
                                 )}
-                              </div>
-                            </TableCell>
+                              </TableCell>
 
-                            <TableCell>
-                              <span className="text-sm">
-                                {typeof c.message === "string" && c.message.length > 50 ? `${c.message.substring(0, 50)}...` : c.message}
-                              </span>
-                            </TableCell>
+                              <TableCell>
+                                <Badge variant={badgeVariantStatus(c.status)}>
+                                  {c.status === "active" ? "Activa" : "Archivada"}
+                                </Badge>
+                              </TableCell>
 
-                            <TableCell className="w-[60px]">
-                              {imgs.length ? (
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  title="Ver imágenes"
-                                  onClick={() => openGallery(imgs, 0)}
-                                  className="h-8 w-8"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </Button>
-                              ) : "—"}
-                            </TableCell>
-
-                            <TableCell>
-                              <Badge variant={badgeVariantStatus(c.status)}>
-                                {c.status === "active" ? "Activa" : "Archivada"}
-                              </Badge>
-                            </TableCell>
-
-                            <TableCell>
-                              <div className="flex gap-1">
-                                <Button variant="outline" size="sm" onClick={() => { setSelectedConsultation(c); setShowConsultationDetail(true); }} title="Ver detalle">
-                                  <MessageSquare className="w-4 h-4" />
-                                </Button>
-                                <Button variant="outline" size="sm" onClick={() => openEdit(c)} title="Editar">
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="outline" size="sm"
-                                  onClick={() => updateStatusMutation.mutate({ consultationId: idStr, status: c.status === "active" ? "archived" : "active" })}
-                                  title={c.status === "active" ? "Archivar" : "Activar"}
-                                >
-                                  {c.status === "active" ? "Archivar" : "Activar"}
-                                </Button>
-                                <Button
-                                  variant="outline" size="sm"
-                                  onClick={() => { setDeleteId(idStr); setShowDeleteConfirm(true); }}
-                                  className="text-red-600 hover:bg-red-50 border-red-200"
-                                  title="Eliminar"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      }) : (
-                        <TableRow><TableCell colSpan={14} className="text-center text-gray-500 py-6">No hay consultas disponibles</TableCell></TableRow>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedConsultation(c);
+                                      setShowConsultationDetail(true);
+                                    }}
+                                    title="Ver detalle"
+                                  >
+                                    <MessageSquare className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openEdit(c)}
+                                    title="Editar"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      updateStatusMutation.mutate({
+                                        consultationId: idStr,
+                                        status:
+                                          c.status === "active" ? "archived" : "active",
+                                      })
+                                    }
+                                    title={
+                                      c.status === "active" ? "Archivar" : "Activar"
+                                    }
+                                  >
+                                    {c.status === "active" ? "Archivar" : "Activar"}
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setDeleteId(idStr);
+                                      setShowDeleteConfirm(true);
+                                    }}
+                                    className="text-red-600 hover:bg-red-50 border-red-200"
+                                    title="Eliminar"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      ) : (
+                        <TableRow>
+                          <TableCell
+                            colSpan={14}
+                            className="text-center text-gray-500 py-6"
+                          >
+                            No hay consultas disponibles
+                          </TableCell>
+                        </TableRow>
                       )}
                     </TableBody>
                   </Table>
@@ -912,18 +1062,40 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                     <small className="text-gray-600 text-xs sm:text-sm text-center sm:text-left">
                       {consultationsData.total === 0
                         ? "0"
-                        : `${filters.offset + 1}-${Math.min(filters.offset + filters.limit, consultationsData.total)}`}{" "}
+                        : `${filters.offset + 1}-${Math.min(
+                            filters.offset + filters.limit,
+                            consultationsData.total
+                          )}`}{" "}
                       de {consultationsData.total}
                     </small>
                     <nav>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" disabled={filters.offset === 0}
-                          onClick={() => setFilters({ ...filters, offset: Math.max(0, filters.offset - filters.limit) })}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={filters.offset === 0}
+                          onClick={() =>
+                            setFilters({
+                              ...filters,
+                              offset: Math.max(0, filters.offset - filters.limit),
+                            })
+                          }
+                        >
                           Anterior
                         </Button>
-                        <Button variant="outline" size="sm"
-                          disabled={filters.offset + filters.limit >= consultationsData.total}
-                          onClick={() => setFilters({ ...filters, offset: filters.offset + filters.limit })}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={
+                            filters.offset + filters.limit >= consultationsData.total
+                          }
+                          onClick={() =>
+                            setFilters({
+                              ...filters,
+                              offset: filters.offset + filters.limit,
+                            })
+                          }
+                        >
                           Siguiente
                         </Button>
                       </div>
@@ -966,8 +1138,16 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                     <p className="text-2xl font-bold">{totals.archived}</p>
                   </div>
                   <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
-                    <path d="M20 7H4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2Z" stroke="#1bd1e8" strokeWidth="2"/>
-                    <path d="M4 7h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" stroke="#1bd1e8" strokeWidth="2"/>
+                    <path
+                      d="M20 7H4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2Z"
+                      stroke="#1bd1e8"
+                      strokeWidth="2"
+                    />
+                    <path
+                      d="M4 7h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z"
+                      stroke="#1bd1e8"
+                      strokeWidth="2"
+                    />
                   </svg>
                 </div>
               </CardContent>
@@ -978,16 +1158,32 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 sm:gap-4">
             {/* Línea: por día */}
             <Card className="border-0 shadow-sm rounded-lg">
-              <CardHeader><CardTitle className="text-sm">Consultas por día (30 días)</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="text-sm">
+                  Consultas por día (30 días)
+                </CardTitle>
+              </CardHeader>
               <CardContent className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={(consultationsByDate || []).map((d:any)=>({date:d.date, count:Number(d.count)}))}>
+                  <LineChart
+                    data={(consultationsByDate || []).map((d: any) => ({
+                      date: d.date,
+                      count: Number(d.count),
+                    }))}
+                  >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" tick={{fontSize:10}} />
+                    <XAxis dataKey="date" tick={{ fontSize: 10 }} />
                     <YAxis allowDecimals={false} />
                     <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="count" name="Consultas" stroke="#1bd1e8" strokeWidth={2} dot={false} />
+                    <Line
+                      type="monotone"
+                      dataKey="count"
+                      name="Consultas"
+                      stroke="#1bd1e8"
+                      strokeWidth={2}
+                      dot={false}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -995,12 +1191,19 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
 
             {/* Barras: sectores */}
             <Card className="border-0 shadow-sm rounded-lg">
-              <CardHeader><CardTitle className="text-sm">Consultas por sector</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="text-sm">Consultas por sector</CardTitle>
+              </CardHeader>
               <CardContent className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={(consultationsBySector || []).map((s:any)=>({sector:s.sector, count:Number(s.count)}))}>
+                  <BarChart
+                    data={(consultationsBySector || []).map((s: any) => ({
+                      sector: s.sector,
+                      count: Number(s.count),
+                    }))}
+                  >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="sector" tick={{fontSize:10}} />
+                    <XAxis dataKey="sector" tick={{ fontSize: 10 }} />
                     <YAxis allowDecimals={false} />
                     <Tooltip />
                     <Legend />
@@ -1012,7 +1215,9 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
 
             {/* Pie: estado */}
             <Card className="border-0 shadow-sm rounded-lg">
-              <CardHeader><CardTitle className="text-sm">Estado de consultas</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="text-sm">Estado de consultas</CardTitle>
+              </CardHeader>
               <CardContent className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <RPieChart>
@@ -1026,8 +1231,11 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                       outerRadius={80}
                       label
                     >
-                      {[0,1].map((i) => (
-                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                      {[0, 1].map((i) => (
+                        <Cell
+                          key={i}
+                          fill={CHART_COLORS[i % CHART_COLORS.length]}
+                        />
                       ))}
                     </Pie>
                     <Tooltip />
@@ -1044,7 +1252,9 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 sm:gap-4 mt-2">
         {/* Por departamento */}
         <Card className="border-0 shadow-sm rounded-lg">
-          <CardHeader><CardTitle className="text-sm">Consultas por departamento</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-sm">Consultas por departamento</CardTitle>
+          </CardHeader>
           <CardContent className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={byDept}>
@@ -1059,40 +1269,31 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
           </CardContent>
         </Card>
 
-        {/* Por sector */}
-        <Card className="border-0 shadow-sm rounded-lg">
-          <CardHeader>
-            <CardTitle className="text-sm">
-              Consultas por sector{filters.departmentId && filters.departmentId !== "all" ? " (Depto)" : ""}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={bySectorAdv}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="sector" tick={{ fontSize: 10 }} />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="count" name="Consultas" fill="#1bd1e8" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
         {/* Por localidad */}
         <Card className="border-0 shadow-sm rounded-lg">
           <CardHeader>
             <CardTitle className="text-sm">
-              Consultas por aldea/localidad {filters.departmentId && filters.departmentId !== "all" ? "" : "(selecciona un departamento)"}
+              Consultas por aldea/localidad{" "}
+              {filters.departmentId && filters.departmentId !== "all"
+                ? ""
+                : "(selecciona un departamento)"}
             </CardTitle>
           </CardHeader>
           <CardContent className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={byLocality} layout="vertical" margin={{ left: 40 }}>
+              <BarChart
+                data={byLocality}
+                layout="vertical"
+                margin={{ left: 40 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" allowDecimals={false} />
-                <YAxis type="category" dataKey="locality" width={120} tick={{ fontSize: 10 }} />
+                <YAxis
+                  type="category"
+                  dataKey="locality"
+                  width={120}
+                  tick={{ fontSize: 10 }}
+                />
                 <Tooltip />
                 <Legend />
                 <Bar dataKey="count" name="Consultas" fill="#1bd1e8" />
@@ -1102,44 +1303,60 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
         </Card>
 
         {/* Sectores por departamento (apilado) */}
-      
+        {/* aquí podrías usar stackedByDept si decides renderizarlo */}
       </div>
 
-      {}
-      <Dialog open={showConsultationDetail} onOpenChange={setShowConsultationDetail}>
-          <DialogContent className="max-w-[95vw] sm:max-w-xl bg-white shadow-2xl">
-
+      {/* Detalle de consulta */}
+      <Dialog
+        open={showConsultationDetail}
+        onOpenChange={setShowConsultationDetail}
+        modal={false}
+      >
+        <DialogContent className="max-w-[95vw] sm:max-w-xl bg-white shadow-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center text-sm sm:text-base">
-              <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 mr-2" style={{ color: '#1bd1e8' }} />
+              <MessageSquare
+                className="w-4 h-4 sm:w-5 sm:h-5 mr-2"
+                style={{ color: "#1bd1e8" }}
+              />
               Detalle de Consulta Ciudadana
             </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm">Información completa de la consulta seleccionada</DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
+              Información completa de la consulta seleccionada
+            </DialogDescription>
           </DialogHeader>
 
           {selectedConsultation && (
             <div className="space-y-3 sm:space-y-4">
-              {}
-              {}
+              {/* aquí puedes renderizar los detalles */}
             </div>
           )}
-          <DialogFooter><Button variant="outline" onClick={() => setShowConsultationDetail(false)}>Cerrar</Button></DialogFooter>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowConsultationDetail(false)}
+            >
+              Cerrar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {}
+      {/* Editar consulta */}
       <Dialog
         open={showEditDialog}
         onOpenChange={(open) => {
           setShowEditDialog(open);
           if (!open) setEditingConsultation(null);
         }}
+        modal={false}
       >
-          <DialogContent className="max-w-[95vw] sm:max-w-xl bg-white shadow-2xl">
-
+        <DialogContent className="max-w-[95vw] sm:max-w-xl bg-white shadow-2xl">
           <DialogHeader>
             <DialogTitle>Editar consulta</DialogTitle>
-            <DialogDescription>Actualiza la información y guarda los cambios.</DialogDescription>
+            <DialogDescription>
+              Actualiza la información y guarda los cambios.
+            </DialogDescription>
           </DialogHeader>
 
           {editingConsultation ? (
@@ -1151,7 +1368,6 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                 })}
                 className="space-y-4"
               >
-                {}
                 <FormField
                   control={editForm.control}
                   name="personType"
@@ -1160,7 +1376,9 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                       <FormLabel>Tipo de persona</FormLabel>
                       <FormControl>
                         <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="natural">Natural</SelectItem>
                             <SelectItem value="juridica">Jurídica</SelectItem>
@@ -1173,7 +1391,6 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                   )}
                 />
 
-                {}
                 {editForm.watch("personType") === "natural" ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <FormField
@@ -1182,7 +1399,9 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Nombre</FormLabel>
-                          <FormControl><Input {...field} /></FormControl>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -1193,7 +1412,9 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Apellido</FormLabel>
-                          <FormControl><Input {...field} /></FormControl>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -1207,7 +1428,9 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Empresa</FormLabel>
-                          <FormControl><Input {...field} /></FormControl>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -1218,7 +1441,9 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>RTN</FormLabel>
-                          <FormControl><Input {...field} /></FormControl>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -1226,7 +1451,6 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                   </div>
                 ) : null}
 
-                {}
                 <FormField
                   control={editForm.control}
                   name="status"
@@ -1235,7 +1459,9 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                       <FormLabel>Estado</FormLabel>
                       <FormControl>
                         <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="active">Activa</SelectItem>
                             <SelectItem value="archived">Archivada</SelectItem>
@@ -1247,7 +1473,6 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                   )}
                 />
 
-                {}
                 <FormField
                   control={editForm.control}
                   name="message"
@@ -1255,7 +1480,10 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                     <FormItem>
                       <FormLabel>Mensaje</FormLabel>
                       <FormControl>
-                        <textarea className="w-full border rounded p-2 h-28" {...field} />
+                        <textarea
+                          className="w-full border rounded p-2 h-28"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1283,8 +1511,8 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
         </DialogContent>
       </Dialog>
 
-      {}
-      <Dialog open={galleryOpen} onOpenChange={setGalleryOpen}>
+      {/* Galería */}
+      <Dialog open={galleryOpen} onOpenChange={setGalleryOpen} modal={false}>
         <DialogContent className="max-w-[95vw] sm:max-w-xl bg-white shadow-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1312,7 +1540,7 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <button
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-white hover:bg-white rounded-full p-2"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-white hover:bg-white rounded-full p-2"
                   onClick={nextImg}
                   title="Siguiente"
                 >
@@ -1325,16 +1553,20 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => downloadUrl(resolveImageUrl(galleryImages[galleryIndex]))}
+                    onClick={() =>
+                      downloadUrl(
+                        resolveImageUrl(galleryImages[galleryIndex])
+                      )
+                    }
                   >
                     <Download className="w-4 h-4 mr-2" /> Descargar
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
-                  >
-                    <a href={resolveImageUrl(galleryImages[galleryIndex])} target="_blank" rel="noreferrer">
+                  <Button variant="outline" size="sm" asChild>
+                    <a
+                      href={resolveImageUrl(galleryImages[galleryIndex])}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       <ExternalLink className="w-4 h-4 mr-2" /> Abrir en pestaña
                     </a>
                   </Button>
@@ -1344,7 +1576,6 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                 </small>
               </div>
 
-              {}
               <div className="mt-3 grid grid-cols-5 sm:grid-cols-8 gap-2">
                 {galleryImages.map((src, i) => {
                   const url = resolveImageUrl(src);
@@ -1352,11 +1583,17 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
                   return (
                     <button
                       key={i}
-                      className={`h-16 rounded overflow-hidden border ${active ? "border-cyan-500" : "border-transparent"} hover:opacity-90`}
+                      className={`h-16 rounded overflow-hidden border ${
+                        active ? "border-cyan-500" : "border-transparent"
+                      } hover:opacity-90`}
                       onClick={() => setGalleryIndex(i)}
-                      title={`Ir a ${i+1}`}
+                      title={`Ir a ${i + 1}`}
                     >
-                      <img src={url} alt={`thumb-${i}`} className="w-full h-full object-cover" />
+                      <img
+                        src={url}
+                        alt={`thumb-${i}`}
+                        className="w-full h-full object-cover"
+                      />
                     </button>
                   );
                 })}
@@ -1367,7 +1604,11 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => downloadAll(galleryImages)} disabled={!galleryImages.length}>
+            <Button
+              variant="outline"
+              onClick={() => downloadAll(galleryImages)}
+              disabled={!galleryImages.length}
+            >
               <Download className="w-4 h-4 mr-2" /> Descargar todas
             </Button>
             <Button onClick={closeGallery}>Cerrar</Button>
@@ -1375,15 +1616,31 @@ const [openZone, setOpenZone] = useState(false); // para <Select> de Zona
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+      {/* Confirmar eliminación */}
+      <Dialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        modal={false}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Eliminar consulta</DialogTitle>
-            <DialogDescription>Esta acción no se puede deshacer.</DialogDescription>
+            <DialogDescription>
+              Esta acción no se puede deshacer.
+            </DialogDescription>
           </DialogHeader>
-          <p className="text-sm">¿Seguro que quieres eliminar la consulta <code>{deleteId}</code>?</p>
+          <p className="text-sm">
+            ¿Seguro que quieres eliminar la consulta{" "}
+            <code>{deleteId}</code>?
+          </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowDeleteConfirm(false); setDeleteId(null); }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteConfirm(false);
+                setDeleteId(null);
+              }}
+            >
               Cancelar
             </Button>
             <Button

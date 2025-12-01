@@ -207,7 +207,8 @@ export function UserManagement() {
               Crear Usuario
             </Button>
           </DialogTrigger>
-          <DialogContent>
+              <DialogContent className="max-w-lg bg-white !bg-opacity-100 backdrop-blur-0 border border-slate-200 shadow-xl">
+
             <DialogHeader>
               <DialogTitle>Crear Nuevo Usuario</DialogTitle>
               <DialogDescription>Crear una nueva cuenta (roles desde la base de datos).</DialogDescription>

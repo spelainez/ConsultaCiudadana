@@ -267,6 +267,7 @@ export default function UserManagement() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Card className="max-w-md w-full">
+          
           <CardHeader>
             <CardTitle>Error</CardTitle>
           </CardHeader>
@@ -327,7 +328,7 @@ export default function UserManagement() {
                     </CardTitle>
                   </div>
                   <Button onClick={() => setShowCreateUser(true)} style={{ backgroundColor: "#1bd1e8", borderColor: "#1bd1e8" }} data-testid="button-create-user">
-                    <UserPlus className="w-4 h-4 mr-1" />
+                    <UserPlus className="w-4 h-4 mr-2" />
                     Crear Usuario
                   </Button>
                 </div>
@@ -437,8 +438,17 @@ export default function UserManagement() {
       </div>
 
       {/* Create User Dialog */}
-      <Dialog open={showCreateUser} onOpenChange={setShowCreateUser}>
-        <DialogContent>
+
+<Dialog open={showCreateUser} onOpenChange={setShowCreateUser} /* opcional: */ modal={false}>
+  <DialogContent
+    className="bg-white overflow-visible"
+    onInteractOutside={(e) => {
+      const el = e.target as HTMLElement;
+      if (el.closest("[data-radix-select-content]")) {
+        e.preventDefault();
+      }
+    }}
+  >
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <UserPlus className="w-5 h-5 mr-2" style={{ color: "#1bd1e8" }} />
@@ -498,29 +508,43 @@ export default function UserManagement() {
 
               {/* Rol */}
               <FormField
-                control={createUserForm.control}
-                name="rol"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Rol</FormLabel>
-                    <Select value={field.value ?? "planificador"} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccione un rol" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="planificador">Planificador</SelectItem>
-                        <SelectItem value="admin">Administrador</SelectItem>
-                        <SelectItem value="super_admin">Super Admin</SelectItem>
-                        <SelectItem value="ciudadano">Ciudadano</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+  control={createUserForm.control}
+  name="rol"
+  render={({ field }) => (
+ <FormField
+  control={createUserForm.control}
+  name="rol"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Rol</FormLabel>
+      <Select value={field.value ?? "planificador"} onValueChange={field.onChange}>
+        <FormControl>
+          <SelectTrigger>
+            <SelectValue placeholder="Seleccione un rol" />
+          </SelectTrigger>
+        </FormControl>
 
+        <SelectContent
+          position="popper"
+          side="bottom"
+          align="start"
+          sideOffset={8}
+          className="z-[99999] bg-white"
+        >
+          <SelectItem value="planificador">Planificador</SelectItem>
+          <SelectItem value="admin">Administrador</SelectItem>
+          <SelectItem value="super_admin">Super Admin</SelectItem>
+          <SelectItem value="ciudadano">Ciudadano</SelectItem>
+        </SelectContent>
+      </Select>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+  )}
+/>
+
+            
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setShowCreateUser(false)} data-testid="button-cancel-create">
                   Cancelar
