@@ -3,18 +3,19 @@ import { z } from "zod";
 const NAME_MIN = 2;
 const NAME_MAX = 50;
 
-//const emailSchema = z.string().trim().email("Correo inválido");
+// const emailSchema = z.string().trim().email("Correo inválido");
 const emailSchema = z
   .string()
   .trim()
-  .optional()
   .refine((v) => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), {
     message: "Correo inválido",
   });
 
 const nonEmpty = (m: string) => z.string().trim().min(1, m);
 
-const nameRegex = new RegExp(`^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\\s'\\-]{${NAME_MIN},${NAME_MAX}}$`);
+const nameRegex = new RegExp(
+  `^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\\s'\\-]{${NAME_MIN},${NAME_MAX}}$`
+);
 const nameSchema = z
   .string()
   .trim()
@@ -29,34 +30,32 @@ const phoneStrictSchema = z
 
 export const headerSchema = z
   .object({
-    // 🔹 Solo natural o jurídica
     personType: z.enum(["natural", "juridica"]).default("natural"),
 
-    // 🔹 Persona natural
     firstName: nameSchema.optional(),
     lastName: nameSchema.optional(),
-    // identity: eliminado
-    email: emailSchema.optional(), // opcional
+    email: emailSchema.optional(), 
 
-    // 🔹 Persona jurídica
-    // Se seguirá llamando companyName en el modelo,
-    // pero la etiqueta en el formulario será "Institución u organización"
-    companyName: nonEmpty("El nombre de la institución u organización es requerido").optional(),
-    // rtn eliminado
-    legalRepresentative: nameSchema.optional(), // etiqueta "Persona de contacto"
-    // companyContact eliminado
+ 
+    companyName: nonEmpty(
+      "El nombre de la institución u organización es requerido"
+    ).optional(),
+    legalRepresentative: nameSchema.optional(), 
 
-    // 🔹 Contacto general (opcional para ambos tipos)
     mobile: phoneStrictSchema.optional(),
     phone: phoneStrictSchema.optional(),
-    // altEmail eliminado
 
-    // 🔹 Ubicación
     departmentId: z.number().int().positive().optional(),
     municipalityId: z.number().int().positive().optional(),
     zone: z.enum(["urbano", "rural"]).optional(),
-    localityId: z.union([z.number().int().positive(), z.literal("otro")]).optional(),
-    customLocalityName: z.string().trim().max(80, "Máximo 80 caracteres").optional(),
+    localityId: z
+      .union([z.number().int().positive(), z.literal("otro")])
+      .optional(),
+    customLocalityName: z
+      .string()
+      .trim()
+      .max(80, "Máximo 80 caracteres")
+      .optional(),
 
     latitude: z.string().trim().optional(),
     longitude: z.string().trim().optional(),
@@ -64,27 +63,50 @@ export const headerSchema = z
     status: z.enum(["active", "archived"]).default("active"),
   })
   .superRefine((data, ctx) => {
-    // ✅ Ubicación
     if (!data.departmentId) {
-      ctx.addIssue({ code: "custom", path: ["departmentId"], message: "Seleccione un departamento" });
+      ctx.addIssue({
+        code: "custom",
+        path: ["departmentId"],
+        message: "Seleccione un departamento",
+      });
     }
     if (!data.municipalityId) {
-      ctx.addIssue({ code: "custom", path: ["municipalityId"], message: "Seleccione un municipio" });
+      ctx.addIssue({
+        code: "custom",
+        path: ["municipalityId"],
+        message: "Seleccione un municipio",
+      });
     }
     if (!data.zone) {
-      ctx.addIssue({ code: "custom", path: ["zone"], message: "Seleccione la zona" });
+      ctx.addIssue({
+        code: "custom",
+        path: ["zone"],
+        message: "Seleccione la zona",
+      });
       return;
     }
 
     const isOtro = data.localityId === "otro";
     if (data.zone === "urbano") {
-      if (!isOtro && (!data.localityId || typeof data.localityId !== "number")) {
-        ctx.addIssue({ code: "custom", path: ["localityId"], message: "Seleccione su colonia/barrio" });
+      if (
+        !isOtro &&
+        (!data.localityId || typeof data.localityId !== "number")
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["localityId"],
+          message: "Seleccione su colonia/barrio",
+        });
       }
     } else if (data.zone === "rural") {
-      const hasLocNum = typeof data.localityId === "number" && data.localityId > 0;
+      const hasLocNum =
+        typeof data.localityId === "number" && data.localityId > 0;
       if (!hasLocNum && !isOtro) {
-        ctx.addIssue({ code: "custom", path: ["localityId"], message: "Seleccione su aldea/caserío" });
+        ctx.addIssue({
+          code: "custom",
+          path: ["localityId"],
+          message: "Seleccione su aldea/caserío",
+        });
       }
     }
 
@@ -93,7 +115,8 @@ export const headerSchema = z
         ctx.addIssue({
           code: "custom",
           path: ["customLocalityName"],
-          message: "Escriba el nombre de la colonia/barrio o aldea/caserío",
+          message:
+            "Escriba el nombre de la colonia/barrio o aldea/caserío",
         });
       }
       if (!data.latitude || !data.longitude) {
@@ -105,17 +128,22 @@ export const headerSchema = z
       }
     }
 
-    // ✅ Reglas por tipo de persona
 
     if (data.personType === "natural") {
       if (!data.firstName?.trim()) {
-        ctx.addIssue({ code: "custom", path: ["firstName"], message: "El primer nombre es requerido" });
+        ctx.addIssue({
+          code: "custom",
+          path: ["firstName"],
+          message: "El primer nombre es requerido",
+        });
       }
       if (!data.lastName?.trim()) {
-        ctx.addIssue({ code: "custom", path: ["lastName"], message: "El apellido es requerido" });
+        ctx.addIssue({
+          code: "custom",
+          path: ["lastName"],
+          message: "El apellido es requerido",
+        });
       }
-      // identidad ya no se usa
-      // email es opcional -> no se valida como requerido
     }
 
     if (data.personType === "juridica") {
@@ -123,7 +151,8 @@ export const headerSchema = z
         ctx.addIssue({
           code: "custom",
           path: ["companyName"],
-          message: "El nombre de la institución u organización es requerido",
+          message:
+            "El nombre de la institución u organización es requerido",
         });
       }
       if (!data.legalRepresentative?.trim()) {
@@ -133,11 +162,7 @@ export const headerSchema = z
           message: "La persona de contacto es requerida",
         });
       }
-      // RTN quitado
-      // companyContact quitado
     }
-
-    // 🔸 Lógica de anónimo eliminada
   });
 
 export type HeaderFormInputs = z.input<typeof headerSchema>;
